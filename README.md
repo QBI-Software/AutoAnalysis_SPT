@@ -1,3 +1,3 @@
-#MSD ANALYSIS scripts
+# MSD ANALYSIS scripts
 
 Analysis of MSD calculations
