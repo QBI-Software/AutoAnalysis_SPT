@@ -42,7 +42,7 @@ class FilterMSD():
         # Uneven rows - detect max columns
         max_msdpoints = self.msdpoints + 2  # max msd points plus first 2 cols
         cols = ['ROI', 'Trace'] + [str(x) for x in range(1, self.msdpoints + 1)]
-        msd = pandas.DataFrame([], columns=cols)
+        msd = pandas.DataFrame([])
         f = open(datafile_msd, encoding=self.encoding)
         f.seek(0)
         for row in f.readlines():
@@ -56,6 +56,7 @@ class FilterMSD():
             x = list(s.values) + [np.nan for i in range(len(s), max_msdpoints)]
             s = pandas.Series(x)
             msd = msd.append(s, ignore_index=True)
+        msd.columns = cols
         #Add log10 column
         data[self.field] = np.log10(data[self.diffcolumn])
         self.data = data
@@ -114,9 +115,10 @@ if __name__ == "__main__":
             # Save files
             fdata = join(args.outputdir, "Filtered_log10D.csv")
             fmsd = join(args.outputdir, "Filtered_" + args.datafile_msd)
-            filtered.to_csv(fdata[field], index=False)  # with or without original index numbers
+            filtered.to_csv(fdata, columns=[field], index=False)  # with or without original index numbers
             filtered_msd.to_csv(fmsd, index=True)
-            print("Files saved to: ", fdata, fmsd)
+            print("Files saved: ")
+            print('\t', fdata, '\n\t',fmsd)
         else:
             raise ValueError("Data not loaded")
 

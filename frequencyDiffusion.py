@@ -94,18 +94,20 @@ class FrequencyDiffusion():
             plt.ylabel('Frequency')
 
             bincenters = 0.5 * (bins[1:] + bins[:-1]) # OR save as bins minus first or last
-            self.histdata = pandas.DataFrame({'bins': bincenters, 'log10D': n})
-
+            histdata = pandas.DataFrame({'bins': bins[1:], 'log10D': n})
+            histdata = histdata.round({'bins':2, 'log10D':5}) #check precision required
+            self.histdata = histdata
             #Save plot to figure
             if outputdir is not None:
                 figtype='png' #png, pdf, ps, eps and svg.
-                outputfile = join(outputdir,'histogram_log10D'+figtype)
+                outputfile = join(outputdir,'Histogram_log10D.'+figtype)
                 plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
                 print("Saved histogram to ", outputfile)
-                outputfile.replace(figtype,'csv')
-                self.hist.to_csv(outputfile)
-                print("Saved histogram data to ", outputfile)
-            plt.show()
+                outputfile2 = join(outputdir, 'Histogram_log10D.csv')
+                self.histdata.to_csv(outputfile2, index=False)
+                print("Saved histogram data to ", outputfile2)
+            #For testing - will stop here until fig closes
+            #plt.show()
 
 
 ############### MAIN ############################
@@ -117,7 +119,7 @@ if __name__ == "__main__":
 
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
-    parser.add_argument('--datafile', action='store', help='Initial data file', default="Filtered_AllROI-D.txt")
+    parser.add_argument('--datafile', action='store', help='Initial data file', default="Filtered_log10D.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory (must exist)', default="data")
     parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
     parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")
