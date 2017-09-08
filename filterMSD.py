@@ -57,7 +57,7 @@ class FilterMSD():
             s = pandas.Series(x)
             msd = msd.append(s, ignore_index=True)
         msd.columns = cols
-        #Add log10 column
+        # Add log10 column
         data[self.field] = np.log10(data[self.diffcolumn])
         self.data = data
         self.msd = msd
@@ -118,7 +118,7 @@ if __name__ == "__main__":
             filtered.to_csv(fdata, columns=[field], index=False)  # with or without original index numbers
             filtered_msd.to_csv(fmsd, index=True)
             print("Files saved: ")
-            print('\t', fdata, '\n\t',fmsd)
+            print('\t', fdata, '\n\t', fmsd)
         else:
             raise ValueError("Data not loaded")
 
