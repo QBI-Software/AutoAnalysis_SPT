@@ -4,22 +4,21 @@ MSD Analysis script: batchHistogramStats
 Compiles histogram data from directories - expects input format:
 
 STIM OR NOSTIM
- | -- cell1                                         <-- uses this name as column header
+ | -- cell1                                         <-- uses this name as cell ID
         | -- celldata
                  | -- Histogram_log10D.csv files    <-- this name must match (generated from histogramLogD)
 
-and compiles to top level as STIM_AllHistogram_log10D.csv and NOSTIM_AllHistogram_log10D.csv
+and compiles to top level as <prefix>_AllHistogram_log10D.csv where prefix can be STIM, NOSTIM (example)
 
-Analysis:
-      1. Total, Mean, STD, SEM, Count per bin - appended to compiled file
-      2. ?Diffs from mean per cell
+Analysis per run (prefix):
+      1. All cells data with Mean, SEM, Count, STD, Sum per bin - appended to compiled file
+      2. Immobile, Mobile, Ratio per cell
+
 Plots:
-    1. Overlaid graph of each cell
-    2. ?Box plots with SEM for STIM and NOSTIM
+    1. Overlaid histogram plot of each cell with threshold line
+    2. Avg histogram with SEM bars
 
-NB: SEMs not recommended - http://sportsci.org/resource/stats/meansd.html
-SEM gives you an idea of the accuracy of the mean, and the SD gives you an idea of the variability of single observations
-SEM = SD/(square root of sample size).
+
 Created on Sep 8 2017
 
 @author: Liz Cooper-Williams, QBI
@@ -71,12 +70,16 @@ class HistoStats():
     def runStats(self):
         print("Running stats")
         df = self.compiled
-        #ORDER: mean,sem,count,std,sum
-        df['SUM'] = df.apply(lambda x: (x[1:].sum()),axis=1)
-        df['COUNT'] = df.apply(lambda x: (x[1:-1].count()), axis=1)
-        df['MEAN'] = df.apply(lambda x: (x[1:-2].mean()), axis=1)
-        df['STD'] = df.apply(lambda x: (x[1:-3].std()), axis=1)
+        #Calculate stats
+        n = self.numcells + 1
+        df['MEAN'] = df.apply(lambda x: (x[1:n].mean()), axis=1)
+        df['COUNT'] = df.apply(lambda x: (x[1:n].count()), axis=1)
+        df['STD'] = df.apply(lambda x: (x[1:n].std()), axis=1)
         df['SEM'] = df.apply(lambda x: (x.loc['STD']/np.sqrt(x.loc['COUNT'])), axis=1)
+        df['SUM'] = df.apply(lambda x: (x[1:n].sum()), axis=1)
+        #reorder ORDER: mean,sem,count,std,sum
+        cols = df.columns[0:n].tolist() +['MEAN','SEM','COUNT','STD','SUM']
+        df = df.reindex_axis(cols, axis=1)
         df.to_csv(self.compiledfile, index=False)
         self.compiled = df
 
@@ -98,6 +101,7 @@ class HistoStats():
 
             df_results = pd.DataFrame({'Cell': labels, 'Immobile': immobile, 'Mobile': mobile})
             df_results['Ratio'] = df_results['Immobile']/ df_results['Mobile']
+
             ratiofile = join(self.outputdir,self.prefix + "_ratios.csv")
             df_results.to_csv(ratiofile)
             print("Output ratios:", ratiofile)
@@ -112,7 +116,7 @@ class HistoStats():
         if ax is None:
             fig, ax = plt.subplots()
         labels=[]
-        for i in range(1,len(df.columns)-5):
+        for i in range(1,self.numcells + 1):
             df.plot.line('bins', i, ax=ax)
             labels.append(df.columns[i])
         #plot threshold line
@@ -159,14 +163,17 @@ if __name__ == "__main__":
         # Split to Mobile/immobile fractions - output
         fmsd.splitMobile(float(args.threshold))
         # Set the figure
-        #fig = plt.figure(figsize=(10, 5))
-        #axes1 = plt.subplot(121)
-        #fmsd.showPlots(axes1,False)
+        fig = plt.figure(figsize=(10, 5))
+        axes1 = plt.subplot(121)
+        fmsd.showPlots(axes1,False)
 
-        #axes2 = plt.subplot(122)
-        #fmsd.showAvgPlot(axes2)
-        #plt.show()
+        axes2 = plt.subplot(122)
+        fmsd.showAvgPlot(axes2)
 
+        figtype = 'png'  # png, pdf, ps, eps and svg.
+        outputfile = join(args.outputdir, 'AllHistogram_log10D.' + figtype)
+        plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
+        plt.show()
 
     except ValueError as e:
         print("Error: ", e)
