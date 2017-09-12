@@ -17,7 +17,7 @@ Analysis per run (prefix):
 Plots:
     1. Overlaid histogram plot of each cell with threshold line
     2. Avg histogram with SEM bars
-
+    3.
 
 Created on Sep 8 2017
 
@@ -28,13 +28,19 @@ import argparse
 from os import R_OK, access, walk, sep
 from os.path import join
 from glob import glob
+from configobj import ConfigObj
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 class HistoStats():
-    def __init__(self, inputdir, outputdir,datafile, prefix=''):
+    def __init__(self, inputdir, outputdir,datafile, threshold, prefix='', configfile=None):
+        if configfile is not None:
+            self.__loadConfig(configfile)
+        else:
+            self.histofile = 'Histogram_log10D.csv'
+            self.threshold = threshold
         self.inputdir = inputdir
         self.outputdir = outputdir
         if len(prefix) > 0:
@@ -42,8 +48,17 @@ class HistoStats():
         self.prefix = prefix
         self.compiledfile = join(outputdir,prefix + datafile)
         self.compiled = pd.DataFrame()
-        self.histofile = 'Histogram_log10D.csv'
         self.numcells = 0
+
+    def __loadConfig(self, configfile=None):
+        if configfile is not None:
+            try:
+                access(configfile, R_OK)
+                config = ConfigObj(configfile)
+                self.histofile = config['HISTOGRAM_FILENAME']
+                self.threshold = float(config['THRESHOLD'])
+            except:
+                raise IOError
 
     def compile(self):
         #get list of files to compile
@@ -83,7 +98,7 @@ class HistoStats():
         df.to_csv(self.compiledfile, index=False)
         self.compiled = df
 
-    def splitMobile(self, threshold):
+    def splitMobile(self):
         print("Split mobile and immobile fractions")
         df = self.compiled
         labels =[]
@@ -91,8 +106,10 @@ class HistoStats():
         mobile =[]
         ratio = []
         try:
-            if type(threshold) != 'float':
-                threshold = float(threshold)
+            if type(self.threshold) != 'float':
+                threshold = float(self.threshold)
+            else:
+                threshold = self.threshold
             for i in range(1,self.numcells + 1):
                 label = df.columns[i]
                 labels.append(label)
@@ -100,17 +117,17 @@ class HistoStats():
                 mobile.append(df[label][df['bins'] > threshold].sum())
 
             df_results = pd.DataFrame({'Cell': labels, 'Immobile': immobile, 'Mobile': mobile})
-            df_results['Ratio'] = df_results['Immobile']/ df_results['Mobile']
+            df_results['Ratio'] = df_results['Mobile']/ df_results['Immobile']
 
-            ratiofile = join(self.outputdir,self.prefix + "_ratios.csv")
-            df_results.to_csv(ratiofile)
+            ratiofile = join(self.outputdir,self.prefix + "ratios.csv")
+            df_results.to_csv(ratiofile, index=False)
             print("Output ratios:", ratiofile)
 
         except ValueError as e:
             print("Error:", e)
 
 
-    def showPlots(self, ax=None,threshold=False):
+    def showPlots(self, ax=None):
         title = "Individual cells"
         df = self.compiled
         if ax is None:
@@ -120,7 +137,7 @@ class HistoStats():
             df.plot.line('bins', i, ax=ax)
             labels.append(df.columns[i])
         #plot threshold line
-        if threshold:
+        if self.threshold:
             plt.axvline(x=-1.6, color='r', linestyle='-', linewidth=0.5)
         lines, _ = ax.get_legend_handles_labels()
         ax.legend(lines, labels, loc='best')
@@ -148,31 +165,32 @@ if __name__ == "__main__":
 
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
-    parser.add_argument('--datafile', action='store', help='Initial data file - D', default="AllHistogram_log10D.csv")
+    parser.add_argument('--datafile', action='store', help='Initial data file', default="AllHistogram_log10D.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
     parser.add_argument('--threshold', action='store', help='Threshold between mobile and immobile', default="-1.6")
+    parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
     args = parser.parse_args()
 
     print("Loading Input from :", args.filedir)
 
     try:
-        fmsd = HistoStats(args.filedir,args.outputdir,args.datafile,args.prefix)
+        fmsd = HistoStats(args.filedir,args.outputdir,args.datafile,float(args.threshold), args.prefix,args.config)
         fmsd.compile()
         fmsd.runStats()
         # Split to Mobile/immobile fractions - output
-        fmsd.splitMobile(float(args.threshold))
+        fmsd.splitMobile()
         # Set the figure
         fig = plt.figure(figsize=(10, 5))
         axes1 = plt.subplot(121)
-        fmsd.showPlots(axes1,False)
+        fmsd.showPlots(axes1)
 
         axes2 = plt.subplot(122)
         fmsd.showAvgPlot(axes2)
 
         figtype = 'png'  # png, pdf, ps, eps and svg.
-        outputfile = join(args.outputdir, 'AllHistogram_log10D.' + figtype)
-        plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
+        figname = fmsd.compiledfile.replace('csv', figtype)
+        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
         plt.show()
 
     except ValueError as e:

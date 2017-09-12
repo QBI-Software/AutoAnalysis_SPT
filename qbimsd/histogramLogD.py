@@ -22,25 +22,47 @@ import pandas
 from scipy.stats import norm
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+from os.path import join, expanduser
+from configobj import ConfigObj
 
 
 
-class FrequencyDiffusion():
-    def __init__(self, minlimit, maxlimit,binwidth,datafile):
-        #self.msdpoints = 10
+class HistogramLogD():
+    def __init__(self, minlimit, maxlimit,binwidth,datafile, configfile=None):
+        if configfile is not None:
+            self.__loadConfig(configfile)
+        else:
+            self.msdpoints = 10
+            self.histofile = 'Histogram_log10D.csv'
+            self.encoding = 'ISO-8859-1'
+            self.diffcolumn = 'log10D'#'D(µm²/s)' #must be exact label
+            # Frequency range limits
+            self.fmin = float(minlimit)
+            self.fmax = float(maxlimit)
+            self.binwidth = float(binwidth)
         # holds raw or filtered data
         self.data = None
         self.fig = None
-        #self.msd = None
-        #Frequency range limits
-        self.fmin = float(minlimit)
-        self.fmax = float(maxlimit)
-        self.binwidth = float(binwidth)
-        self.encoding = 'ISO-8859-1'
-        self.diffcolumn = 'log10D' #'D(µm²/s)' #must be exact label
-        self.load_datafiles(datafile)
 
-    def load_datafiles(self,datafile):
+        #Load data
+        self.__load_datafiles(datafile)
+
+    def __loadConfig(self, configfile=None):
+        if configfile is not None:
+
+            try:
+                access(configfile, R_OK)
+                config = ConfigObj(configfile)
+                self.histofile = config['HISTOGRAM_FILENAME']
+                self.fmin = float(config['MINLIMIT'])
+                self.fmax = float(config['MAXLIMIT'])
+                self.binwidth = float(config['BINWIDTH'])
+                self.encoding = config['ENCODING']
+                self.diffcolumn =config['DIFF_COLUMN']
+            except:
+                raise IOError
+
+    def __load_datafiles(self,datafile):
         self.data = pandas.read_csv(datafile,encoding = self.encoding)
         print("Data loaded:", len(self.data))
         #Allow overwrite of range?
@@ -93,17 +115,18 @@ class FrequencyDiffusion():
             plt.xlabel('log10D')
             plt.ylabel('Frequency')
 
-            bincenters = 0.5 * (bins[1:] + bins[:-1]) # OR save as bins minus first or last
+            #bincenters = 0.5 * (bins[1:] + bins[:-1]) # OR save as bins minus first or last
             histdata = pandas.DataFrame({'bins': bins[1:], 'log10D': n})
             histdata = histdata.round({'bins':2, 'log10D':5}) #check precision required
             self.histdata = histdata
             #Save plot to figure
             if outputdir is not None:
                 figtype='png' #png, pdf, ps, eps and svg.
-                outputfile = join(outputdir,'Histogram_log10D.'+figtype)
+                fname = self.histofile.replace('csv', figtype)
+                outputfile = join(outputdir,fname)
                 plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
                 print("Saved histogram to ", outputfile)
-                outputfile2 = join(outputdir, 'Histogram_log10D.csv')
+                outputfile2 = join(outputdir, self.histofile)
                 self.histdata.to_csv(outputfile2, index=False)
                 print("Saved histogram data to ", outputfile2)
             #For testing - will stop here until fig closes
@@ -124,6 +147,7 @@ if __name__ == "__main__":
     parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
     parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")
     parser.add_argument('--binwidth', action='store', help='Bin width', default="0.2")
+    parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
     args = parser.parse_args()
 
     datafile = join(args.filedir, args.datafile)
@@ -131,7 +155,7 @@ if __name__ == "__main__":
     print("Input:", datafile)
 
     try:
-        fd = FrequencyDiffusion(args.minlimit, args.maxlimit,args.binwidth,datafile)
+        fd = HistogramLogD(args.minlimit, args.maxlimit,args.binwidth,datafile, args.config)
         fd.generateHistogram(outputdir)
 
     except ValueError as e:

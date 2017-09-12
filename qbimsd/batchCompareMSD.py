@@ -22,15 +22,24 @@ Created on Tue Sep 5 2017
 
 import argparse
 from os import R_OK, access, walk, sep
-from os.path import join
+from os.path import join, expanduser
 from glob import glob
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from configobj import ConfigObj
 
 class CompareMSD():
-    def __init__(self, inputdir, outputdir,datafile, prefix=''):
+    def __init__(self, inputdir, outputdir,datafile, prefix='', configfile=None):
+        if configfile is not None:
+            self.__loadConfig(configfile)
+        else:
+            self.histofile = 'Filtered_AllROI-MSD.txt'
+            self.msdpoints = 10
+            self.timeint = 0.02
+            self.threshold = -1.6
+        self.numcells = 0
         self.inputdir = inputdir
         self.outputdir = outputdir
         if len(prefix) > 0:
@@ -38,9 +47,19 @@ class CompareMSD():
         self.prefix = prefix
         self.compiledfile = join(outputdir,prefix + datafile)
         self.compiled = pd.DataFrame()
-        self.histofile = 'Filtered_AllROI-MSD.txt'
-        self.numcells = 0
-        self.msdpoints = 10
+
+    def __loadConfig(self, configfile=None):
+        if configfile is not None:
+            try:
+                access(configfile, R_OK)
+                config = ConfigObj(configfile)
+                self.histofile = config['MSD_FILENAME']
+                self.msdpoints = int(config['MSD_POINTS'])
+                self.timeint = float(config['TIME_INTERVAL'])
+            except:
+                raise IOError
+
+
 
     def compile(self):
         #get list of files to compile
@@ -99,6 +118,11 @@ class CompareMSD():
             self.compiled = data
 
     def showPlots(self,ax=None):
+        """
+        Plots each cells MSD, calculates areas and saves to areas file
+        :param ax:
+        :return: areas
+        """
         if self.compiled is not None:
             df = self.compiled
             if ax is None:
@@ -106,15 +130,24 @@ class CompareMSD():
             means = df.groupby('Stats').get_group('Mean')
             sems = df.groupby('Stats').get_group('SEM')
             x = [str(x) for x in range(1, self.msdpoints + 1)]
-            xi = [x for x in range(1, self.msdpoints + 1)]
+            xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
             labels=[]
+            areas = []
             for ctr in range(0,len(means)):
                 labels.append(means['Cell'].iloc[ctr])
                 plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr])
+                areas.append(np.trapz(means[x].iloc[ctr], dx=self.timeint))
 
             plt.legend(labels)
             plt.title('MSDs per cell')
             #plt.show()
+            #save areas to new file
+            df_area = pd.DataFrame({'Cell':labels, 'MSD Area': areas}, columns=['Cell','MSD Area'])
+            areasfile = join(self.outputdir, self.prefix + "areas.csv")
+            df_area.to_csv(areasfile, index=False)
+            print('Areas output to', areasfile)
+            return df_area
+
 
     def showAvgPlot(self, ax=None):
         if self.compiled is not None:
@@ -123,7 +156,7 @@ class CompareMSD():
             if ax is None:
                 fig, ax = plt.subplots()
             x = [str(x) for x in range(1, self.msdpoints + 1)]
-            xi = [x for x in range(1, self.msdpoints + 1)]
+            xi = [x * self.timeint for x in range(1, self.msdpoints + 1)] #convert to times
             all = df.groupby('Cell').get_group('ALL')
             allmeans = all.groupby('Stats').get_group('Avg_Mean')
             allsems = all.groupby('Stats').get_group('Avg_SEM')
@@ -140,16 +173,17 @@ if __name__ == "__main__":
 
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
-    parser.add_argument('--datafile', action='store', help='Initial data file - D', default="Avg_MSD.csv")
+    parser.add_argument('--outputfile', action='store', help='Generated data file', default="Avg_MSD.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
     parser.add_argument('--threshold', action='store', help='Threshold between mobile and immobile', default="-1.6")
+    parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
     args = parser.parse_args()
 
     print("Loading Input from :", args.filedir)
 
     try:
-        fmsd = CompareMSD(args.filedir,args.outputdir,args.datafile,args.prefix)
+        fmsd = CompareMSD(args.filedir,args.outputdir,args.outputfile,args.prefix,args.config)
         fmsd.compile()
         #fmsd.showPlots()
         #fmsd.showAvgPlot()
@@ -162,8 +196,8 @@ if __name__ == "__main__":
         fmsd.showAvgPlot(axes2)
 
         figtype = 'png'  # png, pdf, ps, eps and svg.
-        outputfile = join(args.outputdir, 'Avg_MSD.' + figtype)
-        plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
+        figname = fmsd.compiledfile.replace('csv', figtype)
+        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
         plt.show()
 
 
