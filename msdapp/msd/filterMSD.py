@@ -31,6 +31,7 @@ class FilterMSD():
             self.diffcolumn = 'D(µm²/s)'
             self.field = 'log10D'
             self.filteredfname = 'Filtered_log10D.csv'
+            self.filtered_msd = 'Filtered_MSD.csv'
             self.minlimit = minlimit
             self.maxlimit = maxlimit
         # Load data
@@ -100,13 +101,14 @@ class FilterMSD():
             print("Rows after filtering= ", len(filtered), ' msd=', len(filtered_msd))
             # Save files
             fdata = join(self.outputdir, self.filteredfname)
-            fmsd = join(self.outputdir, "Filtered_" + args.datafile_msd)
+            fmsd = join(self.outputdir, self.filtered_msd)
             filtered.to_csv(fdata, columns=[field], index=False)  # with or without original index numbers
             filtered_msd.to_csv(fmsd, index=True)
             print("Files saved: ")
             print('\t', fdata, '\n\t', fmsd)
         else:
             raise ValueError("Data not loaded")
+        return (fdata,fmsd)
 
     def filter_datafiles(self):
         """

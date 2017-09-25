@@ -1,0 +1,41 @@
+{% extends "msd/index.html" %}
+{% block title %}Filter MSD{% endblock %}
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        .important { color: #666; }
+    </style>
+{% endblock %}
+{% block content %}
+    <h1>Filter MSD</h1>
+    <p class="important">
+      Filters log10 diffusion coefficient (log10D) for input files
+    </p>
+<form method="POST" action="/filter" enctype="multipart/form-data">
+
+    {% if form.errors %}
+    <ul class="errors">
+        {% for field_name, field_errors in form.errors|dictsort if field_errors %}
+            {% for error in field_errors %}
+                <li>{{ form[field_name].label }}: {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+{% endif %}
+
+    <table class="table">
+        <tr><th>{{ form.datafile.label }}</th><td>  {{ form.datafile() }}</td></tr>
+        <tr><th>{{ form.datafile_msd.label }}</th><td>  {{ form.datafile_msd() }}</td></tr>
+        <tr><th>{{ form.minlimit.label }}</th><td>  {{ form.minlimit() }}</td></tr>
+        <tr><th>{{ form.maxlimit.label }}</th><td>  {{ form.maxlimit() }}</td></tr>
+        <tr><th></th><td>  {{ form.submit() }}</td></tr>
+    </table>
+</form>
+{%if result %}
+<div id="result">
+    <div class="alert alert-success"><h3>Processing finished!</h3>
+    <p>Data File output: {{result.fdata}}</p>
+    <p>MSD File output: {{result.fmsd}}</p></div>
+</div>
+{% endif %}
+{% endblock %}
