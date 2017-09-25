@@ -102,13 +102,16 @@ class FilterMSD():
             # Save files
             fdata = join(self.outputdir, self.filteredfname)
             fmsd = join(self.outputdir, self.filtered_msd)
-            filtered.to_csv(fdata, columns=[field], index=False)  # with or without original index numbers
-            filtered_msd.to_csv(fmsd, index=True)
-            print("Files saved: ")
-            print('\t', fdata, '\n\t', fmsd)
+            try:
+                filtered.to_csv(fdata, columns=[field], index=False)  # with or without original index numbers
+                filtered_msd.to_csv(fmsd, index=True)
+                print("Files saved: ")
+                print('\t', fdata, '\n\t', fmsd)
+            except IOError as e:
+                raise e
         else:
             raise ValueError("Data not loaded")
-        return (fdata,fmsd)
+        return (fdata,fmsd, len(self.data), len(filtered), len(self.msd), len(filtered_msd))
 
     def filter_datafiles(self):
         """

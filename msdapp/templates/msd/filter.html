@@ -34,8 +34,9 @@
 {%if result %}
 <div id="result">
     <div class="alert alert-success"><h3>Processing finished!</h3>
-    <p>Data File output: {{result.fdata}}</p>
-    <p>MSD File output: {{result.fmsd}}</p></div>
+    <p>Data File output: {{result.fdata}} <span class="badge">{{result.d2}} / {{result.d1}}</span></p>
+    <p>MSD File output: {{result.fmsd}}</p><span class="badge">{{result.m2}} / {{result.m1}}</span>
+    </div>
 </div>
 {% endif %}
 {% endblock %}

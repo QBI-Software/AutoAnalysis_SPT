@@ -41,9 +41,9 @@ def show(page):
 
                 config = None
                 fmsd = FilterMSD(config, datafile, datafile_msd, outputdir, int(minlimit), int(maxlimit))
-                (fdata, fmsd) = fmsd.runFilter()
+                (fdata, fmsd, d1, d2, m1,m2) = fmsd.runFilter()
                 #TODO - zip files for download and delete temporary
-                result = {'fdata': fdata, 'fmsd': fmsd}
+                result = {'fdata': fdata, 'fmsd': fmsd, 'd1':d1, 'd2':d2, 'm1':m1, 'm2':m2}
         else:
             form = None
 
