@@ -1,2 +1,6 @@
 .idea/
 data/
+uploads/
+*.pyc
+msdapp/__pycache__/
+__pycache__/
