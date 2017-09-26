@@ -92,13 +92,16 @@ class FilterMSD():
         Run filter over datasets and save to file
         :return:
         """
-
+        results = None
         if not self.data.empty:
             # print(data)
             field = self.field
-            print("Rows loaded= ", len(self.data), ' msd=', len(self.msd))
+            num_data = len(self.data)
+            num_msd = len(self.msd)
+            print("Rows filtered: \tData\tMSD")
             (filtered, filtered_msd) = self.filter_datafiles()
-            print("Rows after filtering= ", len(filtered), ' msd=', len(filtered_msd))
+            print("\t\t", num_data, '\t', num_msd)
+            print("\t\t", len(filtered), '\t', len(filtered_msd))
             # Save files
             fdata = join(self.outputdir, self.filteredfname)
             fmsd = join(self.outputdir, self.filtered_msd)
@@ -107,11 +110,13 @@ class FilterMSD():
                 filtered_msd.to_csv(fmsd, index=True)
                 print("Files saved: ")
                 print('\t', fdata, '\n\t', fmsd)
+                results = (fdata, fmsd, num_data, len(filtered), num_msd, len(filtered_msd))
             except IOError as e:
                 raise e
+
         else:
             raise ValueError("Data not loaded")
-        return (fdata,fmsd, len(self.data), len(filtered), len(self.msd), len(filtered_msd))
+        return results
 
     def filter_datafiles(self):
         """

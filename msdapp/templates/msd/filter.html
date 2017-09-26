@@ -12,16 +12,19 @@
       Filters log10 diffusion coefficient (log10D) for input files
     </p>
 <form method="POST" action="/filter" enctype="multipart/form-data">
-
+    {{ form.csrf_token }}
+    {% if form.csrf_token.errors %}
+        <div class="alert alert-warning warning">You have submitted an invalid CSRF token</div>
+    {% endif %}
     {% if form.errors %}
-    <ul class="errors">
+    <ul class="alert alert-error errors">
         {% for field_name, field_errors in form.errors|dictsort if field_errors %}
             {% for error in field_errors %}
                 <li>{{ form[field_name].label }}: {{ error }}</li>
             {% endfor %}
         {% endfor %}
     </ul>
-{% endif %}
+    {% endif %}
 
     <table class="table">
         <tr><th>{{ form.datafile.label }}</th><td>  {{ form.datafile() }}</td></tr>
@@ -34,8 +37,9 @@
 {%if result %}
 <div id="result">
     <div class="alert alert-success"><h3>Processing finished!</h3>
-    <p>Data File output: {{result.fdata}} <span class="badge">{{result.d2}} / {{result.d1}}</span></p>
-    <p>MSD File output: {{result.fmsd}}</p><span class="badge">{{result.m2}} / {{result.m1}}</span>
+    <p>Data File output: {{result.fdata}} <span class="badge">Filtered {{result.d2}} of {{result.d1}} rows</span></p>
+    <p>MSD File output: {{result.fmsd}} <span class="badge">Filtered {{result.m2}} of {{result.m1}} rows</span></p>
+        <p><a class="btn btn-primary" href="{{result.zip}}">Download Zip files</a></p>
     </div>
 </div>
 {% endif %}

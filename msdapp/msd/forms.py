@@ -1,18 +1,27 @@
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired
 from wtforms import Form, BooleanField, StringField, validators, FileField, IntegerField,SubmitField
 from wtforms.csrf.session import SessionCSRF
+from flask import session
+from datetime import timedelta
+from msdapp import app
 
-class FilterMSDForm(Form):
-    # class Meta:
-    #     csrf = True  # Enable CSRF
-    #     csrf_class = SessionCSRF  # Set the CSRF implementation
-    #     csrf_secret = b'foobar'  # Some implementations need a secret key.
+SECRET_KEY = app.config['CSRF_SESSION_KEY']
 
-    datafile = FileField('Initial datafile (AllROI-D.txt)', validators=[FileRequired()])
-    datafile_msd = FileField('Initial MSD datafile (AllROI-MSD.txt)', validators=[FileRequired()])
-    minlimit = IntegerField('Min limit', [validators.NumberRange(min=-10, max=10)])
-    maxlimit = IntegerField('Max limit', [validators.NumberRange(min=-10, max=10)])
+class MSDBaseForm(Form):
+    class Meta:
+        csrf = True
+        csrf_class = SessionCSRF
+        csrf_secret = SECRET_KEY
+
+        @property
+        def csrf_context(self):
+            return session
+
+class FilterMSDForm(MSDBaseForm):
+    datafile = FileField('Initial datafile (AllROI-D.txt)')
+    datafile_msd = FileField('Initial MSD datafile (AllROI-MSD.txt)')
+    minlimit = IntegerField('Min limit', validators=[validators.NumberRange(min=-10, max=10)])
+    maxlimit = IntegerField('Max limit', validators=[validators.NumberRange(min=-10, max=10)])
     submit = SubmitField('Run Script')
+
 
 
