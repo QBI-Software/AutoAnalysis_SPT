@@ -46,12 +46,13 @@ class FilterMSD():
                 access(configfile, R_OK)
                 config = ConfigObj(configfile)
                 self.filteredfname = config['FILTERED_FILENAME']
+                self.filtered_msd = config['FILTERED_MSD']
                 self.diffcolumn = config['LOG_COLUMN']
                 self.field = config['DIFF_COLUMN']
                 self.encoding = config['ENCODING']
-                self.msdpoints = config['MSD_POINTS']
-                self.minlimit = config['MINLIMIT']
-                self.maxlimit = config['MAXLIMIT']
+                self.msdpoints = int(config['MSD_POINTS'])
+                self.minlimit = int(config['MINLIMIT'])
+                self.maxlimit = int(config['MAXLIMIT'])
             except:
                 raise IOError
 
@@ -130,8 +131,8 @@ class FilterMSD():
         minval = self.minlimit
         maxval = self.maxlimit
 
-        minfilter = data[field] >= minval
-        maxfilter = data[field] <= maxval
+        minfilter = data[field] > minval
+        maxfilter = data[field] < maxval
         mmfilter = minfilter & maxfilter
         filtered = data[mmfilter]
         filtered_msd = msd[mmfilter]
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument('--datafile', action='store', help='Initial data file - D', default="AllROI-D.txt")
     parser.add_argument('--datafile_msd', action='store', help='Initial data file - MSD', default="AllROI-MSD.txt")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
-    parser.add_argument('--minlimit', action='store', help='Min filter', default="-4")
+    parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
     parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")
     parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
     args = parser.parse_args()

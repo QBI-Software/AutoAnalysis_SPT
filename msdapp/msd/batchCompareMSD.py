@@ -38,7 +38,7 @@ class CompareMSD():
             self.histofile = 'Filtered_AllROI-MSD.txt'
             self.msdpoints = 10
             self.timeint = 0.02
-            self.threshold = -1.6
+
         self.numcells = 0
         self.inputdir = inputdir
         self.outputdir = outputdir

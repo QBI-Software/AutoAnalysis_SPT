@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, abort, redirect, url_for, send_from_directory
+from flask import Blueprint, request, render_template, abort, redirect, url_for, send_from_directory, send_file, flash
 from jinja2 import TemplateNotFound
 from msdapp.msd.forms import FilterMSDForm
 from msdapp.msd.filterMSD import FilterMSD
@@ -32,32 +32,7 @@ def show(page):
         if page == 'filter':
             form = FilterMSDForm(request.form)
             if request.method == 'POST' and form.validate():
-                #form = FilterMSDForm(meta={'csrf_context': request.session})
-                uid = datetime.today().strftime('%Y%m%d%H%M')
-                data = request.files['datafile'].read()
-                print("Uploads to: ",UPLOAD_PATH)
-                outputdir = join(UPLOAD_PATH, uid) #create temp directory
-                if (not exists(outputdir)):
-                    mkdir(outputdir)
-                datafile = join(outputdir, request.files['datafile'].filename)
-                open(datafile,'wb').write(data)
-                data = request.files['datafile_msd'].read()
-                datafile_msd = join(outputdir,request.files['datafile_msd'].filename)
-                open(datafile_msd, 'wb').write(data)
-
-                minlimit = request.form['minlimit']
-                maxlimit = request.form['maxlimit']
-                #Run script class - should make this subprocess
-                config = None
-                fmsd = FilterMSD(config, datafile, datafile_msd, outputdir, int(minlimit), int(maxlimit))
-                (fdata, fmsd, d1, d2, m1,m2) = fmsd.runFilter()
-                datazipfile = join(outputdir, uid + "_filteredfiles.zip")
-                with ZipFile(datazipfile, 'w') as myzip:
-                    myzip.write(fdata)
-                    myzip.write(fmsd)
-                    myzip.write(datafile)
-                    myzip.write(datafile_msd)
-                result = {'fdata': fdata, 'fmsd': fmsd, 'd1':d1, 'd2':d2, 'm1':m1, 'm2':m2, 'zip': datazipfile}
+                result = runFilter(request)
         else:
             form = None
 
@@ -68,9 +43,40 @@ def show(page):
 
 @app.route('/uploads/<path:filename>', methods=['GET'])
 def download(filename):
-    # parts = filename.split('/')
-    # print(parts)
-    # downloadfile = join(app.config['UPLOAD_FOLDER'], parts[0])#,parts[1])
     print("Downloading: ", filename)
-    return send_from_directory(directory=app.config['UPLOAD_FOLDER'],filename=filename)
-#https://stackoverflow.com/questions/20646822/how-to-serve-static-files-in-flask
+    try:
+        send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+    except FileNotFoundError as e:
+        print("Download error: Cannot find file:", filename, " - ", e)
+        #app.errorhandler.append(e)
+    except Exception as e:
+        print("Download error: Unknown:", e)
+
+def runFilter(request):
+    # form = FilterMSDForm(meta={'csrf_context': request.session})
+    uid = datetime.today().strftime('%Y%m%d%H%M')
+    data = request.files['datafile'].read()
+    print("Uploads to: ", UPLOAD_PATH)
+    outputdir = join(UPLOAD_PATH, uid)  # create temp directory
+    if (not exists(outputdir)):
+        mkdir(outputdir)
+    datafile = join(outputdir, request.files['datafile'].filename)
+    open(datafile, 'wb').write(data)
+    data = request.files['datafile_msd'].read()
+    datafile_msd = join(outputdir, request.files['datafile_msd'].filename)
+    open(datafile_msd, 'wb').write(data)
+
+    minlimit = request.form['minlimit']
+    maxlimit = request.form['maxlimit']
+    # Run script class - should make this subprocess
+    config = app.config['MSD_CONFIG']
+    fmsd = FilterMSD(config, datafile, datafile_msd, outputdir, int(minlimit), int(maxlimit))
+    (fdata, fmsd, d1, d2, m1, m2) = fmsd.runFilter()
+    datazipfile = join(UPLOAD_PATH, uid + "_filteredfiles.zip")
+    with ZipFile(datazipfile, 'w') as myzip:
+        myzip.write(fdata)
+        myzip.write(fmsd)
+        myzip.write(datafile)
+        myzip.write(datafile_msd)
+    result = {'fdata': fdata, 'fmsd': fmsd, 'd1': d1, 'd2': d2, 'm1': m1, 'm2': m2, 'zip': datazipfile}
+    return result
