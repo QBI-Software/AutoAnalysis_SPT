@@ -44,7 +44,7 @@ class FilterMSD():
         if configfile is not None:
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile)
+                config = ConfigObj(configfile, encoding='ISO-8859-1')
                 self.filteredfname = config['FILTERED_FILENAME']
                 self.filtered_msd = config['FILTERED_MSD']
                 self.diffcolumn = config['LOG_COLUMN']

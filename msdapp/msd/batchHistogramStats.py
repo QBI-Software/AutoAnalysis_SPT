@@ -54,7 +54,7 @@ class HistoStats():
         if configfile is not None:
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile)
+                config = ConfigObj(configfile, encoding='ISO-8859-1')
                 self.histofile = config['HISTOGRAM_FILENAME']
                 self.threshold = float(config['THRESHOLD'])
             except:

@@ -52,8 +52,8 @@ class CompareMSD():
         if configfile is not None:
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile)
-                self.histofile = config['MSD_FILENAME']
+                config = ConfigObj(configfile, encoding='ISO-8859-1')
+                self.histofile = config['FILTERED_MSD']
                 self.msdpoints = int(config['MSD_POINTS'])
                 self.timeint = float(config['TIME_INTERVAL'])
             except:

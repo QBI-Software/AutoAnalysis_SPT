@@ -52,7 +52,7 @@ class HistogramLogD():
 
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile)
+                config = ConfigObj(configfile, encoding='ISO-8859-1')
                 self.histofile = config['HISTOGRAM_FILENAME']
                 self.fmin = float(config['MINLIMIT'])
                 self.fmax = float(config['MAXLIMIT'])
