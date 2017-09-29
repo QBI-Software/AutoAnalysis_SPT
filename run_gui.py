@@ -10,10 +10,17 @@ from noname import AppConfiguration
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.batchCompareMSD import CompareMSD
 from msdapp.msd.batchHistogramStats import HistoStats
-#from msdapp.msd.histogramLogD import HistogramLogD
-#from msdapp.msd.ratioStats import RatioStats
+from msdapp.msd.histogramLogD import HistogramLogD
+from msdapp.msd.ratioStats import RatioStats
 from configobj import ConfigObj
+import pandas as pd
+from multiprocessing import Manager, Process,cpu_count,current_process
+
+
 APP_EXIT = 1
+
+############MultiThreading
+
 
 ############Config dialog
 class MSDConfig(AppConfiguration):
@@ -73,31 +80,39 @@ class ScriptController(wx.Frame):
         self.Centre()
         self.Show()
 
+    # def __loadMultithread(self):
+    #     self.processes = []
+    #     self.numprocesses = 0
+    #     self.taskQueue = Queue()
+    #     self.doneQueue = Queue()
+    #     self.Tasks = []
+    #     self.numtasks = 0
+
     def __loadConfig(self):
         if self.configfile is not None:
             try:
-                access(self.configfile, R_OK)
-                config = ConfigObj(self.configfile, encoding='ISO-8859-1' )
-                self.datafile = config['DATA_FILENAME'] #AllROI.txt
-                self.msdfile = config['MSD_FILENAME'] #AllROI-MSD.txt
-                self.filteredfname = config['FILTERED_FILENAME']
-                self.filtered_msd = config['FILTERED_MSD']
-                self.histofile = config['HISTOGRAM_FILENAME']
-                self.diffcolumn = config['LOG_COLUMN']
-                self.field = config['DIFF_COLUMN']
-                self.encoding = config['ENCODING']
-                self.msdpoints = config['MSD_POINTS']
-                self.minlimit = config['MINLIMIT']
-                self.maxlimit = config['MAXLIMIT']
-                self.timeint = config['TIME_INTERVAL']
-                self.binwidth = config['BINWIDTH']
-                self.threshold = config['THRESHOLD']
+                if access(self.configfile, R_OK):
+                    print("Loading config file")
+                    config = ConfigObj(self.configfile, encoding='ISO-8859-1' )
+                    self.datafile = config['DATA_FILENAME'] #AllROI.txt
+                    self.msdfile = config['MSD_FILENAME'] #AllROI-MSD.txt
+                    self.filteredfname = config['FILTERED_FILENAME']
+                    self.filtered_msd = config['FILTERED_MSD']
+                    self.histofile = config['HISTOGRAM_FILENAME']
+                    self.diffcolumn = config['LOG_COLUMN']
+                    self.field = config['DIFF_COLUMN']
+                    self.encoding = config['ENCODING']
+                    self.msdpoints = config['MSD_POINTS']
+                    self.minlimit = config['MINLIMIT']
+                    self.maxlimit = config['MAXLIMIT']
+                    self.timeint = config['TIME_INTERVAL']
+                    self.binwidth = config['BINWIDTH']
+                    self.threshold = config['THRESHOLD']
+                    return True
 
-                return True
             except:
                 raise IOError
-        else:
-            return False
+        return False
 
 
 
@@ -304,6 +319,18 @@ class ScriptController(wx.Frame):
         if self.cb4.GetValue():
             self.StatusBar.SetStatusText("Running MSD compare script")
 
+    def processFilter(self,datafile, q):
+
+        #self.result_filter.SetLabel("%d of %d" % (ctr, len(result)))
+        datafile_msd = datafile.replace(self.datafile, self.msdfile)
+        outputdir = dirname(datafile)
+        # self.resultbox.AppendText("FILTER: Datafile: %s\n" % datafile)
+        # self.resultbox.AppendText("FILTER: MSD: %s\n" % datafile_msd)
+        fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, int(self.minlimit), int(self.maxlimit))
+        q[datafile] = fmsd.runFilter()
+
+
+
     def RunFilter(self, event):
         self.ShowFeedBack(True)
         #loop through directory
@@ -311,19 +338,44 @@ class ScriptController(wx.Frame):
             #find datafile - assume same directory for msd file
             result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
             if len(result) > 0:
-                for datafile in result:
-                    self.StatusBar.SetStatusText("Running Filter script: %s" % datafile)
-                    datafile_msd = datafile.replace(self.datafile, self.msdfile)
-                    outputdir = dirname(datafile)
-                    self.resultbox.AppendText("FILTER: Datafile: %s\n" % datafile)
-                    self.resultbox.AppendText("FILTER: MSD: %s\n" % datafile_msd)
-                    fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, int(self.minlimit), int(self.maxlimit))
-                    try:
-                        results = fmsd.runFilter()
-                        self.resultbox.AppendText("FILTER: Results:\n\t%d of %d rows filtered\n\t%s\n\t%s" % (results[3], results[2],results[0], results[1]))
-                        self.result_filter.SetLabel("Complete")
-                    except Exception as e:
-                        self.Warn(e)
+                total_tasks = len(result)
+                tasks = []
+                mm = Manager()
+                q = mm.dict()
+                for i in range(total_tasks):
+                    self.StatusBar.SetStatusText("Running Filter script: %s" % result[i])
+                    p = Process(target=self.processFilter, args=(result[i], q))
+                    self.result_filter.SetLabel("%d of %d" % (i, total_tasks))
+                    tasks.append(p)
+                    p.start()
+
+                for p in tasks:
+                    p.join()
+
+                headers = ['Data', 'MSD', 'Total', 'Filtered','Total_MSD', 'Filtered_MSD']
+                results = pd.DataFrame.from_dict(q, orient='index')
+                results.columns=headers
+                for i,row in results.iterrows():
+                    self.resultbox.AppendText("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s" % (
+                        i,row['Filtered'], row['Total'], row['Data'], row['MSD']))
+                self.result_filter.SetLabel("Complete")
+                #headers = ['File', 'Subject', 'M/F'] + report.exptintervals.keys() + ['Stage']
+                # report.data = pd.DataFrame(q.values(), columns=headers)
+                # ctr = 1
+                # for datafile in result:
+                #     self.StatusBar.SetStatusText("Running Filter script: %s" % datafile)
+                #     self.result_filter.SetLabel("%d of %d" % (ctr,len(result)))
+                #     datafile_msd = datafile.replace(self.datafile, self.msdfile)
+                #     outputdir = dirname(datafile)
+                #     self.resultbox.AppendText("FILTER: Datafile: %s\n" % datafile)
+                #     self.resultbox.AppendText("FILTER: MSD: %s\n" % datafile_msd)
+                #     fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, int(self.minlimit), int(self.maxlimit))
+                #     try:
+                #         results = fmsd.runFilter()
+                #         self.resultbox.AppendText("FILTER: Results:\n\t%d of %d rows filtered\n\t%s\n\t%s" % (results[3], results[2],results[0], results[1]))
+                #         self.result_filter.SetLabel("Complete")
+                #     except Exception as e:
+                #         self.Warn(e)
 
             else:
                 self.Warn("Cannot find datafile: %s" % self.datafile)
@@ -397,8 +449,9 @@ class ScriptController(wx.Frame):
         openFileDialog.SetDirectory(expanduser('~'))
         if openFileDialog.ShowModal() == wx.ID_OK:
             self.configfile = str(openFileDialog.GetPath())
+            self.loaded = self.__loadConfig()
             self.StatusBar.SetStatusText("Config Loaded: %s\n" % self.configfile)
-            self.__loadConfig()
+            self.Warn("Save new Config from Config->Edit->Save")
         openFileDialog.Destroy()
 
     def OnSaveConfig(self, event):
