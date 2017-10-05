@@ -3,12 +3,12 @@
 MSD Analysis script: batchHistogramStats
 Compiles histogram data from directories - expects input format:
 
-STIM OR NOSTIM
+STIM OR NOSTIM                                      <-- USE THIS AS INPUT DIRECTORY
  | -- cell1                                         <-- uses this name as cell ID
         | -- celldata
                  | -- Histogram_log10D.csv files    <-- this name must match (generated from histogramLogD)
 
-and compiles to top level as <prefix>_AllHistogram_log10D.csv where prefix can be STIM, NOSTIM (example)
+and compiles to top level as <prefix>_AllHistogram_log10D.csv where prefix can be STIM, NOSTIM (example) in outputdir
 
 Analysis per run (prefix):
       1. All cells data with Mean, SEM, Count, STD, Sum per bin - appended to compiled file
@@ -35,10 +35,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 class HistoStats():
-    def __init__(self, inputdir, outputdir,datafile, threshold, prefix='', configfile=None):
+    def __init__(self, inputdir, outputdir,threshold, prefix='', configfile=None):
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
+            self.outputfile='AllHistogram_log10D.csv'
             self.histofile = 'Histogram_log10D.csv'
             self.threshold = threshold
         self.inputdir = inputdir
@@ -46,7 +47,7 @@ class HistoStats():
         if len(prefix) > 0:
             prefix = prefix + "_"
         self.prefix = prefix
-        self.compiledfile = join(outputdir,prefix + datafile)
+        self.compiledfile = join(outputdir,prefix + self.outputfile)
         self.compiled = pd.DataFrame()
         self.numcells = 0
 
@@ -57,6 +58,7 @@ class HistoStats():
                 config = ConfigObj(configfile, encoding='ISO-8859-1')
                 self.histofile = config['HISTOGRAM_FILENAME']
                 self.threshold = float(config['THRESHOLD'])
+                self.outputfile = config['ALLSTATS_FILENAME']
             except:
                 raise IOError
 
@@ -81,6 +83,9 @@ class HistoStats():
             c.to_csv(self.compiledfile, index=False)
             print("Data compiled to " + self.compiledfile)
             self.compiled = c
+            return self.compiledfile
+        else:
+            return None
 
     def runStats(self):
         print("Running stats")
@@ -97,6 +102,8 @@ class HistoStats():
         df = df.reindex_axis(cols, axis=1)
         df.to_csv(self.compiledfile, index=False)
         self.compiled = df
+        return self.compiledfile
+
 
     def splitMobile(self):
         print("Split mobile and immobile fractions")
@@ -104,7 +111,7 @@ class HistoStats():
         labels =[]
         immobile =[]
         mobile =[]
-        ratio = []
+        ratiofile = None
         try:
             if type(self.threshold) != 'float':
                 threshold = float(self.threshold)
@@ -125,6 +132,7 @@ class HistoStats():
 
         except ValueError as e:
             print("Error:", e)
+        return ratiofile
 
 
     def showPlots(self, ax=None):
@@ -165,7 +173,6 @@ if __name__ == "__main__":
 
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
-    parser.add_argument('--datafile', action='store', help='Initial data file', default="AllHistogram_log10D.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
     parser.add_argument('--threshold', action='store', help='Threshold between mobile and immobile', default="-1.6")
@@ -175,7 +182,7 @@ if __name__ == "__main__":
     print("Loading Input from :", args.filedir)
 
     try:
-        fmsd = HistoStats(args.filedir,args.outputdir,args.datafile,float(args.threshold), args.prefix,args.config)
+        fmsd = HistoStats(args.filedir,args.outputdir,float(args.threshold), args.prefix,args.config)
         fmsd.compile()
         fmsd.runStats()
         # Split to Mobile/immobile fractions - output

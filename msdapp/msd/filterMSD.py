@@ -29,7 +29,7 @@ class FilterMSD():
             self.msdpoints = 10
             self.encoding = 'ISO-8859-1'
             self.diffcolumn = 'D(µm²/s)'
-            self.field = 'log10D'
+            self.logcolumn = 'log10D'
             self.filteredfname = 'Filtered_log10D.csv'
             self.filtered_msd = 'Filtered_MSD.csv'
             self.minlimit = minlimit
@@ -52,7 +52,7 @@ class FilterMSD():
             self.filteredfname = config['FILTERED_FILENAME']
             self.filtered_msd = config['FILTERED_MSD']
             self.diffcolumn = config['DIFF_COLUMN']
-            self.field = config['LOG_COLUMN']
+            self.logcolumn = config['LOG_COLUMN']
             self.encoding = config['ENCODING']
             self.msdpoints = int(config['MSD_POINTS'])
             self.minlimit = int(config['MINLIMIT'])
@@ -86,7 +86,7 @@ class FilterMSD():
             msd = msd.append(s, ignore_index=True)
         msd.columns = cols
         # Add log10 column
-        data[self.field] = np.log10(data[self.diffcolumn])
+        data[self.logcolumn] = np.log10(data[self.diffcolumn])
 
         return (data, msd)
 
@@ -98,7 +98,7 @@ class FilterMSD():
         results = None
         if not self.data.empty:
             # print(data)
-            field = self.field
+            logcolumn = self.logcolumn
             num_data = len(self.data)
             num_msd = len(self.msd)
             print("Rows filtered: \tData\tMSD")
@@ -109,7 +109,7 @@ class FilterMSD():
             fdata = join(self.outputdir, self.filteredfname)
             fmsd = join(self.outputdir, self.filtered_msd)
             try:
-                filtered.to_csv(fdata, columns=[field], index=False)  # with or without original index numbers
+                filtered.to_csv(fdata, columns=[logcolumn], index=False)  # with or without original index numbers
                 filtered_msd.to_csv(fmsd, index=True)
                 print("Files saved: ")
                 print('\t', fdata, '\n\t', fmsd)
@@ -129,12 +129,12 @@ class FilterMSD():
         """
         data = self.data
         msd = self.msd
-        field = self.field
+        logcolumn = self.logcolumn
         minval = self.minlimit
         maxval = self.maxlimit
 
-        minfilter = data[field] > minval
-        maxfilter = data[field] < maxval
+        minfilter = data[logcolumn] > minval
+        maxfilter = data[logcolumn] < maxval
         mmfilter = minfilter & maxfilter
         filtered = data[mmfilter]
         filtered_msd = msd[mmfilter]

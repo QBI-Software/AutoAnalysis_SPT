@@ -35,7 +35,7 @@ class HistogramLogD():
             self.msdpoints = 10
             self.histofile = 'Histogram_log10D.csv'
             self.encoding = 'ISO-8859-1'
-            self.diffcolumn = 'log10D'#'D(µm²/s)' #must be exact label
+            self.logcolumn = 'log10D'#'D(µm²/s)' #must be exact label
             # Frequency range limits
             self.fmin = float(minlimit)
             self.fmax = float(maxlimit)
@@ -58,7 +58,7 @@ class HistogramLogD():
                 self.fmax = float(config['MAXLIMIT'])
                 self.binwidth = float(config['BINWIDTH'])
                 self.encoding = config['ENCODING']
-                self.diffcolumn =config['DIFF_COLUMN']
+                self.logcolumn =config['LOG_COLUMN']
             except:
                 raise IOError
 
@@ -66,8 +66,8 @@ class HistogramLogD():
         self.data = pandas.read_csv(datafile,encoding = self.encoding)
         print("Data loaded:", len(self.data))
         #Allow overwrite of range?
-        #self.fmin = min(self.data[self.diffcolumn])
-        #self.fmax = max(self.data[self.diffcolumn])
+        #self.fmin = min(self.data[self.logcolumn])
+        #self.fmax = max(self.data[self.logcolumn])
 
     def getStats(self, bimodal=True):
         """
@@ -78,16 +78,16 @@ class HistogramLogD():
         mean = None
         variance = None
         if not self.data.empty:
-            ndata = self.data[self.diffcolumn]
+            ndata = self.data[self.logcolumn]
             if not bimodal:
                 mean = np.mean(ndata)
                 variance = np.var(ndata)
                 print("Mean:", mean)
             else:
                 #two sets
-                mean = np.median(self.data[self.diffcolumn])
+                mean = np.median(self.data[self.logcolumn])
                 print("Median:", mean)
-            variance = np.var(self.data[self.diffcolumn])
+            variance = np.var(self.data[self.logcolumn])
             print("Variance:", variance)
         return (mean,variance)
 
@@ -106,7 +106,7 @@ class HistogramLogD():
         if not self.data.empty:
             print("Generating histogram")
             num_bins = int((self.fmax-self.fmin)/self.binwidth) #smaller binwidth better for fitting eg 0.1 or 0.05
-            data = self.data[self.diffcolumn]
+            data = self.data[self.logcolumn]
             #Create figure
             self.fig = plt.figure()
             n, bins, patches = plt.hist(data, bins=num_bins,range=[self.fmin, self.fmax], align='mid',normed=1, alpha=0.75)
@@ -131,6 +131,7 @@ class HistogramLogD():
                 print("Saved histogram data to ", outputfile2)
             #For testing - will stop here until fig closes
             #plt.show()
+            return (outputfile, outputfile2)
 
 
 ############### MAIN ############################
