@@ -44,17 +44,19 @@ class FilterMSD():
         if configfile is not None:
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile, encoding='ISO-8859-1')
-                self.filteredfname = config['FILTERED_FILENAME']
-                self.filtered_msd = config['FILTERED_MSD']
-                self.diffcolumn = config['DIFF_COLUMN']
-                self.field = config['LOG_COLUMN']
-                self.encoding = config['ENCODING']
-                self.msdpoints = int(config['MSD_POINTS'])
-                self.minlimit = int(config['MINLIMIT'])
-                self.maxlimit = int(config['MAXLIMIT'])
+                config = ConfigObj(configfile)
             except:
-                raise IOError
+                #Chars work differently for diff OSes
+                print("Encoding required for Config")
+                config = ConfigObj(configfile, encoding='ISO-8859-1')
+            self.filteredfname = config['FILTERED_FILENAME']
+            self.filtered_msd = config['FILTERED_MSD']
+            self.diffcolumn = config['DIFF_COLUMN']
+            self.field = config['LOG_COLUMN']
+            self.encoding = config['ENCODING']
+            self.msdpoints = int(config['MSD_POINTS'])
+            self.minlimit = int(config['MINLIMIT'])
+            self.maxlimit = int(config['MAXLIMIT'])
 
     def load_datafiles(self, datafile, datafile_msd):
         """

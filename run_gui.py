@@ -15,7 +15,8 @@ from msdapp.msd.ratioStats import RatioStats
 from configobj import ConfigObj
 import pandas as pd
 from multiprocessing import Manager, Process,cpu_count,current_process
-
+import threading
+import time
 
 APP_EXIT = 1
 
@@ -342,12 +343,20 @@ class ScriptController(wx.Frame):
                 tasks = []
                 mm = Manager()
                 q = mm.dict()
+                self.count = 1
                 for i in range(total_tasks):
                     self.StatusBar.SetStatusText("Running Filter script: %s" % result[i])
+                    #p = threading.Thread(target=self.processFilter, args=(result[i], q))
                     p = Process(target=self.processFilter, args=(result[i], q))
                     self.result_filter.SetLabel("%d of %d" % (i, total_tasks))
                     tasks.append(p)
                     p.start()
+                    self.gauge_filter.FindFocus()
+                    while p.is_alive():
+                        time.sleep(1)
+                        self.count = self.count + 1
+                        self.gauge_filter.SetValue(self.count)
+                    self.count = 1
 
                 for p in tasks:
                     p.join()
