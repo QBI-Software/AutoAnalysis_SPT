@@ -23,18 +23,19 @@ import pandas
 
 class FilterMSD():
     def __init__(self, configfile, datafile, datafile_msd, outputdir, minlimit, maxlimit):
+        self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
             self.msdpoints = 10
-            self.encoding = 'ISO-8859-1'
             self.diffcolumn = 'D(µm²/s)'
             self.logcolumn = 'log10D'
             self.filteredfname = 'Filtered_log10D.csv'
             self.filtered_msd = 'Filtered_MSD.csv'
             self.minlimit = minlimit
             self.maxlimit = maxlimit
-        # Load data
+
+            # Load data
         self.outputdir = outputdir
         print("Loading data ...")
         (self.data, self.msd) = self.load_datafiles(datafile, datafile_msd)
@@ -48,12 +49,11 @@ class FilterMSD():
             except:
                 #Chars work differently for diff OSes
                 print("Encoding required for Config")
-                config = ConfigObj(configfile, encoding='ISO-8859-1')
+                config = ConfigObj(configfile, encoding=self.encoding)
             self.filteredfname = config['FILTERED_FILENAME']
             self.filtered_msd = config['FILTERED_MSD']
             self.diffcolumn = config['DIFF_COLUMN']
             self.logcolumn = config['LOG_COLUMN']
-            self.encoding = config['ENCODING']
             self.msdpoints = int(config['MSD_POINTS'])
             self.minlimit = int(config['MINLIMIT'])
             self.maxlimit = int(config['MAXLIMIT'])

@@ -31,10 +31,12 @@ import matplotlib.pyplot as plt
 from configobj import ConfigObj
 
 class CompareMSD():
-    def __init__(self, inputdir, outputdir,datafile, prefix='', configfile=None):
+    def __init__(self, inputdir, outputdir,prefix='', configfile=None):
+        self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
+            self.msdcompare = 'Avg_MSD.csv'
             self.histofile = 'Filtered_AllROI-MSD.txt'
             self.msdpoints = 10
             self.timeint = 0.02
@@ -45,15 +47,16 @@ class CompareMSD():
         if len(prefix) > 0:
             prefix = prefix + "_"
         self.prefix = prefix
-        self.compiledfile = join(outputdir,prefix + datafile)
+        self.compiledfile = join(outputdir,prefix + self.msdcompare)
         self.compiled = pd.DataFrame()
 
     def __loadConfig(self, configfile=None):
         if configfile is not None:
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile, encoding='ISO-8859-1')
+                config = ConfigObj(configfile, encoding=self.encoding)
                 self.histofile = config['FILTERED_MSD']
+                self.msdcompare = config['AVGMSD_FILENAME']
                 self.msdpoints = int(config['MSD_POINTS'])
                 self.timeint = float(config['TIME_INTERVAL'])
             except:
@@ -116,6 +119,7 @@ class CompareMSD():
             data.to_csv(self.compiledfile, index=False)
             print("Data compiled to " + self.compiledfile)
             self.compiled = data
+            return self.compiledfile
 
     def showPlots(self,ax=None):
         """

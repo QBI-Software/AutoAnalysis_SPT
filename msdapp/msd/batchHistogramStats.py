@@ -36,6 +36,7 @@ import matplotlib.pyplot as plt
 
 class HistoStats():
     def __init__(self, inputdir, outputdir,threshold, prefix='', configfile=None):
+        self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
@@ -55,7 +56,7 @@ class HistoStats():
         if configfile is not None:
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile, encoding='ISO-8859-1')
+                config = ConfigObj(configfile, encoding=self.encoding)
                 self.histofile = config['HISTOGRAM_FILENAME']
                 self.threshold = float(config['THRESHOLD'])
                 self.outputfile = config['ALLSTATS_FILENAME']

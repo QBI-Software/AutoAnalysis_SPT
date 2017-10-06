@@ -29,17 +29,18 @@ from configobj import ConfigObj
 
 class HistogramLogD():
     def __init__(self, minlimit, maxlimit,binwidth,datafile, configfile=None):
+        self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
             self.msdpoints = 10
             self.histofile = 'Histogram_log10D.csv'
-            self.encoding = 'ISO-8859-1'
             self.logcolumn = 'log10D'#'D(µm²/s)' #must be exact label
             # Frequency range limits
             self.fmin = float(minlimit)
             self.fmax = float(maxlimit)
             self.binwidth = float(binwidth)
+
         # holds raw or filtered data
         self.data = None
         self.fig = None
@@ -52,12 +53,11 @@ class HistogramLogD():
 
             try:
                 access(configfile, R_OK)
-                config = ConfigObj(configfile, encoding='ISO-8859-1')
+                config = ConfigObj(configfile, encoding=self.encoding)
                 self.histofile = config['HISTOGRAM_FILENAME']
                 self.fmin = float(config['MINLIMIT'])
                 self.fmax = float(config['MAXLIMIT'])
                 self.binwidth = float(config['BINWIDTH'])
-                self.encoding = config['ENCODING']
                 self.logcolumn =config['LOG_COLUMN']
             except:
                 raise IOError
