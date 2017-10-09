@@ -156,7 +156,7 @@ if __name__ == "__main__":
     print("Input:", datafile)
 
     try:
-        fd = HistogramLogD(args.minlimit, args.maxlimit,args.binwidth,datafile, args.config)
+        fd = HistogramLogD(float(args.minlimit), float(args.maxlimit),args.binwidth,datafile, args.config)
         fd.generateHistogram(outputdir)
 
     except ValueError as e:

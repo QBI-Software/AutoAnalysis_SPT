@@ -5,6 +5,7 @@
 import time
 from glob import glob
 from multiprocessing import Manager, Process
+from threading import Thread
 from os import access, R_OK, walk, mkdir
 from os.path import join, expanduser, dirname, exists, split
 
@@ -355,15 +356,21 @@ class ScriptController(wx.Frame):
             self.RunMSD(e)
 
     def processFilter(self, datafile, q):
+        """
+        Activate filter process - multithreaded
+        :param datafile:
+        :param q:
+        :return:
+        """
         datafile_msd = datafile.replace(self.datafile, self.msdfile)
-        outputdir = join(dirname(datafile), 'output')  # subdir as inputfiles
+        outputdir = join(dirname(datafile), 'processed')  # subdir as inputfiles
         if not exists(outputdir):
             mkdir(outputdir)
-        fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, int(self.minlimit), int(self.maxlimit))
+        fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, self.minlimit, self.maxlimit)
         q[datafile] = fmsd.runFilter()
 
     def processHistogram(self, datafile, q):
-        outputdir = dirname(datafile)  # same dir as inputfile
+        outputdir = dirname(datafile)  # same dir as inputfile Filtered*
         fd = HistogramLogD(self.minlimit, self.maxlimit, self.binwidth, datafile, self.configfile)
         q[datafile] = fd.generateHistogram(outputdir)
 
@@ -380,19 +387,20 @@ class ScriptController(wx.Frame):
                 tasks = []
                 mm = Manager()
                 q = mm.dict()
-                self.count = 1
+
                 for i in range(total_tasks):
+                    self.count = 1
                     self.StatusBar.SetStatusText("Running %s script: %s" % (type.title(), result[i]))
+                    #self.result_filter.SetLabel("%d of %d" % (i, total_tasks))
                     p = Process(target=self.processFilter, args=(result[i], q))
-                    self.result_filter.SetLabel("%d of %d" % (i, total_tasks))
                     tasks.append(p)
                     p.start()
-                    self.gauge_filter.FindFocus()
+                    self.gauge_filter.SetFocus()
                     while p.is_alive():
                         time.sleep(1)
                         self.count = self.count + 1
                         self.gauge_filter.SetValue(self.count)
-                    self.count = 1
+                    #self.count = 1
 
                 for p in tasks:
                     p.join()
@@ -423,19 +431,19 @@ class ScriptController(wx.Frame):
                 tasks = []
                 mm = Manager()
                 q = mm.dict()
-                self.count = 1
                 for i in range(total_tasks):
+                    self.count = 1
                     self.StatusBar.SetStatusText("Running %s script: %s" % (type.title(), result[i]))
+                    #self.result_histo.SetLabel("%d of %d" % (i, total_tasks))
                     p = Process(target=self.processHistogram, args=(result[i], q))
-                    self.result_histo.SetLabel("%d of %d" % (i, total_tasks))
+
                     tasks.append(p)
                     p.start()
-                    self.gauge_histo.FindFocus()
+                    self.gauge_histo.SetFocus()
                     while p.is_alive():
                         time.sleep(1)
                         self.count = self.count + 1
                         self.gauge_histo.SetValue(self.count)
-                    self.count = 1
 
                 for p in tasks:
                     p.join()
@@ -464,7 +472,7 @@ class ScriptController(wx.Frame):
                 self.statusbar.SetStatusText("Prefix not found - using ALL")
                 prefix = 'ALL'
             self.statusbar.SetStatusText("Running %s script: %s" % (type.title(), prefix))
-            self.gauge_stats.FindFocus()
+            self.gauge_stats.SetFocus()
             fmsd = HistoStats(self.inputdir, self.outputdir, float(self.threshold), prefix,
                               self.configfile)
             fmsd.compile()
@@ -472,7 +480,7 @@ class ScriptController(wx.Frame):
             # Split to Mobile/immobile fractions - output
             ratiofile = fmsd.splitMobile()
             self.resultbox.AppendText("HISTOGRAM STATS: %s\n\t%s\n\t%s\n" % (prefix, compiledfile, ratiofile))
-            self.result_stats.SetLabel("Complete")
+            self.result_stats.SetLabel("Complete - Close plot to continue")
             # Set the figure
             fig = plt.figure(figsize=(10, 5))
             axes1 = plt.subplot(121)
@@ -500,7 +508,7 @@ class ScriptController(wx.Frame):
                 self.statusbar.SetStatusText("Prefix not found - using ALL")
                 prefix = 'ALL'
             self.statusbar.SetStatusText("Running %s script: %s" % (type.title(), prefix))
-            self.gauge_msd.FindFocus()
+            self.gauge_msd.SetFocus()
             fmsd = CompareMSD(self.inputdir, self.outputdir, prefix, self.configfile)
             compiledfile = fmsd.compile()
 

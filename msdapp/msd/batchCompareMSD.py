@@ -37,7 +37,7 @@ class CompareMSD():
             self.__loadConfig(configfile)
         else:
             self.msdcompare = 'Avg_MSD.csv'
-            self.histofile = 'Filtered_AllROI-MSD.txt'
+            self.msdfile = 'Filtered_MSD.csv'
             self.msdpoints = 10
             self.timeint = 0.02
 
@@ -55,10 +55,11 @@ class CompareMSD():
             try:
                 access(configfile, R_OK)
                 config = ConfigObj(configfile, encoding=self.encoding)
-                self.histofile = config['FILTERED_MSD']
+                self.msdfile = config['FILTERED_MSD']
                 self.msdcompare = config['AVGMSD_FILENAME']
                 self.msdpoints = int(config['MSD_POINTS'])
                 self.timeint = float(config['TIME_INTERVAL'])
+                print("MSD: Config file loaded")
             except:
                 raise IOError
 
@@ -67,8 +68,8 @@ class CompareMSD():
     def compile(self):
         #get list of files to compile
         if access(self.inputdir, R_OK):
-            #result = glob[join(self.inputdir,self.histofile)]
-            result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.histofile))]
+            #result = glob[join(self.inputdir,self.msdfile)]
+            result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.msdfile))]
             print(result)
             self.numcells = len(result)
             base = self.inputdir.split(sep)
@@ -187,7 +188,7 @@ if __name__ == "__main__":
     print("Loading Input from :", args.filedir)
 
     try:
-        fmsd = CompareMSD(args.filedir,args.outputdir,args.outputfile,args.prefix,args.config)
+        fmsd = CompareMSD(args.filedir,args.outputdir,args.prefix,args.config)
         fmsd.compile()
         #fmsd.showPlots()
         #fmsd.showAvgPlot()

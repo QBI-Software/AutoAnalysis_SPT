@@ -32,8 +32,8 @@ class FilterMSD():
             self.logcolumn = 'log10D'
             self.filteredfname = 'Filtered_log10D.csv'
             self.filtered_msd = 'Filtered_MSD.csv'
-            self.minlimit = minlimit
-            self.maxlimit = maxlimit
+            self.minlimit = float(minlimit)
+            self.maxlimit = float(maxlimit)
 
             # Load data
         self.outputdir = outputdir
@@ -55,8 +55,8 @@ class FilterMSD():
             self.diffcolumn = config['DIFF_COLUMN']
             self.logcolumn = config['LOG_COLUMN']
             self.msdpoints = int(config['MSD_POINTS'])
-            self.minlimit = int(config['MINLIMIT'])
-            self.maxlimit = int(config['MAXLIMIT'])
+            self.minlimit = float(config['MINLIMIT'])
+            self.maxlimit = float(config['MAXLIMIT'])
 
     def load_datafiles(self, datafile, datafile_msd):
         """
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     print("Input:", datafile)
 
     try:
-        fmsd = FilterMSD(args.config, datafile, datafile_msd, outputdir, int(args.minlimit), int(args.maxlimit))
+        fmsd = FilterMSD(args.config, datafile, datafile_msd, outputdir, float(args.minlimit), float(args.maxlimit))
         fmsd.runFilter()
 
     except ValueError as e:

@@ -41,8 +41,8 @@ class RatioStats():
         try:
             if access(ratio1, R_OK) and access(ratio2, R_OK):
                 self.data = pd.read_csv(ratio1)
-                ratio2 = pd.read_csv(ratio2)
-                self.data = self.data.merge(ratio2, how='outer', left_on='Cell', right_on='Cell', suffixes=self.prefixes)
+                data2 = pd.read_csv(ratio2)
+                self.data = self.data.merge(data2, how='outer', left_on='Cell', right_on='Cell', suffixes=self.prefixes)
             else:
                 self.data = None
 
@@ -59,7 +59,7 @@ class RatioStats():
         if self.data is not None:
             print("Running t-test")
             (dstats, p) = stats.ttest_rel(self.data['Ratio' + self.prefixes[0]], self.data['Ratio' + self.prefixes[1]], nan_policy='omit')
-            print("T-test\t\t\tp-value\t\t\tsignificance\n", dstats, "\t", p, '\t', p < 0.05)
+            print("T-test\tp-value\tsignificance\n", dstats, "\t", p, '\t', p < 0.05)
             return (dstats,p)
 
 

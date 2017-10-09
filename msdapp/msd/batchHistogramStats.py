@@ -79,13 +79,18 @@ class HistoStats():
                 if c.empty:
                     c = df
                 else:
-                    c = c.merge(df, how='outer', left_on='bins', right_on='bins', suffixes=suffixes)
+                    try:
+                        c = c.merge(df, how='outer', left_on='bins', right_on='bins', suffixes=suffixes)
+                    except ValueError as e:
+                        print(e)
+                        raise Exception(e)
 
             c.to_csv(self.compiledfile, index=False)
             print("Data compiled to " + self.compiledfile)
             self.compiled = c
             return self.compiledfile
         else:
+            print("Error: Cannot access directory : ", self.inputdir)
             return None
 
     def runStats(self):
