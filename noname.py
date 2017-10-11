@@ -162,19 +162,19 @@ class AppConfiguration ( wx.Frame ):
 	
 
 ###########################################################################
-## Class RatioStatsDialog
+## Class StatsDialog
 ###########################################################################
 
-class RatioStatsDialog ( wx.Frame ):
+class StatsDialog ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Ratio Statistics: t-test", pos = wx.DefaultPosition, size = wx.Size( 500,300 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MSD Statistics: t-tests", pos = wx.DefaultPosition, size = wx.Size( 500,360 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
 		bSizer1 = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Mobile/Immobile Ratios", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Group Statistics", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText18.Wrap( -1 )
 		self.m_staticText18.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
 		

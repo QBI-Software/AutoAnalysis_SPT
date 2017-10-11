@@ -12,6 +12,8 @@ and compiles to top level as <prefix>_AllMSD.csv where prefix can be STIM, NOSTI
 
 Analysis per run (prefix):
       1. All cells data with Mean, SEM, Count, STD per timepoint - appended to compiled file
+      2. Overlay MSD vs timepoints -> Calculate Area Under Curve -> add to file
+      3. Plot Avg MSD with SD
 (Data files encoded in ISO-8859-1)
 
 
@@ -75,7 +77,7 @@ class CompareMSD():
             base = self.inputdir.split(sep)
             timepoints = [str(x) for x in range(1,self.msdpoints + 1)]
             cols = ['Cell','Stats'] + timepoints
-            data = pd.DataFrame(columns=cols)
+            data = pd.DataFrame(columns=cols, dtype=float)
             ctr = 0
             for f in result:
                 df = pd.read_csv(f)
@@ -101,11 +103,16 @@ class CompareMSD():
 
             #Calculate avgs of avg
             cell = 'ALL'
-            stats = OrderedDict({'avgs': [cell, 'Avg_Mean'],
-                                 'counts': [cell, 'Avg_Count'],
-                                 'stds': [cell, 'Avg_Std'],
-                                 'sems': [cell, 'Avg_SEM'],
-                                 'medians': [cell, 'Avg_Median']})
+            # stats = OrderedDict({'avgs': [cell, 'Avg_Mean'],
+            #                      'counts': [cell, 'Avg_Count'],
+            #                      'stds': [cell, 'Avg_Std'],
+            #                      'sems': [cell, 'Avg_SEM'],
+            #                      'medians': [cell, 'Avg_Median']})
+            stats = OrderedDict({'avgs': [cell, 'Mean'],
+                                 'counts': [cell, 'Count'],
+                                 'stds': [cell, 'Std'],
+                                 'sems': [cell, 'SEM'],
+                                 'medians': [cell, 'Median']})
             for i in timepoints:
                 d = data.groupby(['Stats'])[i].mean()
                 print(d)
@@ -117,12 +124,20 @@ class CompareMSD():
             for key in stats.keys():
                 data.loc[ctr] = stats[key]
                 ctr += 1
-            data.to_csv(self.compiledfile, index=False)
-            print("Data compiled to " + self.compiledfile)
-            self.compiled = data
-            return self.compiledfile
 
-    def showPlots(self,ax=None):
+            #Sort by Stats
+            df1 = data.sort_values(by=['Stats', 'Cell'])
+
+            df1.to_csv(self.compiledfile, index=False)
+            print("Data compiled to " + self.compiledfile)
+            self.compiled = df1
+            return self.compiledfile
+        else:
+            msg = "ERROR: Unable to access inputdir: %s" % self.inputdir
+            raise IOError(msg)
+
+
+    def showPlotsWithAreas(self,ax=None):
         """
         Plots each cells MSD, calculates areas and saves to areas file
         :param ax:
@@ -144,14 +159,16 @@ class CompareMSD():
                 areas.append(np.trapz(means[x].iloc[ctr], dx=self.timeint))
 
             plt.legend(labels)
-            plt.title('MSDs per cell')
+            plt.xlabel('Time (s)')
+            plt.ylabel(r'MSD ($\mu$m2/s)')
+            plt.title(self.prefix.replace("_"," ") + 'MSDs per cell')
             #plt.show()
             #save areas to new file
             df_area = pd.DataFrame({'Cell':labels, 'MSD Area': areas}, columns=['Cell','MSD Area'])
             areasfile = join(self.outputdir, self.prefix + "areas.csv")
             df_area.to_csv(areasfile, index=False)
             print('Areas output to', areasfile)
-            return df_area
+            return areasfile
 
 
     def showAvgPlot(self, ax=None):
@@ -163,10 +180,12 @@ class CompareMSD():
             x = [str(x) for x in range(1, self.msdpoints + 1)]
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)] #convert to times
             all = df.groupby('Cell').get_group('ALL')
-            allmeans = all.groupby('Stats').get_group('Avg_Mean')
-            allsems = all.groupby('Stats').get_group('Avg_SEM')
+            allmeans = all.groupby('Stats').get_group('Mean')
+            allsems = all.groupby('Stats').get_group('SEM')
             plt.errorbar(xi,allmeans[x].iloc[0],yerr=allsems[x].iloc[0])
-            plt.title('Average MSD')
+            plt.title(self.prefix.replace("_"," ") + 'Average MSD')
+            plt.xlabel('Time (s)')
+            plt.ylabel(r'MSD ($\mu$m2/s)')
             #plt.show()
 
 #################################################################################################
@@ -195,7 +214,7 @@ if __name__ == "__main__":
         # Set the figure
         fig = plt.figure(figsize=(10, 5))
         axes1 = plt.subplot(121)
-        fmsd.showPlots(axes1)
+        fmsd.showPlotsWithAreas(axes1)
 
         axes2 = plt.subplot(122)
         fmsd.showAvgPlot(axes2)
@@ -205,7 +224,8 @@ if __name__ == "__main__":
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
         plt.show()
 
-
+    except IOError as e:
+        print("IOError: ", e)
     except ValueError as e:
         print("Error: ", e)
 

@@ -84,14 +84,19 @@ class HistoStats():
                     except ValueError as e:
                         print(e)
                         raise Exception(e)
-
-            c.to_csv(self.compiledfile, index=False)
-            print("Data compiled to " + self.compiledfile)
-            self.compiled = c
-            return self.compiledfile
+            if not c.empty:
+                newcols = [c.replace('log10D','') for c in c.columns.tolist()]
+                c.columns=newcols
+                c.to_csv(self.compiledfile, index=False)
+                print("Data compiled to " + self.compiledfile)
+                self.compiled = c
+                return self.compiledfile
+            else:
+                return None
         else:
-            print("Error: Cannot access directory : ", self.inputdir)
-            return None
+            msg = "Error: Cannot access directory : %s" % self.inputdir
+            raise IOError(msg)
+
 
     def runStats(self):
         print("Running stats")
@@ -155,7 +160,9 @@ class HistoStats():
             plt.axvline(x=-1.6, color='r', linestyle='-', linewidth=0.5)
         lines, _ = ax.get_legend_handles_labels()
         ax.legend(lines, labels, loc='best')
-        plt.title(title)
+        plt.title(self.prefix.replace("_"," ") + title)
+        plt.xlabel('Log (D)')
+        plt.ylabel(r'Relative Frequency')
 
 
     def showAvgPlot(self, ax=None):
@@ -164,10 +171,10 @@ class HistoStats():
         width=0.15
         if ax is None:
             fig, ax = plt.subplots()
-        plt.bar(df['bins'],df['MEAN'],yerr=df['SEM'], width=width)
+        plt.errorbar(df['bins'],df['MEAN'],yerr=df['SEM'], fmt='--o')
         #df['Total_mean'].plot.bar(yerr=df['Total_sem'])
-        plt.xlabel('bins')
-        plt.title('Average with SEM')
+        plt.xlabel('Log (D)')
+        plt.title(self.prefix.replace("_"," ") + 'Average with SEM')
 
 
 #################################################################################################

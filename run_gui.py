@@ -13,16 +13,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import wx
 from configobj import ConfigObj
+from tabulate import tabulate
 
 from msdapp.msd.batchCompareMSD import CompareMSD
 from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
-from msdapp.msd.ratioStats import RatioStats
-from noname import AppConfiguration, RatioStatsDialog
+from msdapp.msd.msdStats import MSDStats
+from noname import AppConfiguration, StatsDialog
 
 APP_EXIT = 1
-
+############Directory structure for Data files
+# Y:\Ravi\RAVI PHD\3rd year\analysis\170525\170525M18eos\cell1 nostim\edited\cell1\m18MEOSCELL1NOSTIM-2...m18MEOSCELL1NOSTIM-3
 ############Config dialog
 class MSDConfig(AppConfiguration):
     def __init__(self, parent):
@@ -72,17 +74,18 @@ class MSDConfig(AppConfiguration):
         config.write()
         event.Skip()
 
-class RatioApp(RatioStatsDialog):
+class StatsApp(StatsDialog):
     def __init__(self, parent):
-        super(RatioApp, self).__init__(parent)
+        super(StatsApp, self).__init__(parent)
         self.outputdir = parent.outputdir
+        self.configfile = parent.configfile
         self.Bind(wx.EVT_BUTTON, self.OnRatiofile1, self.m_btnGp1)
         self.Bind(wx.EVT_BUTTON, self.OnRatiofile2, self.m_btnGp2)
         self.Bind(wx.EVT_BUTTON, self.OnRun, self.m_btnRatioRun)
 
     def OnRatiofile1(self, e):
         """ Open a file"""
-        dlg = wx.FileDialog(self, "Choose a File for Group 1", self.outputdir)
+        dlg = wx.DirDialog(self, "Choose a Directory for Group 1", self.outputdir)
         if dlg.ShowModal() == wx.ID_OK:
             filename = str(dlg.GetPath())
             self.m_tcRatioFile1.SetValue(filename)
@@ -90,7 +93,7 @@ class RatioApp(RatioStatsDialog):
 
     def OnRatiofile2(self, e):
         """ Open a file"""
-        dlg = wx.FileDialog(self, "Choose a File for Group 2", self.outputdir)
+        dlg = wx.DirDialog(self, "Choose a Directory for Group 2", self.outputdir)
         if dlg.ShowModal() == wx.ID_OK:
             filename = str(dlg.GetPath())
             self.m_tcRatioFile2.SetValue(filename)
@@ -102,15 +105,16 @@ class RatioApp(RatioStatsDialog):
         :param e:
         :return:
         """
-        file1 = self.m_tcRatioFile1.GetValue()
-        file2 = self.m_tcRatioFile2.GetValue()
+        dir1 = self.m_tcRatioFile1.GetValue()
+        dir2 = self.m_tcRatioFile2.GetValue()
         label1 = self.m_textCtrlGp1.GetValue()
         label2 = self.m_textCtrlGp2.GetValue()
         self.m_tcResults.AppendText("T-test on TWO RELATED samples of scores\nSignificance of 0.05\n--------------------------------------\n")
-        rs = RatioStats(file1, file2,label1, label2)
-        (dstats, p) = rs.runStats()
-        results="T-test\t\t\tp-value\t\t\tsignificance\n%s\t\t\t%s\t\t\t%s\n" % (dstats, str(p), str(p < 0.05))
-        self.m_tcResults.AppendText(results)
+        rs = MSDStats(dir1, dir2, self.outputdir, label1, label2, self.configfile)
+        dfstats = rs.runTtests()
+        self.m_tcResults.AppendText(tabulate(dfstats, headers='keys', showindex=False,tablefmt='simple'))
+        #Run overlay plots
+        rs.showPlots("Test cells")
 
     def OnClose(self, e):
         self.Close()
@@ -187,20 +191,36 @@ class ScriptController(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
         #####Input files
         hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        self.btnInputdir = wx.Button(panel, label='Input directory')
+        self.btnInputdir = wx.Button(panel, label='Top level input directory')
         hbox1.Add(self.btnInputdir, flag=wx.RIGHT, border=8)
         self.txtInputdir = wx.TextCtrl(panel)
         hbox1.Add(self.txtInputdir, proportion=1)
         vbox.Add(hbox1, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
 
         vbox.Add((-1, 10))
-        ####Output directory
+        #####Target directory names - protein
+        hbox1d = wx.BoxSizer(wx.HORIZONTAL)
+        st1d = wx.StaticText(panel, label='Search for directory names with:')
+        st1d.SetFont(font_description)
+        hbox1d.Add(st1d)
+        vbox.Add(hbox1d, flag=wx.LEFT | wx.TOP, border=10)
+        vbox.Add((-1, 10))
         hbox1a = wx.BoxSizer(wx.HORIZONTAL)
+        st1a = wx.StaticText(panel, wx.ID_ANY, u"Protein", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.txtProtein = wx.TextCtrl(panel)
+        st1c = wx.StaticText(panel, wx.ID_ANY, u"Celltype", wx.DefaultPosition, wx.DefaultSize, 0)
+        self.txtCelltype = wx.TextCtrl(panel)
+        hbox1a.AddMany([st1a,self.txtProtein,(5,5),st1c,self.txtCelltype])
+        vbox.Add(hbox1a, flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, border=10)
+        vbox.Add((-1, 10))
+
+        ####Output directory
+        hbox1b = wx.BoxSizer(wx.HORIZONTAL)
         self.btnOutputdir = wx.Button(panel, label='Output directory')
-        hbox1a.Add(self.btnOutputdir, flag=wx.RIGHT, border=8)
+        hbox1b.Add(self.btnOutputdir, flag=wx.RIGHT, border=8)
         self.txtOutputdir = wx.TextCtrl(panel)
-        hbox1a.Add(self.txtOutputdir, proportion=1)
-        vbox.Add(hbox1a, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
+        hbox1b.Add(self.txtOutputdir, proportion=1)
+        vbox.Add(hbox1b, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
 
         vbox.Add((-1, 10))
         hbox2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -269,7 +289,7 @@ class ScriptController(wx.Frame):
         vbox.Add((-1, 25))
 
         hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
-        btnRatio = wx.Button(panel, label='Ratio Stats (STIM vs NOSTIM)', size=(200, 30))
+        btnRatio = wx.Button(panel, label='Compare STIM vs NOSTIM', size=(200, 30))
         hbox_btns.Add(btnRatio, flag=wx.LEFT, border=5)
         btnRun = wx.Button(panel, label='Run selected', size=(100, 30))
         hbox_btns.Add(btnRun)
@@ -390,19 +410,18 @@ class ScriptController(wx.Frame):
 
                 for i in range(total_tasks):
                     self.count = 1
-                    self.StatusBar.SetStatusText("Running %s script: %s" % (type.title(), result[i]))
-                    #self.result_filter.SetLabel("%d of %d" % (i, total_tasks))
+                    self.StatusBar.SetStatusText(
+                        "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
                     p = Process(target=self.processFilter, args=(result[i], q))
                     tasks.append(p)
                     p.start()
+
+                for p in tasks:
                     self.gauge_filter.SetFocus()
                     while p.is_alive():
                         time.sleep(1)
                         self.count = self.count + 1
                         self.gauge_filter.SetValue(self.count)
-                    #self.count = 1
-
-                for p in tasks:
                     p.join()
 
                 headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
@@ -433,19 +452,18 @@ class ScriptController(wx.Frame):
                 q = mm.dict()
                 for i in range(total_tasks):
                     self.count = 1
-                    self.StatusBar.SetStatusText("Running %s script: %s" % (type.title(), result[i]))
-                    #self.result_histo.SetLabel("%d of %d" % (i, total_tasks))
+                    self.StatusBar.SetStatusText("Running %s script: %s (%d of %d)" % (type.title(), result[i],i, total_tasks))
                     p = Process(target=self.processHistogram, args=(result[i], q))
 
                     tasks.append(p)
                     p.start()
+
+                for p in tasks:
                     self.gauge_histo.SetFocus()
                     while p.is_alive():
                         time.sleep(1)
                         self.count = self.count + 1
                         self.gauge_histo.SetValue(self.count)
-
-                for p in tasks:
                     p.join()
 
                 headers = ['Figure', 'Histogram data']
@@ -471,10 +489,9 @@ class ScriptController(wx.Frame):
             if len(prefix) == 0:
                 self.statusbar.SetStatusText("Prefix not found - using ALL")
                 prefix = 'ALL'
-            self.statusbar.SetStatusText("Running %s script: %s" % (type.title(), prefix))
+            self.statusbar.SetStatusText("Running %s script: %s (%s)" % (type.title(), self.inputdir, prefix))
             self.gauge_stats.SetFocus()
-            fmsd = HistoStats(self.inputdir, self.outputdir, float(self.threshold), prefix,
-                              self.configfile)
+            fmsd = HistoStats(self.inputdir, self.outputdir, float(self.threshold), prefix, self.configfile)
             fmsd.compile()
             compiledfile = fmsd.runStats()
             # Split to Mobile/immobile fractions - output
@@ -511,8 +528,19 @@ class ScriptController(wx.Frame):
             self.gauge_msd.SetFocus()
             fmsd = CompareMSD(self.inputdir, self.outputdir, prefix, self.configfile)
             compiledfile = fmsd.compile()
+            # Set the figure
+            fig = plt.figure(figsize=(10, 5))
+            axes1 = plt.subplot(121)
+            areasfile = fmsd.showPlotsWithAreas(axes1)
 
-            self.resultbox.AppendText("MSD STATS: %s\n\t%s\n" % (prefix, compiledfile))
+            axes2 = plt.subplot(122)
+            fmsd.showAvgPlot(axes2)
+
+            figtype = 'png'  # png, pdf, ps, eps and svg.
+            figname = fmsd.compiledfile.replace('csv', figtype)
+            plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+            plt.show()
+            self.resultbox.AppendText("MSD STATS: %s\n\t%s\n\t%s\n" % (prefix, compiledfile, areasfile))
             self.result_msd.SetLabel("Complete")
 
         else:
@@ -547,7 +575,7 @@ class ScriptController(wx.Frame):
         configdlg.Show(True)
 
     def OnRatios(self, e):
-        dlg = RatioApp(self)
+        dlg = StatsApp(self)
         dlg.Show(True)
 
     def OnCloseWindow(self, e):
