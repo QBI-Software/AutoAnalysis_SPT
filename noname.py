@@ -17,7 +17,7 @@ import wx.xrc
 class AppConfiguration ( wx.Frame ):
 	
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MSD Configuration", pos = wx.DefaultPosition, size = wx.Size( 441,593 ), style = wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT|wx.TAB_TRAVERSAL )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MSD Configuration", pos = wx.DefaultPosition, size = wx.Size( 523,872 ), style = wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
 		
@@ -139,6 +139,20 @@ class AppConfiguration ( wx.Frame ):
 		
 		self.m_textCtrl13 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer1.Add( self.m_textCtrl13, 0, wx.ALL, 5 )
+		
+		self.m_staticText21 = wx.StaticText( self, wx.ID_ANY, u"Group 1", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText21.Wrap( -1 )
+		fgSizer1.Add( self.m_staticText21, 0, wx.ALL, 5 )
+		
+		self.m_tcGroup1 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer1.Add( self.m_tcGroup1, 0, wx.ALL, 5 )
+		
+		self.m_staticText22 = wx.StaticText( self, wx.ID_ANY, u"Group 2", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText22.Wrap( -1 )
+		fgSizer1.Add( self.m_staticText22, 0, wx.ALL, 5 )
+		
+		self.m_tcGroup2 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer1.Add( self.m_tcGroup2, 0, wx.ALL, 5 )
 		
 		self.btnSave = wx.Button( self, wx.ID_ANY, u"Save", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer1.Add( self.btnSave, 0, wx.ALL, 5 )

@@ -8,7 +8,7 @@ from multiprocessing import Manager, Process
 from threading import Thread
 from os import access, R_OK, walk, mkdir
 from os.path import join, expanduser, dirname, exists, split
-
+import logging
 import matplotlib.pyplot as plt
 import pandas as pd
 import wx
@@ -23,6 +23,8 @@ from msdapp.msd.msdStats import MSDStats
 from noname import AppConfiguration, StatsDialog
 
 APP_EXIT = 1
+
+
 ############Directory structure for Data files
 # Y:\Ravi\RAVI PHD\3rd year\analysis\170525\170525M18eos\cell1 nostim\edited\cell1\m18MEOSCELL1NOSTIM-2...m18MEOSCELL1NOSTIM-3
 ############Config dialog
@@ -50,6 +52,8 @@ class MSDConfig(AppConfiguration):
         self.m_textCtrl13.SetValue(parent.threshold)
         self.m_textCtrl161.SetValue(parent.allstats)
         self.m_textCtrl18.SetValue(parent.msdcompare)
+        self.m_tcGroup1.SetValue(parent.group1)
+        self.m_tcGroup2.SetValue(parent.group2)
 
     def OnSaveConfig(self, event):
         print("In config - onsave - saving to cfg file")
@@ -71,8 +75,11 @@ class MSDConfig(AppConfiguration):
         config['THRESHOLD'] = self.m_textCtrl13.GetValue()
         config['ALLSTATS_FILENAME'] = self.m_textCtrl161.GetValue()
         config['AVGMSD_FILENAME'] = self.m_textCtrl18.GetValue()
+        config['GROUP1'] = self.m_tcGroup1.GetValue()
+        config['GROUP2'] = self.m_tcGroup2.GetValue()
         config.write()
         event.Skip()
+
 
 class StatsApp(StatsDialog):
     def __init__(self, parent):
@@ -99,7 +106,7 @@ class StatsApp(StatsDialog):
             self.m_tcRatioFile2.SetValue(filename)
         dlg.Destroy()
 
-    def OnRun(self,e):
+    def OnRun(self, e):
         """
         Run Ratio Analysis
         :param e:
@@ -109,23 +116,31 @@ class StatsApp(StatsDialog):
         dir2 = self.m_tcRatioFile2.GetValue()
         label1 = self.m_textCtrlGp1.GetValue()
         label2 = self.m_textCtrlGp2.GetValue()
-        self.m_tcResults.AppendText("T-test on TWO RELATED samples of scores\nSignificance of 0.05\n--------------------------------------\n")
+        self.m_tcResults.AppendText(
+            "T-test on TWO RELATED samples of scores\nSignificance of 0.05\n--------------------------------------\n")
         rs = MSDStats(dir1, dir2, self.outputdir, label1, label2, self.configfile)
         dfstats = rs.runTtests()
-        self.m_tcResults.AppendText(tabulate(dfstats, headers='keys', showindex=False,tablefmt='simple'))
-        #Run overlay plots
+        self.m_tcResults.AppendText(tabulate(dfstats, headers='keys', showindex=False, tablefmt='simple'))
+        # Run overlay plots
         rs.showPlots("Test cells")
 
     def OnClose(self, e):
         self.Close()
 
+
 ####Main GUI
 class ScriptController(wx.Frame):
     def __init__(self, parent, title):
         super(ScriptController, self).__init__(parent, title=title, size=(600, 800))
+        logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
+                            datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
         self.configfile = join(expanduser('~'), '.msdcfg')
         self.loaded = self.__loadConfig()
+        if self.loaded:
+            self.prefixes = [self.group1, self.group2]
+        else:
+            self.prefixes = ['stim','nostim'] #default
         self.InitUI()
         self.Centre()
         self.Show()
@@ -136,7 +151,7 @@ class ScriptController(wx.Frame):
                 if access(self.configfile, R_OK):
                     print("Loading config file")
                     config = ConfigObj(self.configfile, encoding='ISO-8859-1')
-                    self.datafile = config['DATA_FILENAME']  # AllROI.txt
+                    self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
                     self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
                     self.filteredfname = config['FILTERED_FILENAME']
                     self.filtered_msd = config['FILTERED_MSD']
@@ -151,6 +166,8 @@ class ScriptController(wx.Frame):
                     self.threshold = config['THRESHOLD']
                     self.allstats = config['ALLSTATS_FILENAME']
                     self.msdcompare = config['AVGMSD_FILENAME']
+                    self.group1 = config['GROUP1']
+                    self.group2 = config['GROUP2']
                     return True
 
             except:
@@ -210,8 +227,8 @@ class ScriptController(wx.Frame):
         self.txtProtein = wx.TextCtrl(panel)
         st1c = wx.StaticText(panel, wx.ID_ANY, u"Celltype", wx.DefaultPosition, wx.DefaultSize, 0)
         self.txtCelltype = wx.TextCtrl(panel)
-        hbox1a.AddMany([st1a,self.txtProtein,(5,5),st1c,self.txtCelltype])
-        vbox.Add(hbox1a, flag=wx.ALIGN_CENTER_VERTICAL|wx.ALL, border=10)
+        hbox1a.AddMany([st1a, self.txtProtein, (5, 5), st1c, self.txtCelltype])
+        vbox.Add(hbox1a, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALL, border=10)
         vbox.Add((-1, 10))
 
         ####Output directory
@@ -258,10 +275,10 @@ class ScriptController(wx.Frame):
         self.result_msd = wx.StaticText(panel, label='4')
         self.gauge_msd = wx.Gauge(panel)
         flags = wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL
-        hbox4.AddMany([(self.result_filter,flags), (5,5),(self.gauge_filter, 0, flags, 5)])
-        hbox5.AddMany([(self.result_histo,flags), (5,5),(self.gauge_histo, 0, flags, 5)])
-        hbox6.AddMany([(self.result_stats,flags), (5,5),(self.gauge_stats, 0, flags, 5)])
-        hbox7.AddMany([(self.result_msd,flags), (5,5),(self.gauge_msd, 0, flags, 5)])
+        hbox4.AddMany([(self.result_filter, flags), (5, 5), (self.gauge_filter, 0, flags, 5)])
+        hbox5.AddMany([(self.result_histo, flags), (5, 5), (self.gauge_histo, 0, flags, 5)])
+        hbox6.AddMany([(self.result_stats, flags), (5, 5), (self.gauge_stats, 0, flags, 5)])
+        hbox7.AddMany([(self.result_msd, flags), (5, 5), (self.gauge_msd, 0, flags, 5)])
 
         grid.AddMany([(st_cb, 0, wx.TOP | wx.LEFT, 12),
                       (st_opt, 0, wx.TOP | wx.RIGHT, 12),
@@ -338,12 +355,19 @@ class ScriptController(wx.Frame):
             return 0
         else:
             self.inputdir = self.txtInputdir.GetValue()
-
+            if not access(self.inputdir, R_OK):
+                self.Warn("Input directory is not accessible - check permissions")
+                return 0
         if len(self.txtOutputdir.GetValue()) == 0:
             self.Warn("Output directory not specified")
             return 0
         else:
             self.outputdir = self.txtOutputdir.GetValue()
+            if not access(self.outputdir, R_OK):
+                self.Warn("Output directory is not accessible - check permissions")
+                return 0
+        expt = self.txtProtein.GetValue() + self.txtCelltype.GetValue()
+        print("Expt:", expt)
         self.timer = wx.Timer(self)
         if self.cb1.GetValue():
             self.StatusBar.SetStatusText("Running Filter script")
@@ -355,7 +379,6 @@ class ScriptController(wx.Frame):
 
         if self.cb2.GetValue():
             self.StatusBar.SetStatusText("Running Histogram script")
-            # self.timer = wx.Timer(self)
             self.Bind(wx.EVT_TIMER,
                       lambda e: self.gauge_histo.Pulse(),
                       self.timer)
@@ -366,14 +389,14 @@ class ScriptController(wx.Frame):
             self.Bind(wx.EVT_TIMER,
                       lambda e: self.gauge_stats.Pulse(),
                       self.timer)
-            self.RunStats(e)
+            self.RunStats(e, expt)
 
         if self.cb4.GetValue():
             self.StatusBar.SetStatusText("Running MSD compare script")
             self.Bind(wx.EVT_TIMER,
                       lambda e: self.gauge_msd.Pulse(),
                       self.timer)
-            self.RunMSD(e)
+            self.RunMSD(e, expt)
 
     def processFilter(self, datafile, q):
         """
@@ -397,137 +420,132 @@ class ScriptController(wx.Frame):
     def RunFilter(self, event):
         type = 'filter'
         self.ShowFeedBack(True, type)
-        # loop through directory
-        if access(self.inputdir, R_OK):
-            # find datafile - assume same directory for msd file
-            result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
+        # find datafile - assume same directory for msd file
+        result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
 
-            if len(result) > 0:
-                total_tasks = len(result)
-                tasks = []
-                mm = Manager()
-                q = mm.dict()
+        if len(result) > 0:
+            total_tasks = len(result)
+            tasks = []
+            mm = Manager()
+            q = mm.dict()
 
-                for i in range(total_tasks):
-                    self.count = 1
-                    self.StatusBar.SetStatusText(
-                        "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
-                    p = Process(target=self.processFilter, args=(result[i], q))
-                    tasks.append(p)
-                    p.start()
+            for i in range(total_tasks):
+                self.count = 1
+                self.StatusBar.SetStatusText(
+                    "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
+                p = Process(target=self.processFilter, args=(result[i], q))
+                tasks.append(p)
+                p.start()
 
-                for p in tasks:
-                    self.gauge_filter.SetFocus()
-                    while p.is_alive():
-                        time.sleep(1)
-                        self.count = self.count + 1
-                        self.gauge_filter.SetValue(self.count)
-                    p.join()
+            for p in tasks:
+                self.gauge_filter.SetFocus()
+                while p.is_alive():
+                    time.sleep(1)
+                    self.count = self.count + 1
+                    self.gauge_filter.SetValue(self.count)
+                p.join()
 
-                headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
-                results = pd.DataFrame.from_dict(q, orient='index')
-                results.columns = headers
-                for i, row in results.iterrows():
-                    self.resultbox.AppendText("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s\n" % (
-                        i, row['Filtered'], row['Total'], row['Data'], row['MSD']))
-                self.result_filter.SetLabel("Complete")
+            headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
+            results = pd.DataFrame.from_dict(q, orient='index')
+            results.columns = headers
+            for i, row in results.iterrows():
+                self.resultbox.AppendText("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s\n" % (
+                    i, row['Filtered'], row['Total'], row['Data'], row['MSD']))
+            self.result_filter.SetLabel("Complete")
 
-            else:
-                self.Warn("Cannot find datafile: %s" % self.datafile)
         else:
-            self.Warn("Cannot access input directory: %s" % self.inputdir)
+            self.Warn("Cannot find any datafiles: %s" % self.datafile)
+
         self.ShowFeedBack(False, type)
 
     def RunHistogram(self, event):
         type = 'histo'
         self.ShowFeedBack(True, type)
-        # loop through directory
-        if access(self.inputdir, R_OK):
-            # find datafile - assume same directory for msd file
-            result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.filteredfname))]
-            if len(result) > 0:
-                total_tasks = len(result)
-                tasks = []
-                mm = Manager()
-                q = mm.dict()
-                for i in range(total_tasks):
-                    self.count = 1
-                    self.StatusBar.SetStatusText("Running %s script: %s (%d of %d)" % (type.title(), result[i],i, total_tasks))
-                    p = Process(target=self.processHistogram, args=(result[i], q))
+        # find datafile - assume same directory for msd file
+        result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.filteredfname))]
+        if len(result) > 0:
+            total_tasks = len(result)
+            tasks = []
+            mm = Manager()
+            q = mm.dict()
+            for i in range(total_tasks):
+                self.count = 1
+                self.StatusBar.SetStatusText(
+                    "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
+                p = Process(target=self.processHistogram, args=(result[i], q))
 
-                    tasks.append(p)
-                    p.start()
+                tasks.append(p)
+                p.start()
 
-                for p in tasks:
-                    self.gauge_histo.SetFocus()
-                    while p.is_alive():
-                        time.sleep(1)
-                        self.count = self.count + 1
-                        self.gauge_histo.SetValue(self.count)
-                    p.join()
+            for p in tasks:
+                self.gauge_histo.SetFocus()
+                while p.is_alive():
+                    time.sleep(1)
+                    self.count = self.count + 1
+                    self.gauge_histo.SetValue(self.count)
+                p.join()
 
-                headers = ['Figure', 'Histogram data']
-                results = pd.DataFrame.from_dict(q, orient='index')
-                results.columns = headers
-                for i, row in results.iterrows():
-                    self.resultbox.AppendText("HISTOGRAM: %s\n\t%s\n\t%s\n" % (
-                        i, row['Figure'], row['Histogram data']))
-                self.result_histo.SetLabel("Complete")
+            headers = ['Figure', 'Histogram data']
+            results = pd.DataFrame.from_dict(q, orient='index')
+            results.columns = headers
+            for i, row in results.iterrows():
+                self.resultbox.AppendText("HISTOGRAM: %s\n\t%s\n\t%s\n" % (
+                    i, row['Figure'], row['Histogram data']))
+            self.result_histo.SetLabel("Complete")
 
-            else:
-                self.Warn("Cannot find datafile: %s" % self.filteredfname)
         else:
-            self.Warn("Cannot access input directory: %s" % self.inputdir)
+            self.Warn("Cannot find any datafiles: %s" % self.filteredfname)
+
         self.ShowFeedBack(False, type)
 
-    def RunStats(self, event):
+    def RunStats(self, event,expt=None):
         type = 'stats'
+        if expt is None:
+            expt = ''
         self.ShowFeedBack(True, type)
-        # loop through directory
-        if access(self.inputdir, R_OK):
-            prefix = split(self.inputdir)[1]
-            if len(prefix) == 0:
-                self.statusbar.SetStatusText("Prefix not found - using ALL")
-                prefix = 'ALL'
-            self.statusbar.SetStatusText("Running %s script: %s (%s)" % (type.title(), self.inputdir, prefix))
-            self.gauge_stats.SetFocus()
-            fmsd = HistoStats(self.inputdir, self.outputdir, float(self.threshold), prefix, self.configfile)
-            fmsd.compile()
-            compiledfile = fmsd.runStats()
-            # Split to Mobile/immobile fractions - output
-            ratiofile = fmsd.splitMobile()
-            self.resultbox.AppendText("HISTOGRAM STATS: %s\n\t%s\n\t%s\n" % (prefix, compiledfile, ratiofile))
-            self.result_stats.SetLabel("Complete - Close plot to continue")
-            # Set the figure
-            fig = plt.figure(figsize=(10, 5))
-            axes1 = plt.subplot(121)
-            fmsd.showPlots(axes1)
+        # loop through directory structure and locate prefixes with expt name
+        try:
+            for prefix in self.prefixes:
+                print("Group:", prefix)
+                self.statusbar.SetStatusText("Running %s script: %s (%s)" % (type.title(), expt, prefix))
+                self.gauge_stats.SetFocus()
+                fmsd = HistoStats(self.inputdir, self.outputdir, prefix, expt, self.configfile)
+                fmsd.compile()
+                compiledfile = fmsd.runStats()
+                # Split to Mobile/immobile fractions - output
+                ratiofile = fmsd.splitMobile()
+                self.resultbox.AppendText("HISTOGRAM BATCH: %s: %s\n\t%s\n\t%s\n" % (expt, prefix, compiledfile, ratiofile))
+                self.result_stats.SetLabel("Complete - Close plot to continue")
+                # Set the figure
+                fig = plt.figure(figsize=(10, 5))
+                axes1 = plt.subplot(121)
+                fmsd.showPlots(axes1)
 
-            axes2 = plt.subplot(122)
-            fmsd.showAvgPlot(axes2)
+                axes2 = plt.subplot(122)
+                fmsd.showAvgPlot(axes2)
 
-            figtype = 'png'  # png, pdf, ps, eps and svg.
-            figname = fmsd.compiledfile.replace('csv', figtype)
-            plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-            plt.show()
+                figtype = 'png'  # png, pdf, ps, eps and svg.
+                figname = fmsd.compiledfile.replace('csv', figtype)
+                plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+                plt.show()
+        except ValueError as e:
+            self.Warn("Batch Histogram error: %s" % e.message)
 
-        else:
-            self.Warn("Cannot access input directory: %s" % self.inputdir)
         self.ShowFeedBack(False, type)
 
-    def RunMSD(self, event):
+    def RunMSD(self, event,expt=None):
         type = 'msd'
+        if expt is None:
+            expt = ''
         self.ShowFeedBack(True, type)
         # loop through directory
-        if access(self.inputdir, R_OK):
-            prefix = split(self.inputdir)[1]
-            if len(prefix) == 0:
-                self.statusbar.SetStatusText("Prefix not found - using ALL")
-                prefix = 'ALL'
-            self.statusbar.SetStatusText("Running %s script: %s" % (type.title(), prefix))
+        for prefix in self.prefixes:
+            self.statusbar.SetStatusText("Running %s script: %s (%s)" % (type.title(),expt, prefix))
             self.gauge_msd.SetFocus()
-            fmsd = CompareMSD(self.inputdir, self.outputdir, prefix, self.configfile)
+            fmsd = CompareMSD(self.inputdir, self.outputdir, prefix, expt,self.configfile)
             compiledfile = fmsd.compile()
+            self.resultbox.AppendText("MSD BATCH: %s: %s\n\t%s\n\t%s\n" % (expt, prefix, compiledfile, areasfile))
+            self.result_msd.SetLabel("Complete")
             # Set the figure
             fig = plt.figure(figsize=(10, 5))
             axes1 = plt.subplot(121)
@@ -540,11 +558,8 @@ class ScriptController(wx.Frame):
             figname = fmsd.compiledfile.replace('csv', figtype)
             plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
             plt.show()
-            self.resultbox.AppendText("MSD STATS: %s\n\t%s\n\t%s\n" % (prefix, compiledfile, areasfile))
-            self.result_msd.SetLabel("Complete")
 
-        else:
-            self.Warn("Cannot access input directory: %s" % self.inputdir)
+
         self.ShowFeedBack(False, type)
 
     def OnInputdir(self, e):
@@ -564,7 +579,6 @@ class ScriptController(wx.Frame):
             self.statusbar.SetStatusText("Loaded: %s\n" % self.outputdir)
             self.txtOutputdir.SetValue(self.outputdir)
         dlg.Destroy()
-
 
     def OnQuit(self, e):
         self.Close()
