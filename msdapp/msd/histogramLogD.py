@@ -105,20 +105,20 @@ class HistogramLogD():
         """
         if not self.data.empty:
             print("Generating histogram")
-            num_bins = int((self.fmax-self.fmin)/self.binwidth) #smaller binwidth better for fitting eg 0.1 or 0.05
+            num_bins = abs(int((self.fmax-self.fmin)/self.binwidth)) #smaller binwidth better for fitting eg 0.1 or 0.05
             data = self.data[self.logcolumn]
+            # Use numpy with density as more accurate - include extra bin for equal
+            hist = np.histogram(data, bins=num_bins + 1, range=[int(self.fmin), int(self.fmax) + self.binwidth],
+                                density=True)
+            self.histdata = pandas.DataFrame({'bins': hist[1][0:-1], 'log10D': hist[0]})
+
             #Create figure
             self.fig = plt.figure()
-            n, bins, patches = plt.hist(data, bins=num_bins,range=[self.fmin, self.fmax], align='mid',normed=1, alpha=0.75)
-            #Save bins
+            n, bins, patches = plt.hist(data, bins=hist[1][0:-1], align='mid',normed=1, alpha=0.75)
             plt.grid(which='major')
             plt.xlabel('log10D')
             plt.ylabel('Frequency')
 
-            #bincenters = 0.5 * (bins[1:] + bins[:-1]) # OR save as bins minus first or last
-            histdata = pandas.DataFrame({'bins': bins[1:], 'log10D': n})
-            histdata = histdata.round({'bins':2, 'log10D':5}) #check precision required
-            self.histdata = histdata
             #Save plot to figure
             if outputdir is not None:
                 figtype='png' #png, pdf, ps, eps and svg.
@@ -137,6 +137,8 @@ class HistogramLogD():
 ############### MAIN ############################
 if __name__ == "__main__":
     import sys
+    import plotly
+    from plotly.graph_objs import Scatter, Layout, Histogram
     parser = argparse.ArgumentParser(prog=sys.argv[0],
                                      description='''\
             Generates frequency histogram from datafile to output directory
@@ -144,7 +146,7 @@ if __name__ == "__main__":
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
     parser.add_argument('--datafile', action='store', help='Initial data file', default="Filtered_log10D.csv")
-    parser.add_argument('--outputdir', action='store', help='Output directory (must exist)', default="data")
+    parser.add_argument('--outputdir', action='store', help='Output directory (must exist)', default="output")
     parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
     parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")
     parser.add_argument('--binwidth', action='store', help='Bin width', default="0.2")
@@ -158,6 +160,12 @@ if __name__ == "__main__":
     try:
         fd = HistogramLogD(float(args.minlimit), float(args.maxlimit),args.binwidth,datafile, args.config)
         fd.generateHistogram(outputdir)
+        # Plotly Offline
+        data = fd.data[fd.logcolumn]
+        plotly.offline.plot({
+            "data": [Histogram(x=data, xbins=dict(start=int(fd.fmin), end=int(fd.fmax), size=fd.binwidth))],
+            "layout": Layout(title="Log10D histogram")
+        })
 
     except ValueError as e:
         print("Error:", e)

@@ -49,7 +49,7 @@ class HistoStats():
         self.outputdir = outputdir
         self.prefix = prefix
         self.expt = expt
-        self.compiledfile = join(outputdir,expt+"_"+ prefix  + "_"+ self.outputfile)
+        self.compiledfile = join(outputdir, expt + "_" + prefix + "_" + self.outputfile)
         self.compiled = pd.DataFrame()
         self.numcells = 0
         #TODO: Testing Only:
@@ -58,11 +58,14 @@ class HistoStats():
     def __loadConfig(self, configfile=None):
         if configfile is not None:
             try:
-                access(configfile, R_OK)
-                config = ConfigObj(configfile, encoding=self.encoding)
-                self.histofile = config['HISTOGRAM_FILENAME']
-                self.threshold = float(config['THRESHOLD'])
-                self.outputfile = config['ALLSTATS_FILENAME']
+                if access(configfile, R_OK):
+                    config = ConfigObj(configfile, encoding=self.encoding)
+                    self.histofile = config['HISTOGRAM_FILENAME']
+                    self.threshold = float(config['THRESHOLD'])
+                    self.outputfile = config['ALLSTATS_FILENAME']
+                    print("HIST: Config file loaded")
+                else:
+                    raise IOError("Cannot access Config file")
             except:
                 raise IOError("Cannot load Config file")
 
@@ -81,7 +84,7 @@ class HistoStats():
 
         return itemlist
 
-    def compile(self):
+    def compile(self, selectedfiles=None):
         #get list of files to compile
         if access(self.inputdir, R_OK):
             #allhistofiles = [y for x in walk(self.inputdir) for y in iglob(join(x[0], self.histofile))]
@@ -90,10 +93,7 @@ class HistoStats():
             if len(allhistofiles)== 0:
                 msg = "No files found"
                 raise ValueError(msg)
-            c = pd.DataFrame()
-            base = self.inputdir.split(sep)
-            suffixes = ['bins']
-            dfs = []
+
             #Filter on expt and prefix
             searchtext = self.expt+self.prefix
             result = [f for f in allhistofiles if re.search(searchtext,f, flags=re.IGNORECASE)]
@@ -102,8 +102,13 @@ class HistoStats():
             if self.numcells == 0:
                 msg = "No matching files found: %s" % searchtext
                 raise ValueError(msg)
-            #Test with dummy file
-            f0 ='D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Histogram_log10D.csv'
+
+            #Compile all selected files
+            c = pd.DataFrame()
+            base = self.inputdir.split(sep)
+            suffixes = ['bins']
+            # TODO: Test with dummy file
+            f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Histogram_log10D.csv'
             for f in result:
                 df = pd.read_csv(f0)
                 cell = f.split(sep)

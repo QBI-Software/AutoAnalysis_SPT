@@ -20,6 +20,7 @@ class AppConfiguration ( wx.Frame ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MSD Configuration", pos = wx.DefaultPosition, size = wx.Size( 523,872 ), style = wx.DEFAULT_FRAME_STYLE|wx.FRAME_FLOAT_ON_PARENT|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		self.SetBackgroundColour( wx.Colour( 219, 237, 255 ) )
 		
 		fgSizer1 = wx.FlexGridSizer( 0, 2, 0, 0 )
 		fgSizer1.SetFlexibleDirection( wx.BOTH )
@@ -185,17 +186,23 @@ class StatsDialog ( wx.Frame ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"MSD Statistics: t-tests", pos = wx.DefaultPosition, size = wx.Size( 500,360 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 		
 		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		self.SetBackgroundColour( wx.Colour( 247, 247, 247 ) )
 		
 		bSizer1 = wx.BoxSizer( wx.VERTICAL )
+		
+		bSizer4 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Group Statistics", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText18.Wrap( -1 )
 		self.m_staticText18.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
 		
-		bSizer1.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
+		bSizer4.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
 		self.m_staticline1 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		bSizer1.Add( self.m_staticline1, 0, wx.EXPAND |wx.ALL, 5 )
+		bSizer4.Add( self.m_staticline1, 0, wx.EXPAND |wx.ALL, 5 )
+		
+		
+		bSizer1.Add( bSizer4, 1, wx.EXPAND, 5 )
 		
 		fgSizer2 = wx.FlexGridSizer( 0, 4, 0, 0 )
 		fgSizer2.SetFlexibleDirection( wx.BOTH )

@@ -6,7 +6,7 @@ Compiles MSD data from directories - expects input format:
 STIM OR NOSTIM
  | -- cell1                                         <-- uses this name as cell ID
         | -- celldata
-                 | -- Filtered_AllROI-MSD.csv files    <-- this name must match (generated from histogramLogD)
+                 | -- Filtered_MSD.csv files    <-- this name must match (generated from histogramLogD)
 
 and compiles to top level as <prefix>_AllMSD.csv where prefix can be STIM, NOSTIM (example)
 
@@ -24,16 +24,17 @@ Created on Tue Sep 5 2017
 
 import argparse
 from os import R_OK, access, walk, sep
-from os.path import join, expanduser
-from glob import glob
+from os.path import join, expanduser, commonpath
+from glob import glob, iglob
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
+import re
 import matplotlib.pyplot as plt
 from configobj import ConfigObj
 
 class CompareMSD():
-    def __init__(self, inputdir, outputdir,prefix='', configfile=None):
+    def __init__(self, inputdir, outputdir,prefix, expt,configfile=None):
         self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
@@ -46,44 +47,96 @@ class CompareMSD():
         self.numcells = 0
         self.inputdir = inputdir
         self.outputdir = outputdir
-        if len(prefix) > 0:
-            prefix = prefix + "_"
         self.prefix = prefix
-        self.compiledfile = join(outputdir,prefix + self.msdcompare)
+        self.expt = expt
+        self.compiledfile = join(outputdir, expt + "_" + prefix + "_" + self.msdcompare)
         self.compiled = pd.DataFrame()
+        # TODO: Testing Only for filenames:
+        self.msdfile = 'AllROI-D.txt'
 
     def __loadConfig(self, configfile=None):
         if configfile is not None:
             try:
-                access(configfile, R_OK)
-                config = ConfigObj(configfile, encoding=self.encoding)
-                self.msdfile = config['FILTERED_MSD']
-                self.msdcompare = config['AVGMSD_FILENAME']
-                self.msdpoints = int(config['MSD_POINTS'])
-                self.timeint = float(config['TIME_INTERVAL'])
-                print("MSD: Config file loaded")
+                if access(configfile, R_OK):
+                    config = ConfigObj(configfile, encoding=self.encoding)
+                    self.msdfile = config['FILTERED_MSD']
+                    self.msdcompare = config['AVGMSD_FILENAME']
+                    self.msdpoints = int(config['MSD_POINTS'])
+                    self.timeint = float(config['TIME_INTERVAL'])
+                    print("MSD: Config file loaded")
+                else:
+                    raise IOError("Cannot access Config file")
             except:
-                raise IOError
+                raise IOError("Cannot load Config file")
 
+    def deduplicate(self,itemlist):
+        """
+        Checks for duplicated column names and appends a number
+        :param itemlist:
+        :return:
+        """
+        u, indices = np.unique(itemlist, return_index=True)
+        duplicates = [x for x in range(0, len(itemlist)) if x not in indices]
+        i=0
+        for d in duplicates:
+            itemlist[d] = itemlist[d] + "_" + str(i)
+            i = i + 1
 
+        return itemlist
 
-    def compile(self):
-        #get list of files to compile
-        if access(self.inputdir, R_OK):
-            #result = glob[join(self.inputdir,self.msdfile)]
-            result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.msdfile))]
-            print(result)
+    def getSelectedFiles(self,inputdir, datafile, searchtext=None):
+        # get list of files to compile
+        allfiles = []
+        if access(inputdir, R_OK):
+            allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
+            print("Files Found: ", len(allfiles))
+            if len(allfiles) > 0:
+                # Filter on searchtext
+                if searchtext is not None:
+                    allfiles = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+                    if len(allfiles) == 0:
+                        msg = "No matching files found: %s" % searchtext
+                        raise IOError(msg)
+            else:
+                msg = "No files found"
+                raise IOError(msg)
+        else:
+            msg = "ERROR: Unable to access inputdir: %s" % inputdir
+            raise IOError(msg)
+        return allfiles
+
+    def compile(self, selectedfiles=None):
+        try:
+            searchtext = self.expt + self.prefix
+            if selectedfiles is None:
+                result = self.getSelectedFiles(self.inputdir,self.msdfile,searchtext)
+                base = self.inputdir.split(sep)
+            else:
+                result = selectedfiles
+                base = commonpath(result)
             self.numcells = len(result)
-            base = self.inputdir.split(sep)
+            print("Files Selected: ", self.numcells)
+            # Compile all selected files
+
             timepoints = [str(x) for x in range(1,self.msdpoints + 1)]
             cols = ['Cell','Stats'] + timepoints
             data = pd.DataFrame(columns=cols, dtype=float)
             ctr = 0
+            # TODO: Test with dummy file
+            f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Filtered_MSD.csv'
+
+            n = 1
             for f in result:
-                df = pd.read_csv(f)
-                #Get cellname
+                df = pd.read_csv(f0)
+                #Generate unique cell ID
                 cells = f.split(sep)
-                cell = cells[len(base)]
+                #cell = cells[len(base)]
+                if len(base) > 0:
+                    cell = "_".join(cells[len(base):len(base)+3])
+                else:
+                    cellid = '_c{0:03d}'.format(n)
+                    cell = "_".join(searchtext,cellid)
+                    n = n + 1
                 stats=OrderedDict({'avgs': [cell,'Mean'],
                        'counts': [cell,'Count'],
                        'stds':[cell,'Std'],
@@ -127,14 +180,15 @@ class CompareMSD():
 
             #Sort by Stats
             df1 = data.sort_values(by=['Stats', 'Cell'])
-
+            self.compiled = df1
+            #Write to CSV
             df1.to_csv(self.compiledfile, index=False)
             print("Data compiled to " + self.compiledfile)
-            self.compiled = df1
-            return self.compiledfile
-        else:
-            msg = "ERROR: Unable to access inputdir: %s" % self.inputdir
-            raise IOError(msg)
+
+        except IOError as e:
+            raise e
+        return self.compiledfile
+
 
 
     def showPlotsWithAreas(self,ax=None):
@@ -193,24 +247,22 @@ if __name__ == "__main__":
     import sys
     parser = argparse.ArgumentParser(prog=sys.argv[0],
                                      description='''\
-            Compiles histogram data from a directory (recursively looks for Histogram_log10D.csv) into an output file with stats
+            Compiles histogram data from a directory (recursively looks for Filtered_MSD.csv) into an output file with stats
 
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
-    parser.add_argument('--outputfile', action='store', help='Generated data file', default="Avg_MSD.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
-    parser.add_argument('--threshold', action='store', help='Threshold between mobile and immobile', default="-1.6")
+    parser.add_argument('--expt', action='store', help='ProteinCelltype as shown on directory names', default="ProteinCelltype")
     parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
     args = parser.parse_args()
 
     print("Loading Input from :", args.filedir)
 
     try:
-        fmsd = CompareMSD(args.filedir,args.outputdir,args.prefix,args.config)
+        fmsd = CompareMSD(args.filedir,args.outputdir,args.prefix,args.expt,args.config)
         fmsd.compile()
-        #fmsd.showPlots()
-        #fmsd.showAvgPlot()
+
         # Set the figure
         fig = plt.figure(figsize=(10, 5))
         axes1 = plt.subplot(121)

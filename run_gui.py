@@ -86,6 +86,13 @@ class StatsApp(StatsDialog):
         super(StatsApp, self).__init__(parent)
         self.outputdir = parent.outputdir
         self.configfile = parent.configfile
+
+        # Set the panel
+        self.text = wx.TextCtrl(self, style=wx.TE_MULTILINE)
+        self.text.AppendText("Drag and drop some files here!")
+        dropTarget = MyFileDropTarget(self.text)
+        self.text.SetDropTarget(dropTarget)
+
         self.Bind(wx.EVT_BUTTON, self.OnRatiofile1, self.m_btnGp1)
         self.Bind(wx.EVT_BUTTON, self.OnRatiofile2, self.m_btnGp2)
         self.Bind(wx.EVT_BUTTON, self.OnRun, self.m_btnRatioRun)
@@ -127,6 +134,14 @@ class StatsApp(StatsDialog):
     def OnClose(self, e):
         self.Close()
 
+class MyFileDropTarget(wx.FileDropTarget):
+    def __init__(self, target):
+        super(MyFileDropTarget, self).__init__()
+        self.target = target
+
+    def OnDropFiles(self, x, y, filenames):
+        for fname in filenames:
+            self.target.AppendText(fname)
 
 ####Main GUI
 class ScriptController(wx.Frame):
