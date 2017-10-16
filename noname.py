@@ -625,7 +625,7 @@ class WelcomePanel ( wx.Panel ):
 		bSizer18.Add( self.m_staticline2, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_richText1 = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_READONLY|wx.NO_BORDER|wx.VSCROLL|wx.WANTS_CHARS, wx.DefaultValidator, u"welcome" )
-		bSizer18.Add( self.m_richText1, 1, wx.EXPAND |wx.ALL, 5 )
+		bSizer18.Add( self.m_richText1, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		self.SetSizer( bSizer18 )
