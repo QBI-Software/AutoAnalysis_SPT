@@ -1,48 +1,208 @@
-# -*- coding: utf-8 -*-
-
-# center.py
-
+#import images
+import logging
 import time
 from glob import glob
 from multiprocessing import Manager, Process
-from threading import Thread
 from os import access, R_OK, walk, mkdir
-from os.path import join, expanduser, dirname, exists, split
-import logging
+from os.path import join, expanduser, dirname, exists
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import wx
 from configobj import ConfigObj
-from tabulate import tabulate
-
+from collections import OrderedDict
+from msdapp.guicontrollers import MSDController
 from msdapp.msd.batchCompareMSD import CompareMSD
 from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
-from msdapp.msd.msdStats import MSDStats
-from noname import AppConfiguration, StatsDialog
-
-APP_EXIT = 1
+from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
 
 
-############Directory structure for Data files
-# Y:\Ravi\RAVI PHD\3rd year\analysis\170525\170525M18eos\cell1 nostim\edited\cell1\m18MEOSCELL1NOSTIM-2...m18MEOSCELL1NOSTIM-3
-############Config dialog
+########################################################################
+class HomePanel(WelcomePanel):
+    """
+    This will be the first notebook tab
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, parent):
+        """"""
+
+        super(HomePanel, self).__init__(parent)
+        self.m_richText1.AddParagraph("Welcome to the MSD Automated Analysis App")
+        self.m_richText1.AddParagraph(self.__loadContent())
+        self.m_richText1.AddParagraph("Any queries, contact Liz Cooper-Williams e.cooperwilliams@uq.edu.au\nCopyright (2017) Apache license v2 (https://github.com/QBI-Software/MSDAnalysis)")
+
+    def __loadContent(self):
+        """
+        Welcome text
+        :return:
+        """
+        content = '''
+        To process your files: 
+            1. Check the Configuration options, particularly the column names and filenames used for matching
+            2. Select Files to process either with AutoFind from a top level and/or Drag and Drop
+            3. Select which processes to run and monitor their progress
+            4. Run a statistical comparison of two groups after processing files have been generated
+       
+        '''
+        return content
+
+########################################################################
+class MSDConfig(ConfigPanel):
+    def __init__(self, parent):
+        super(MSDConfig, self).__init__(parent)
+        self.encoding = 'ISO-8859-1'
+        if parent.loaded:
+            self.__loadValues(parent)
+
+    def __loadValues(self, parent):
+        print("Config loaded")
+        self.m_textCtrl15.SetValue(parent.datafile)
+        self.m_textCtrl16.SetValue(parent.msdfile)
+        self.m_textCtrl1.SetValue(parent.histofile)
+        self.m_textCtrl2.SetValue(parent.filteredfname)
+        self.m_textCtrl3.SetValue(parent.filtered_msd)
+        self.m_textCtrl4.SetValue(parent.msdpoints)
+        self.m_textCtrl5.SetValue(parent.timeint)
+        self.m_textCtrl8.SetValue(parent.diffcolumn)
+        self.m_textCtrl9.SetValue(parent.logcolumn)
+        self.m_textCtrl10.SetValue(parent.minlimit)
+        self.m_textCtrl11.SetValue(parent.maxlimit)
+        self.m_textCtrl12.SetValue(parent.binwidth)
+        self.m_textCtrl13.SetValue(parent.threshold)
+        self.m_textCtrl161.SetValue(parent.allstats)
+        self.m_textCtrl18.SetValue(parent.msdcompare)
+        self.m_tcGroup1.SetValue(parent.group1)
+        self.m_tcGroup2.SetValue(parent.group2)
+
+    def OnSaveConfig(self, event):
+        print("In config - onsave - saving to cfg file")
+        config = ConfigObj()
+        config.filename = join(expanduser('~'), '.msdcfg')
+        config.encoding = self.encoding
+        config['DATA_FILENAME'] = self.m_textCtrl15.GetValue()
+        config['MSD_FILENAME'] = self.m_textCtrl16.GetValue()
+        config['HISTOGRAM_FILENAME'] = self.m_textCtrl1.GetValue()
+        config['FILTERED_FILENAME'] = self.m_textCtrl2.GetValue()
+        config['FILTERED_MSD'] = self.m_textCtrl3.GetValue()
+        config['LOG_COLUMN'] = self.m_textCtrl9.GetValue()
+        config['DIFF_COLUMN'] = self.m_textCtrl8.GetValue()
+        config['MSD_POINTS'] = self.m_textCtrl4.GetValue()
+        config['MINLIMIT'] = self.m_textCtrl10.GetValue()
+        config['MAXLIMIT'] = self.m_textCtrl11.GetValue()
+        config['TIME_INTERVAL'] = self.m_textCtrl5.GetValue()
+        config['BINWIDTH'] = self.m_textCtrl12.GetValue()
+        config['THRESHOLD'] = self.m_textCtrl13.GetValue()
+        config['ALLSTATS_FILENAME'] = self.m_textCtrl161.GetValue()
+        config['AVGMSD_FILENAME'] = self.m_textCtrl18.GetValue()
+        config['GROUP1'] = self.m_tcGroup1.GetValue()
+        config['GROUP2'] = self.m_tcGroup2.GetValue()
+        config.write()
+        event.Skip()
+
+    def OnLoadConfig(self,event):
+        print("Load From Config dialog")
+        openFileDialog = wx.FileDialog(self, "Open config file", "", "", "Config files (*.cfg)|*",
+                                       wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_CHANGE_DIR)
+        openFileDialog.SetDirectory(expanduser('~'))
+        if openFileDialog.ShowModal() == wx.ID_OK:
+            self.configfile = str(openFileDialog.GetPath())
+            self.loaded = self.__loadConfig()
+            self.statusbar.SetStatusText("Config Loaded: %s\n" % self.configfile)
+            self.Warn("Save new Config from Config->Edit->Save")
+        openFileDialog.Destroy()
+
+########################################################################
+class MyFileDropTarget(wx.FileDropTarget):
+    def __init__(self, target):
+        super(MyFileDropTarget, self).__init__()
+        self.target = target
+
+    def OnDropFiles(self, x, y, filenames):
+        for fname in filenames:
+            self.target.AppendItem([True,fname])
+        return len(filenames)
+
+########################################################################
+class FileSelectPanel(FilesPanel):
+    def __init__(self,parent):
+        super(FileSelectPanel, self).__init__(parent)
+        self.m_dataViewListCtrl1.GetColumn(0).SetMinWidth(20)
+        self.m_dataViewListCtrl1.GetColumn(1).SetMinWidth(200)
+
+        self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
+        self.m_tcDragdrop.SetDropTarget(self.filedrop)
+        self.datafile = parent.datafile
+
+    def OnInputdir(self, e):
+        """ Open a file"""
+        dlg = wx.DirDialog(self, "Choose a directory containing input files")
+        if dlg.ShowModal() == wx.ID_OK:
+            self.inputdir = str(dlg.GetPath())
+            #self.statusbar.SetStatusText("Loaded: %s" % self.inputdir)
+            self.txtInputdir.SetValue(self.inputdir)
+        dlg.Destroy()
+
+    def OnOutputdir(self, e):
+        """ Open a file"""
+        dlg = wx.DirDialog(self, "Choose a directory for output files")
+        if dlg.ShowModal() == wx.ID_OK:
+            self.outputdir = str(dlg.GetPath())
+            #self.statusbar.SetStatusText("Loaded: %s\n" % self.outputdir)
+            self.txtOutputdir.SetValue(self.outputdir)
+        dlg.Destroy()
+
+    def OnAutofind(self, event):
+        filenames = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
+        for fname in filenames:
+            self.m_dataViewListCtrl1.AppendItem([True,fname])
+        print("Total Files loaded: ", self.m_dataViewListCtrl1.GetItemCount())
+
+    def OnSelectall(self, event):
+        for i in range(0, self.m_dataViewListCtrl1.GetItemCount()):
+            self.m_dataViewListCtrl1.SetToggleValue(event.GetSelection(),i,0)
+        print("Toggled selections to: ", event.GetSelection())
+
+    def OnClearlist(self, event):
+        print("Clear items in list")
+        self.m_dataViewListCtrl1.DeleteAllItems()
+
+class ProcessRunPanel(ProcessPanel):
+    def __init__(self, parent):
+        super(ProcessRunPanel, self).__init__(parent)
+        self.processes = list(parent.processes.values())
+        #self.m_sProcess.AppendItems(self.processes)
 
 
-####Main GUI
-class ScriptController(wx.Frame):
-    def __init__(self, parent, title):
-        super(ScriptController, self).__init__(parent, title=title, size=(600, 800))
+########################################################################
+class AppMain(wx.Listbook):
+    """"""
+
+    # ----------------------------------------------------------------------
+
+    def __init__(self, parent):
+        """Constructor"""
+        wx.Listbook.__init__(self, parent, wx.ID_ANY, style=
+        wx.BK_DEFAULT
+                             # wx.BK_TOP
+                             # wx.BK_BOTTOM
+                             # wx.BK_LEFT
+                             # wx.BK_RIGHT
+                             )
+
         logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
-        self.configfile = join(expanduser('~'), '.msdcfg')
+        self.configfile = "msdapp\\msd.cfg" #join(expanduser('~'), '.msdcfg')
         self.loaded = self.__loadConfig()
         if self.loaded:
             self.prefixes = [self.group1, self.group2]
         else:
-            self.prefixes = ['stim','nostim'] #default
+            self.prefixes = ['stim', 'nostim']  # default
+        self.processes =OrderedDict({'filter':'Filter data','histo':'Generate Histograms','stats':'Compile All Histograms','msd':'Compile All MSD'})
+        self.controller = MSDController(self.configfile)
         self.InitUI()
         self.Centre()
         self.Show()
@@ -77,154 +237,51 @@ class ScriptController(wx.Frame):
         return False
 
     def InitUI(self):
-        menubar = wx.MenuBar()
-        fileMenu = wx.Menu()
-        fileMenu.Append(wx.ID_NEW, '&New\tCtrl+N')
-        fileMenu.Append(wx.ID_OPEN, '&Open\tCtrl+O')
-        fileMenu.Append(wx.ID_SAVE, '&Save\tCtrl+S')
-        fileMenu.AppendSeparator()
-        # menu_quit = wx.MenuItem(fileMenu, APP_EXIT, '&Quit\tCtrl+Q')
-        fitem = fileMenu.Append(wx.ID_EXIT, '&Quit\tCtrl+Q', 'Quit application')
+        # make an image list using the LBXX images
+        # il = wx.ImageList(32, 32)
+        # # for x in [wx.ArtProvider.]:
+        # #     obj = getattr(images, 'LB%02d' % (x + 1))
+        # #     bmp = obj.GetBitmap()
+        # #     il.Add(bmp)
+        # bmp = wx.ArtProvider.GetBitmap(wx.ART_HELP_SETTINGS, wx.ART_FRAME_ICON, (16, 16))
+        # il.Add(bmp)
+        # bmp = wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_FRAME_ICON, (16, 16))
+        # il.Add(bmp)
+        # bmp = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_FRAME_ICON, (16, 16))
+        # il.Add(bmp)
+        # self.AssignImageList(il)
 
-        configMenu = wx.Menu()
-        menu_load = wx.MenuItem(configMenu, wx.ID_ANY, '&Load\tCtrl+L')
-        menu_config = wx.MenuItem(configMenu, wx.ID_ANY, '&Edit\tCtrl+E')
-        configMenu.Append(menu_load)
-        configMenu.Append(menu_config)
+        pages = [(HomePanel(self),"Welcome"),
+                 (MSDConfig(self), "Configure"),
+                 (FileSelectPanel(self), "Select Files"),
+                 (ProcessPanel(self), "Run Processes"),
+                 (ComparePanel(self),"Compare Groups")]
+        imID = 0
+        for page, label in pages:
+            #self.AddPage(page, label, imageId=imID)
+            self.AddPage(page, label)
+            imID += 1
 
-        menubar.Append(fileMenu, '&File')
-        menubar.Append(configMenu, '&Config')
-        self.SetMenuBar(menubar)
+        self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGED, self.OnPageChanged)
+        self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGING, self.OnPageChanging)
 
-        self.Bind(wx.EVT_MENU, self.OnQuit, fitem)
-        self.Bind(wx.EVT_MENU, self.OnConfig, menu_config)
-        self.Bind(wx.EVT_MENU, self.OnLoadConfig, menu_load)
-        self.statusbar = self.CreateStatusBar()
-        self.statusbar.SetStatusText('Ready')
+    # ----------------------------------------------------------------------
+    def OnPageChanged(self, event):
+        old = event.GetOldSelection()
+        new = event.GetSelection()
+        sel = self.GetSelection()
+        msg = 'OnPageChanged,  old:%d, new:%d, sel:%d\n' % (old, new, sel)
+        print(msg)
+        event.Skip()
 
-        ######Main content
-        panel = wx.Panel(self)
-        ##Fonts
-        font_header = wx.Font(14, wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
-        font_description = wx.Font(10, wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        #####Input files
-        hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        self.btnInputdir = wx.Button(panel, label='Top level input directory')
-        hbox1.Add(self.btnInputdir, flag=wx.RIGHT, border=8)
-        self.txtInputdir = wx.TextCtrl(panel)
-        hbox1.Add(self.txtInputdir, proportion=1)
-        vbox.Add(hbox1, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
-
-        vbox.Add((-1, 10))
-        #####Target directory names - protein
-        hbox1d = wx.BoxSizer(wx.HORIZONTAL)
-        st1d = wx.StaticText(panel, label='Search for directory names with:')
-        st1d.SetFont(font_description)
-        hbox1d.Add(st1d)
-        vbox.Add(hbox1d, flag=wx.LEFT | wx.TOP, border=10)
-        vbox.Add((-1, 10))
-        hbox1a = wx.BoxSizer(wx.HORIZONTAL)
-        st1a = wx.StaticText(panel, wx.ID_ANY, u"Protein", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.txtProtein = wx.TextCtrl(panel)
-        st1c = wx.StaticText(panel, wx.ID_ANY, u"Celltype", wx.DefaultPosition, wx.DefaultSize, 0)
-        self.txtCelltype = wx.TextCtrl(panel)
-        hbox1a.AddMany([st1a, self.txtProtein, (5, 5), st1c, self.txtCelltype])
-        vbox.Add(hbox1a, flag=wx.ALIGN_CENTER_VERTICAL | wx.ALL, border=10)
-        vbox.Add((-1, 10))
-
-        ####Output directory
-        hbox1b = wx.BoxSizer(wx.HORIZONTAL)
-        self.btnOutputdir = wx.Button(panel, label='Output directory')
-        hbox1b.Add(self.btnOutputdir, flag=wx.RIGHT, border=8)
-        self.txtOutputdir = wx.TextCtrl(panel)
-        hbox1b.Add(self.txtOutputdir, proportion=1)
-        vbox.Add(hbox1b, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.TOP, border=10)
-
-        vbox.Add((-1, 10))
-        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        st2 = wx.StaticText(panel, label='Processing scripts should run in sequence')
-        st2.SetFont(font_description)
-        hbox2.Add(st2)
-
-        vbox.Add(hbox2, flag=wx.LEFT | wx.TOP, border=10)
-
-        vbox.Add((-1, 10))
-        #### Sequence scripts buttons
-        grid = wx.FlexGridSizer(5, 2, 10, 10)
-        self.cb1 = wx.CheckBox(panel, label='Filter log10 D')
-        self.cb2 = wx.CheckBox(panel, label='Histogram log10 D')
-        self.cb3 = wx.CheckBox(panel, label='Batch Histogram Stats')
-        self.cb4 = wx.CheckBox(panel, label='Batch Compare MSD')
-        # cb5 = wx.CheckBox(panel, label='Ratio Stats')
-
-        st_cb = wx.StaticText(panel, label='Script')
-        st_cb.SetFont(font_header)
-        st_opt = wx.StaticText(panel, label='Processing')
-        st_opt.SetFont(font_header)
-
-        vbox.Add((-1, 10))
-        hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox5 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox6 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox7 = wx.BoxSizer(wx.HORIZONTAL)
-        self.result_filter = wx.StaticText(panel, label='1')
-        self.gauge_filter = wx.Gauge(panel)
-        self.result_histo = wx.StaticText(panel, label='2')
-        self.gauge_histo = wx.Gauge(panel)
-        self.result_stats = wx.StaticText(panel, label='3')
-        self.gauge_stats = wx.Gauge(panel)
-        self.result_msd = wx.StaticText(panel, label='4')
-        self.gauge_msd = wx.Gauge(panel)
-        flags = wx.EXPAND | wx.ALIGN_CENTER_HORIZONTAL
-        hbox4.AddMany([(self.result_filter, flags), (5, 5), (self.gauge_filter, 0, flags, 5)])
-        hbox5.AddMany([(self.result_histo, flags), (5, 5), (self.gauge_histo, 0, flags, 5)])
-        hbox6.AddMany([(self.result_stats, flags), (5, 5), (self.gauge_stats, 0, flags, 5)])
-        hbox7.AddMany([(self.result_msd, flags), (5, 5), (self.gauge_msd, 0, flags, 5)])
-
-        grid.AddMany([(st_cb, 0, wx.TOP | wx.LEFT, 12),
-                      (st_opt, 0, wx.TOP | wx.RIGHT, 12),
-                      (self.cb1, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 9),
-                      (hbox4, 0, wx.ALIGN_LEFT, 9),
-                      (self.cb2, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 9),
-                      (hbox5, 0, wx.ALIGN_LEFT, 9),
-                      (self.cb3, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 9),
-                      (hbox6, 0, wx.ALIGN_LEFT, 9),
-                      (self.cb4, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 9),
-                      (hbox7, 0, wx.ALIGN_LEFT, 9)
-                      ])
-        grid.AddGrowableCol(1, 1)
-        vbox.Add(grid, flag=wx.LEFT, border=10)
-
-        ### OUTPUT panel
-        vbox.Add((-1, 25))
-
-        hbox9 = wx.BoxSizer(wx.HORIZONTAL)
-        self.resultbox = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
-        hbox9.Add(self.resultbox, proportion=1, flag=wx.EXPAND)
-        vbox.Add(hbox9, proportion=1, flag=wx.LEFT | wx.RIGHT | wx.EXPAND,
-                 border=10)
-
-        vbox.Add((-1, 25))
-
-        hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
-        btnRatio = wx.Button(panel, label='Compare STIM vs NOSTIM', size=(200, 30))
-        hbox_btns.Add(btnRatio, flag=wx.LEFT, border=5)
-        btnRun = wx.Button(panel, label='Run selected', size=(100, 30))
-        hbox_btns.Add(btnRun)
-        btn2 = wx.Button(panel, label='Close', size=(70, 30))
-        hbox_btns.Add(btn2, flag=wx.LEFT | wx.BOTTOM, border=5)
-        vbox.Add(hbox_btns, flag=wx.ALIGN_RIGHT | wx.RIGHT, border=10)
-
-        panel.SetSizer(vbox)
-        # Actions
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-        self.Bind(wx.EVT_BUTTON, self.OnCloseWindow, btn2)
-        self.Bind(wx.EVT_BUTTON, self.OnRunScripts, btnRun)
-        self.Bind(wx.EVT_BUTTON, self.OnInputdir, self.btnInputdir)
-        self.Bind(wx.EVT_BUTTON, self.OnOutputdir, self.btnOutputdir)
-        self.Bind(wx.EVT_BUTTON, self.OnRatios, btnRatio)
-
+    # ----------------------------------------------------------------------
+    def OnPageChanging(self, event):
+        old = event.GetOldSelection()
+        new = event.GetSelection()
+        sel = self.GetSelection()
+        msg = 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
+        print(msg)
+        event.Skip()
     def Warn(self, message, caption='Warning!'):
         dlg = wx.MessageDialog(self, message, caption, wx.OK | wx.ICON_WARNING)
         dlg.ShowModal()
@@ -464,35 +521,10 @@ class ScriptController(wx.Frame):
 
         self.ShowFeedBack(False, type)
 
-    def OnInputdir(self, e):
-        """ Open a file"""
-        dlg = wx.DirDialog(self, "Choose a directory containing input files")
-        if dlg.ShowModal() == wx.ID_OK:
-            self.inputdir = str(dlg.GetPath())
-            self.statusbar.SetStatusText("Loaded: %s" % self.inputdir)
-            self.txtInputdir.SetValue(self.inputdir)
-        dlg.Destroy()
 
-    def OnOutputdir(self, e):
-        """ Open a file"""
-        dlg = wx.DirDialog(self, "Choose a directory for output files")
-        if dlg.ShowModal() == wx.ID_OK:
-            self.outputdir = str(dlg.GetPath())
-            self.statusbar.SetStatusText("Loaded: %s\n" % self.outputdir)
-            self.txtOutputdir.SetValue(self.outputdir)
-        dlg.Destroy()
 
     def OnQuit(self, e):
         self.Close()
-
-    def OnConfig(self, e):
-        configdlg = MSDConfig(self)
-        self.Bind(wx.EVT_BUTTON, self.OnSaveConfig, configdlg.btnSave)
-        configdlg.Show(True)
-
-    def OnRatios(self, e):
-        dlg = StatsApp(self)
-        dlg.Show(True)
 
     def OnCloseWindow(self, e):
 
@@ -506,36 +538,32 @@ class ScriptController(wx.Frame):
         else:
             e.Veto()
 
-    ###Propagated from config dialog
-    def OnLoadConfig(self, event):
-        print("Load From Config dialog")
-        openFileDialog = wx.FileDialog(self, "Open config file", "", "", "Config files (*.cfg)|*",
-                                       wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_CHANGE_DIR)
-        openFileDialog.SetDirectory(expanduser('~'))
-        if openFileDialog.ShowModal() == wx.ID_OK:
-            self.configfile = str(openFileDialog.GetPath())
-            self.loaded = self.__loadConfig()
-            self.statusbar.SetStatusText("Config Loaded: %s\n" % self.configfile)
-            self.Warn("Save new Config from Config->Edit->Save")
-        openFileDialog.Destroy()
+########################################################################
+class MSDFrame(wx.Frame):
+    """
+    Frame that holds all other widgets
+    """
 
-    def OnSaveConfig(self, event):
-        print("Save From Config dialog")
-        self.configfile = join(expanduser('~'), '.msdcfg')
-        self.loaded = self.__loadConfig()
-        if self.loaded:
-            self.statusbar.SetStatusText("Config saved")
-            # event.Veto()
-        else:
-            self.statusbar.SetStatusText("ERROR: Save Config failed")
+    # ----------------------------------------------------------------------
+    def __init__(self):
+        """Constructor"""
+        wx.Frame.__init__(self, None, wx.ID_ANY,
+                          "MSD Autoanalysis",
+                          size=(700, 400)
+                          )
+        panel = wx.Panel(self)
+
+        notebook = AppMain(panel)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(notebook, 1, wx.ALL | wx.EXPAND, 5)
+        panel.SetSizer(sizer)
+        self.Layout()
+
+        self.Show()
 
 
-def main():
+# ----------------------------------------------------------------------
+if __name__ == "__main__":
     app = wx.App()
-    ScriptController(None, title='MSD Analysis')
+    frame = MSDFrame()
     app.MainLoop()
-
-
-####################################################################
-if __name__ == '__main__':
-    main()
