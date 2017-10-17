@@ -22,25 +22,27 @@ from msdapp.msd.histogramLogD import HistogramLogD
 from msdapp.msd.msdStats import MSDStats
 from noname import AppConfiguration, StatsDialog
 
+
 class MSDController():
     def __init__(self, configfile):
-        self.processes = [{'caption': 'Home', 'href': 'index', 'description': 'Home page', 'files': ''},
-                          {'caption': '1. Filter MSD', 'href': 'filter',
-                           'description': 'Filters log10 diffusion coefficient (log10D) for input files',
-                           'files': 'AllROI-D.txt, AllROI-MSD.txt'},
-                          {'caption': '2. Histogram LogD', 'href': 'histogram',
-                           'description': 'Create frequency histogram data for individual cells and all cells',
-                           'files': 'Filtered_AllROI-D.txt'},
-                          {'caption': '3. Compare MSD', 'href': 'compare',
-                           'description': 'Compiles MSD data from cell directories (batch)',
-                           'files': 'Filtered_AllROI-MSD.csv files'},
-                          {'caption': '4. Histogram Stats', 'href': 'stats',
-                           'description': 'Compiles histogram data from cell directories (batch)',
-                           'files': 'Histogram_log10D.csv files'},
-                          {'caption': '5. Ratio Stats', 'href': 'ratio',
-                           'description': 'Compares mobile/immobile ratios for two groups',
-                           'files': 'STIM_ratios.csv, NOSTIM_ratios.csv'}
-                          ]
+        self.processes = [
+            {'caption': '1. Filter Data', 'href': 'filter',
+             'description': 'Filter log10 diffusion coefficient (log10D) and corresponding MSD data between min and max range',
+             'files': 'DATA_FILENAME, MSD_FILENAME',
+             'filesout': 'FILTERED_FILENAME, FILTERED_MSD'},
+            {'caption': '2. Generate Histograms', 'href': 'histogram',
+             'description': 'Generate relative frequency histograms of Log10 D data for individual cells and all cells',
+             'files': 'FILTERED_FILENAME',
+             'filesout': 'HISTOGRAM_FILENAME'},
+            {'caption': '3. Histogram Stats', 'href': 'stats',
+             'description': 'Compiles histogram data from all cell directories (batch) into one file in output directory with statistics',
+             'files': 'HISTOGRAM_FILENAME',
+             'filesout': 'ALLSTATS_FILENAME'},
+            {'caption': '4. Compile MSD', 'href': 'compare',
+             'description': 'Compiles MSD data from all cell directories (batch) into one file in output directory with statistics',
+             'files': 'FILTERED_MSD',
+             'filesout': 'AVGMSD_FILENAME'}
+        ]
         self.configfile = configfile
         self.loaded = self.__loadConfig()
 
@@ -100,9 +102,9 @@ class MSDController():
         :return:
         """
         type = 'filter'
-        #self.ShowFeedBack(True, type)
+        # self.ShowFeedBack(True, type)
         # find datafile - assume same directory for msd file
-        #result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
+        # result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
 
         if len(filenames) > 0:
             total_tasks = len(filenames)
@@ -119,25 +121,23 @@ class MSDController():
                 p.start()
 
             for p in tasks:
-                #self.gauge_filter.SetFocus()
+                # self.gauge_filter.SetFocus()
                 while p.is_alive():
                     time.sleep(1)
                     self.count = self.count + 1
-                    #self.gauge_filter.SetValue(self.count)
+                    # self.gauge_filter.SetValue(self.count)
                 p.join()
 
             headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
             results = pd.DataFrame.from_dict(q, orient='index')
             results.columns = headers
-            # for i, row in results.iterrows():
-            #     self.resultbox.AppendText("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s\n" % (
-            #         i, row['Filtered'], row['Total'], row['Data'], row['MSD']))
-            # self.result_filter.SetLabel("Complete")
+
+            return results
 
         else:
             raise ValueError("Cannot find any datafiles: %s" % self.datafile)
 
-        #self.ShowFeedBack(False, type)
+            # self.ShowFeedBack(False, type)
 
     def RunHistogram(self, event):
         type = 'histo'

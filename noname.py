@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*- 
 
 ###########################################################################
-## Python code generated with wxFormBuilder (version Dec 21 2016)
+## Python code generated with wxFormBuilder (version Jun 17 2015)
 ## http://www.wxformbuilder.org/
 ##
 ## PLEASE DO "NOT" EDIT THIS FILE!
@@ -30,7 +30,7 @@ class AppConfiguration ( wx.Frame ):
 		
 		self.m_Title = wx.StaticText( self, wx.ID_ANY, u"MSD Config params", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
 		self.m_Title.Wrap( -1 )
-		self.m_Title.SetFont( wx.Font( 12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
+		self.m_Title.SetFont( wx.Font( 12, 70, 90, 90, False, wx.EmptyString ) )
 		
 		fgSizer1.Add( self.m_Title, 0, wx.ALL|wx.EXPAND, 5 )
 		
@@ -196,7 +196,7 @@ class StatsDialog ( wx.Frame ):
 		
 		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Group Statistics", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText18.Wrap( -1 )
-		self.m_staticText18.SetFont( wx.Font( 12, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
+		self.m_staticText18.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
 		
 		bSizer4.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
@@ -283,7 +283,7 @@ class StatsDialog ( wx.Frame ):
 class ConfigPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 500,642 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( -1,-1 ), style = wx.TAB_TRAVERSAL )
 		
 		fgSizer1 = wx.FlexGridSizer( 0, 2, 0, 0 )
 		fgSizer1.SetFlexibleDirection( wx.BOTH )
@@ -291,13 +291,13 @@ class ConfigPanel ( wx.Panel ):
 		
 		self.m_Title = wx.StaticText( self, wx.ID_ANY, u"Configuration", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
 		self.m_Title.Wrap( -1 )
-		self.m_Title.SetFont( wx.Font( 12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
+		self.m_Title.SetFont( wx.Font( 12, 70, 90, 92, False, wx.EmptyString ) )
 		
 		fgSizer1.Add( self.m_Title, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_staticText16 = wx.StaticText( self, wx.ID_ANY, u"Settings for processing scripts", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText16.Wrap( -1 )
-		self.m_staticText16.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
+		self.m_staticText16.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 93, 90, False, wx.EmptyString ) )
 		
 		fgSizer1.Add( self.m_staticText16, 0, wx.ALL, 5 )
 		
@@ -440,6 +440,7 @@ class ConfigPanel ( wx.Panel ):
 		
 		self.SetSizer( fgSizer1 )
 		self.Layout()
+		fgSizer1.Fit( self )
 		
 		# Connect Events
 		self.btnLoadConfig.Bind( wx.EVT_BUTTON, self.OnLoadConfig )
@@ -464,13 +465,13 @@ class ConfigPanel ( wx.Panel ):
 class ProcessPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 500,300 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 618,405 ), style = wx.TAB_TRAVERSAL )
 		
 		bSizer19 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_staticText85 = wx.StaticText( self, wx.ID_ANY, u"Processes", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText85.Wrap( -1 )
-		self.m_staticText85.SetFont( wx.Font( 12, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
+		self.m_staticText85.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
 		
 		bSizer19.Add( self.m_staticText85, 0, wx.ALL, 5 )
 		
@@ -479,26 +480,44 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer20 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		m_checkList1Choices = [u"Filter Data", u"Generate Histograms", u"Compile All Histograms", u"Compile All MSD"]
-		self.m_checkList1 = wx.CheckListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkList1Choices, wx.LB_MULTIPLE )
-		bSizer20.Add( self.m_checkList1, 0, wx.ALL, 5 )
+		m_checkListProcessChoices = []
+		self.m_checkListProcess = wx.CheckListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkListProcessChoices, wx.LB_MULTIPLE )
+		bSizer20.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
+		
+		bSizer15 = wx.BoxSizer( wx.VERTICAL )
+		
+		self.m_stDescription = wx.StaticText( self, wx.ID_ANY, u"Description", wx.DefaultPosition, wx.Size( 200,100 ), 0 )
+		self.m_stDescription.Wrap( -1 )
+		bSizer15.Add( self.m_stDescription, 0, wx.ALL, 5 )
+		
+		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self.m_button22 = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer20.Add( self.m_button22, 0, wx.ALL, 5 )
+		self.m_button22.SetForegroundColour( wx.Colour( 0, 128, 0 ) )
+		
+		bSizer16.Add( self.m_button22, 0, wx.ALL, 5 )
 		
 		self.m_button23 = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer20.Add( self.m_button23, 0, wx.ALL, 5 )
+		self.m_button23.SetForegroundColour( wx.Colour( 255, 0, 0 ) )
+		
+		bSizer16.Add( self.m_button23, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer16, 1, wx.ALIGN_BOTTOM, 5 )
+		
+		
+		bSizer20.Add( bSizer15, 1, wx.EXPAND, 5 )
 		
 		
 		bSizer19.Add( bSizer20, 1, wx.EXPAND, 5 )
 		
 		bSizer21 = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_dataViewListCtrl2 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_dataViewListColumn4 = self.m_dataViewListCtrl2.AppendTextColumn( u"Process" )
-		self.m_dataViewListColumn5 = self.m_dataViewListCtrl2.AppendProgressColumn( u"Status" )
-		self.m_dataViewListColumn6 = self.m_dataViewListCtrl2.AppendTextColumn( u"Output" )
-		bSizer21.Add( self.m_dataViewListCtrl2, 0, wx.ALL|wx.EXPAND, 5 )
+		self.m_dataViewListCtrlRunning = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_dataViewListColumn4 = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Process" )
+		self.m_dataViewListColumn5 = self.m_dataViewListCtrlRunning.AppendProgressColumn( u"Status" )
+		self.m_dataViewListColumn6 = self.m_dataViewListCtrlRunning.AppendTextColumn( u"Output" )
+		bSizer21.Add( self.m_dataViewListCtrlRunning, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		bSizer19.Add( bSizer21, 1, wx.EXPAND, 5 )
@@ -506,9 +525,25 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.SetSizer( bSizer19 )
 		self.Layout()
+		
+		# Connect Events
+		self.m_checkListProcess.Bind( wx.EVT_CHECKLISTBOX, self.OnShowDescription )
+		self.m_button22.Bind( wx.EVT_BUTTON, self.OnRunScripts )
+		self.m_button23.Bind( wx.EVT_BUTTON, self.OnCancelScripts )
 	
 	def __del__( self ):
 		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def OnShowDescription( self, event ):
+		event.Skip()
+	
+	def OnRunScripts( self, event ):
+		event.Skip()
+	
+	def OnCancelScripts( self, event ):
+		event.Skip()
 	
 
 ###########################################################################
@@ -518,7 +553,7 @@ class ProcessPanel ( wx.Panel ):
 class ComparePanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 500,300 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( -1,-1 ), style = wx.TAB_TRAVERSAL )
 		
 		bSizer1 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -526,7 +561,7 @@ class ComparePanel ( wx.Panel ):
 		
 		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Group Statistics", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText18.Wrap( -1 )
-		self.m_staticText18.SetFont( wx.Font( 12, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
+		self.m_staticText18.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
 		
 		bSizer4.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
@@ -591,6 +626,7 @@ class ComparePanel ( wx.Panel ):
 		
 		self.SetSizer( bSizer1 )
 		self.Layout()
+		bSizer1.Fit( self )
 		
 		# Connect Events
 		self.m_btnRatioClose.Bind( wx.EVT_BUTTON, self.OnClose )
@@ -611,13 +647,13 @@ class ComparePanel ( wx.Panel ):
 class WelcomePanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 500,300 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( -1,-1 ), style = wx.TAB_TRAVERSAL )
 		
 		bSizer18 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_staticText23 = wx.StaticText( self, wx.ID_ANY, u"MSD Automated Analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText23.Wrap( -1 )
-		self.m_staticText23.SetFont( wx.Font( 14, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
+		self.m_staticText23.SetFont( wx.Font( 14, 71, 90, 90, False, wx.EmptyString ) )
 		
 		bSizer18.Add( self.m_staticText23, 0, wx.ALL, 5 )
 		
@@ -630,6 +666,7 @@ class WelcomePanel ( wx.Panel ):
 		
 		self.SetSizer( bSizer18 )
 		self.Layout()
+		bSizer18.Fit( self )
 	
 	def __del__( self ):
 		pass
@@ -642,19 +679,19 @@ class WelcomePanel ( wx.Panel ):
 class FilesPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 497,380 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( -1,-1 ), style = wx.TAB_TRAVERSAL )
 		
 		bSizer5 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_staticText23 = wx.StaticText( self, wx.ID_ANY, u"Select Files for analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText23.Wrap( -1 )
-		self.m_staticText23.SetFont( wx.Font( 14, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
+		self.m_staticText23.SetFont( wx.Font( 14, 71, 90, 90, False, wx.EmptyString ) )
 		
 		bSizer5.Add( self.m_staticText23, 0, wx.ALL, 5 )
 		
 		self.m_staticText25 = wx.StaticText( self, wx.ID_ANY, u"AutoFind and/or Manual Select", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText25.Wrap( -1 )
-		self.m_staticText25.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
+		self.m_staticText25.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 93, 90, False, wx.EmptyString ) )
 		
 		bSizer5.Add( self.m_staticText25, 0, wx.ALL, 5 )
 		
@@ -662,7 +699,7 @@ class FilesPanel ( wx.Panel ):
 		bSizer5.Add( self.m_staticline2, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		fgSizer4 = wx.FlexGridSizer( 0, 3, 0, 0 )
-		fgSizer4.SetFlexibleDirection( wx.BOTH )
+		fgSizer4.SetFlexibleDirection( wx.VERTICAL )
 		fgSizer4.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
 		
 		self.m_staticText26 = wx.StaticText( self, wx.ID_ANY, u"Top level directory", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -689,8 +726,8 @@ class FilesPanel ( wx.Panel ):
 		self.m_staticText27.Wrap( -1 )
 		fgSizer4.Add( self.m_staticText27, 0, wx.ALL, 5 )
 		
-		self.m_textCtrl24 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		fgSizer4.Add( self.m_textCtrl24, 0, wx.ALL, 5 )
+		self.m_tcSearch = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer4.Add( self.m_tcSearch, 0, wx.ALL, 5 )
 		
 		self.btnAutoFind = wx.Button( self, wx.ID_ANY, u"AutoFind", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer4.Add( self.btnAutoFind, 0, wx.ALL, 5 )
@@ -702,7 +739,7 @@ class FilesPanel ( wx.Panel ):
 		self.btnClearlist = wx.Button( self, wx.ID_ANY, u"Clear List", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer4.Add( self.btnClearlist, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
-		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag files here", wx.DefaultPosition, wx.DefaultSize, wx.TE_CENTRE|wx.TE_READONLY )
+		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag files here !", wx.DefaultPosition, wx.Size( 200,100 ), wx.TE_CENTRE|wx.TE_READONLY )
 		self.m_tcDragdrop.SetBackgroundColour( wx.Colour( 191, 191, 255 ) )
 		
 		fgSizer4.Add( self.m_tcDragdrop, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
@@ -710,7 +747,7 @@ class FilesPanel ( wx.Panel ):
 		
 		bSizer5.Add( fgSizer4, 1, wx.EXPAND, 5 )
 		
-		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,140 ), wx.dataview.DV_MULTIPLE|wx.HSCROLL|wx.VSCROLL )
+		self.m_dataViewListCtrl1 = wx.dataview.DataViewListCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( -1,200 ), wx.dataview.DV_MULTIPLE|wx.HSCROLL|wx.VSCROLL )
 		self.col_selected = self.m_dataViewListCtrl1.AppendToggleColumn( u"Select" )
 		self.col_file = self.m_dataViewListCtrl1.AppendTextColumn( u"File" )
 		bSizer5.Add( self.m_dataViewListCtrl1, 0, wx.ALL|wx.EXPAND, 5 )
@@ -718,6 +755,7 @@ class FilesPanel ( wx.Panel ):
 		
 		self.SetSizer( bSizer5 )
 		self.Layout()
+		bSizer5.Fit( self )
 		
 		# Connect Events
 		self.m_button18.Bind( wx.EVT_BUTTON, self.OnInputdir )

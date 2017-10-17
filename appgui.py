@@ -1,14 +1,15 @@
 #import images
 import logging
 import time
-from glob import glob
+from glob import glob, iglob
 from multiprocessing import Manager, Process
 from os import access, R_OK, walk, mkdir
-from os.path import join, expanduser, dirname, exists
-
+from os.path import join, expanduser, dirname, exists, split
+import re
 import matplotlib.pyplot as plt
 import pandas as pd
 import wx
+import wx.html2
 from configobj import ConfigObj
 from collections import OrderedDict
 from msdapp.guicontrollers import MSDController
@@ -27,24 +28,32 @@ class HomePanel(WelcomePanel):
 
     # ----------------------------------------------------------------------
     def __init__(self, parent):
-        """"""
-
         super(HomePanel, self).__init__(parent)
-        self.m_richText1.AddParagraph("Welcome to the MSD Automated Analysis App")
-        self.m_richText1.AddParagraph(self.__loadContent())
-        self.m_richText1.AddParagraph("Any queries, contact Liz Cooper-Williams e.cooperwilliams@uq.edu.au\nCopyright (2017) Apache license v2 (https://github.com/QBI-Software/MSDAnalysis)")
+        # hbox = wx.BoxSizer(wx.HORIZONTAL)
+        # text = wx.TextCtrl(self, style=wx.TE_MULTILINE,value=self.__loadContent())
+        # hbox.Add(text, proportion=1, flag=wx.EXPAND)
+        # self.SetSizer(hbox)
+        self.m_richText1.AddParagraph(r'''***Welcome to the MSD Automated Analysis App***''')
+        self.m_richText1.AddParagraph(r''' To process your files: ''')
+        #self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
+        self.m_richText1.AddParagraph(r'1. Check the Configuration options, particularly the column names and filenames used for matching')
+        self.m_richText1.AddParagraph(r"2. Select Files to process either with AutoFind from a top level directory and/or Drag and Drop")
+        self.m_richText1.AddParagraph(r"3. Select which processes to run and monitor their progress")
+        self.m_richText1.AddParagraph(r"4. Choose Compare Groups to run a statistical comparison of two groups after processing files have been generated")
+        self.m_richText1.AddParagraph(r"Any queries, contact Liz Cooper-Williams e.cooperwilliams@uq.edu.au")
+        self.m_richText1.AddParagraph(r"Copyright (2017) Apache license v2 (https://github.com/QBI-Software/MSDAnalysis)")
 
     def __loadContent(self):
         """
         Welcome text
         :return:
         """
-        content = '''
+        content = '''***Welcome to the MSD Automated Analysis App***
         To process your files: 
             1. Check the Configuration options, particularly the column names and filenames used for matching
-            2. Select Files to process either with AutoFind from a top level and/or Drag and Drop
+            2. Select Files to process either with AutoFind from a top level directory and/or Drag and Drop
             3. Select which processes to run and monitor their progress
-            4. Run a statistical comparison of two groups after processing files have been generated
+            4. Choose Compare Groups to run a statistical comparison of two groups after processing files have been generated
        
         '''
         return content
@@ -155,7 +164,19 @@ class FileSelectPanel(FilesPanel):
         dlg.Destroy()
 
     def OnAutofind(self, event):
-        filenames = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
+        """
+        Find all matching files in top level directory
+        :param event:
+        :return:
+        """
+
+        allfiles = [y for y in iglob(join(self.inputdir, '**', self.datafile), recursive=True)]
+        searchtext = self.m_tcSearch.GetValue()
+        if (len(searchtext) > 0):
+            filenames = [f for f in allfiles if re.search(searchtext,f, flags=re.IGNORECASE)]
+        else:
+            filenames = allfiles
+
         for fname in filenames:
             self.m_dataViewListCtrl1.AppendItem([True,fname])
         print("Total Files loaded: ", self.m_dataViewListCtrl1.GetItemCount())
@@ -169,28 +190,91 @@ class FileSelectPanel(FilesPanel):
         print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
 
+########################################################################
 class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
-        self.processes = list(parent.processes.values())
-        #self.m_sProcess.AppendItems(self.processes)
+        self.controller = parent.controller
+        processes = [p['caption'] for p in self.controller.processes]
+        self.m_checkListProcess.AppendItems(processes)
+
+    def OnShowDescription( self, event ):
+        print(event.String)
+        desc = [p['description'] for p in self.controller.processes if p['caption']==event.String]
+        print(desc)
+        self.m_stDescription.SetLabelText(desc[0])
+
+    def OnRunScripts(self, event):
+        """
+        Run selected scripts sequentially - updating progress bars
+        :param e:
+        :return:
+        """
+        selections = self.m_checkListProcess.GetCheckedStrings()
+        print("Processes selected: ", len(selections))
+        #Get data from other panels
+        filepanel = None
+        configpanel = None
+        for fp in self.Parent.Children:
+            if isinstance(fp,FileSelectPanel):
+                filepanel = fp
+            elif isinstance(fp, MSDConfig):
+                configpanel = fp
+        if filepanel is None or configpanel is None:
+            raise ValueError("Cannot locate other panels - exiting")
+        filenames = []
+        num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
+        print('All Files:', num_files)
+        for i in range(0, num_files):
+            if filepanel.m_dataViewListCtrl1.GetToggleValue(i,0):
+                filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i,1))
+        print('Selected Files:', len(filenames))
+        expt = filepanel.m_tcSearch.GetValue()
+        print("Expt:", expt)
+        i=0
+        for p in selections:
+            print("Running:", p)
+            #Filter process
+            self.m_dataViewListCtrlRunning.AppendItem([p,0,"running"])
+            #self.m_dataViewListCtrlRunning.SetValue(0, i, 1) #status progressbar
+            results=[]
+            if p['caption'] == self.controller.processes[0]['caption']:
+                checkedfilenames = self.CheckFilenames(filenames, p['files'])
+                print("Checked:", checkedfilenames)
+                results = "Completed - testonly" #self.controller.RunFilter(event,checkedfilenames)
+            self.m_dataViewListCtrlRunning.SetValue(results, i, 2)
+            i = i+1
+
+        print("Completed processes")
+
+    def CheckFilenames(self,filenames, configfiles):
+        """
+        Check that filenames are appropriate for the script required
+        :param filenames: list of full path filenames
+        :param configfiles: matching filename for script as in config
+        :return: filtered list
+        """
+        #TODO: works for Filter script but others? -STRIP DIRECTORY
+        for conf in configfiles:
+            search = self.Parent.config[conf]
+            print("Searching for:", search)
+            newfiles = []
+            for f in filenames:
+                parts = split(f)
+                if search in parts[1]:
+                    newfiles.append(f)
+
+            return newfiles
+
+
 
 
 ########################################################################
 class AppMain(wx.Listbook):
-    """"""
-
-    # ----------------------------------------------------------------------
 
     def __init__(self, parent):
         """Constructor"""
-        wx.Listbook.__init__(self, parent, wx.ID_ANY, style=
-        wx.BK_DEFAULT
-                             # wx.BK_TOP
-                             # wx.BK_BOTTOM
-                             # wx.BK_LEFT
-                             # wx.BK_RIGHT
-                             )
+        wx.Listbook.__init__(self, parent, wx.ID_ANY, style=wx.BK_DEFAULT)
 
         logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%d-%m-%Y %I:%M:%S %p')
@@ -201,8 +285,9 @@ class AppMain(wx.Listbook):
             self.prefixes = [self.group1, self.group2]
         else:
             self.prefixes = ['stim', 'nostim']  # default
-        self.processes =OrderedDict({'filter':'Filter data','histo':'Generate Histograms','stats':'Compile All Histograms','msd':'Compile All MSD'})
+        #self.processes =OrderedDict({'filter':'Filter data','histo':'Generate Histograms','stats':'Compile All Histograms','msd':'Compile All MSD'})
         self.controller = MSDController(self.configfile)
+
         self.InitUI()
         self.Centre()
         self.Show()
@@ -213,6 +298,7 @@ class AppMain(wx.Listbook):
                 if access(self.configfile, R_OK):
                     print("Loading config file")
                     config = ConfigObj(self.configfile, encoding='ISO-8859-1')
+                    self.config = config
                     self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
                     self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
                     self.filteredfname = config['FILTERED_FILENAME']
@@ -254,7 +340,7 @@ class AppMain(wx.Listbook):
         pages = [(HomePanel(self),"Welcome"),
                  (MSDConfig(self), "Configure"),
                  (FileSelectPanel(self), "Select Files"),
-                 (ProcessPanel(self), "Run Processes"),
+                 (ProcessRunPanel(self), "Run Processes"),
                  (ComparePanel(self),"Compare Groups")]
         imID = 0
         for page, label in pages:
@@ -282,246 +368,11 @@ class AppMain(wx.Listbook):
         msg = 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
         print(msg)
         event.Skip()
+
     def Warn(self, message, caption='Warning!'):
         dlg = wx.MessageDialog(self, message, caption, wx.OK | wx.ICON_WARNING)
         dlg.ShowModal()
         dlg.Destroy()
-
-    def ShowFeedBack(self, show, type):
-        if type == 'filter':
-            self.gauge_filter.Show(show)
-        elif type == 'histo':
-            self.gauge_histo.Show(show)
-        elif type == 'stats':
-            self.gauge_stats.Show(show)
-        elif type == 'msd':
-            self.gauge_msd.Show(show)
-        # self.result.Show(not show)
-        if show:
-            self.timer.Start(250)
-        else:
-            self.timer.Stop()
-        self.Layout()
-
-    def OnRunScripts(self, e):
-        """
-        Run selected scripts sequentially - updating progress bars
-        :param e:
-        :return:
-        """
-        if len(self.txtInputdir.GetValue()) == 0:
-            self.Warn("Input files not specified")
-            return 0
-        else:
-            self.inputdir = self.txtInputdir.GetValue()
-            if not access(self.inputdir, R_OK):
-                self.Warn("Input directory is not accessible - check permissions")
-                return 0
-        if len(self.txtOutputdir.GetValue()) == 0:
-            self.Warn("Output directory not specified")
-            return 0
-        else:
-            self.outputdir = self.txtOutputdir.GetValue()
-            if not access(self.outputdir, R_OK):
-                self.Warn("Output directory is not accessible - check permissions")
-                return 0
-        expt = self.txtProtein.GetValue() + self.txtCelltype.GetValue()
-        print("Expt:", expt)
-        self.timer = wx.Timer(self)
-        if self.cb1.GetValue():
-            self.StatusBar.SetStatusText("Running Filter script")
-
-            self.Bind(wx.EVT_TIMER,
-                      lambda e: self.gauge_filter.Pulse(),
-                      self.timer)
-            self.RunFilter(e)
-
-        if self.cb2.GetValue():
-            self.StatusBar.SetStatusText("Running Histogram script")
-            self.Bind(wx.EVT_TIMER,
-                      lambda e: self.gauge_histo.Pulse(),
-                      self.timer)
-            self.RunHistogram(e)
-
-        if self.cb3.GetValue():
-            self.StatusBar.SetStatusText("Running Stats script")
-            self.Bind(wx.EVT_TIMER,
-                      lambda e: self.gauge_stats.Pulse(),
-                      self.timer)
-            self.RunStats(e, expt)
-
-        if self.cb4.GetValue():
-            self.StatusBar.SetStatusText("Running MSD compare script")
-            self.Bind(wx.EVT_TIMER,
-                      lambda e: self.gauge_msd.Pulse(),
-                      self.timer)
-            self.RunMSD(e, expt)
-
-    def processFilter(self, datafile, q):
-        """
-        Activate filter process - multithreaded
-        :param datafile:
-        :param q:
-        :return:
-        """
-        datafile_msd = datafile.replace(self.datafile, self.msdfile)
-        outputdir = join(dirname(datafile), 'processed')  # subdir as inputfiles
-        if not exists(outputdir):
-            mkdir(outputdir)
-        fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, self.minlimit, self.maxlimit)
-        q[datafile] = fmsd.runFilter()
-
-    def processHistogram(self, datafile, q):
-        outputdir = dirname(datafile)  # same dir as inputfile Filtered*
-        fd = HistogramLogD(self.minlimit, self.maxlimit, self.binwidth, datafile, self.configfile)
-        q[datafile] = fd.generateHistogram(outputdir)
-
-    def RunFilter(self, event):
-        type = 'filter'
-        self.ShowFeedBack(True, type)
-        # find datafile - assume same directory for msd file
-        result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
-
-        if len(result) > 0:
-            total_tasks = len(result)
-            tasks = []
-            mm = Manager()
-            q = mm.dict()
-
-            for i in range(total_tasks):
-                self.count = 1
-                self.StatusBar.SetStatusText(
-                    "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
-                p = Process(target=self.processFilter, args=(result[i], q))
-                tasks.append(p)
-                p.start()
-
-            for p in tasks:
-                self.gauge_filter.SetFocus()
-                while p.is_alive():
-                    time.sleep(1)
-                    self.count = self.count + 1
-                    self.gauge_filter.SetValue(self.count)
-                p.join()
-
-            headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
-            results = pd.DataFrame.from_dict(q, orient='index')
-            results.columns = headers
-            for i, row in results.iterrows():
-                self.resultbox.AppendText("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s\n" % (
-                    i, row['Filtered'], row['Total'], row['Data'], row['MSD']))
-            self.result_filter.SetLabel("Complete")
-
-        else:
-            self.Warn("Cannot find any datafiles: %s" % self.datafile)
-
-        self.ShowFeedBack(False, type)
-
-    def RunHistogram(self, event):
-        type = 'histo'
-        self.ShowFeedBack(True, type)
-        # find datafile - assume same directory for msd file
-        result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.filteredfname))]
-        if len(result) > 0:
-            total_tasks = len(result)
-            tasks = []
-            mm = Manager()
-            q = mm.dict()
-            for i in range(total_tasks):
-                self.count = 1
-                self.StatusBar.SetStatusText(
-                    "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
-                p = Process(target=self.processHistogram, args=(result[i], q))
-
-                tasks.append(p)
-                p.start()
-
-            for p in tasks:
-                self.gauge_histo.SetFocus()
-                while p.is_alive():
-                    time.sleep(1)
-                    self.count = self.count + 1
-                    self.gauge_histo.SetValue(self.count)
-                p.join()
-
-            headers = ['Figure', 'Histogram data']
-            results = pd.DataFrame.from_dict(q, orient='index')
-            results.columns = headers
-            for i, row in results.iterrows():
-                self.resultbox.AppendText("HISTOGRAM: %s\n\t%s\n\t%s\n" % (
-                    i, row['Figure'], row['Histogram data']))
-            self.result_histo.SetLabel("Complete")
-
-        else:
-            self.Warn("Cannot find any datafiles: %s" % self.filteredfname)
-
-        self.ShowFeedBack(False, type)
-
-    def RunStats(self, event,expt=None):
-        type = 'stats'
-        if expt is None:
-            expt = ''
-        self.ShowFeedBack(True, type)
-        # loop through directory structure and locate prefixes with expt name
-        try:
-            for prefix in self.prefixes:
-                print("Group:", prefix)
-                self.statusbar.SetStatusText("Running %s script: %s (%s)" % (type.title(), expt, prefix))
-                self.gauge_stats.SetFocus()
-                fmsd = HistoStats(self.inputdir, self.outputdir, prefix, expt, self.configfile)
-                fmsd.compile()
-                compiledfile = fmsd.runStats()
-                # Split to Mobile/immobile fractions - output
-                ratiofile = fmsd.splitMobile()
-                self.resultbox.AppendText("HISTOGRAM BATCH: %s: %s\n\t%s\n\t%s\n" % (expt, prefix, compiledfile, ratiofile))
-                self.result_stats.SetLabel("Complete - Close plot to continue")
-                # Set the figure
-                fig = plt.figure(figsize=(10, 5))
-                axes1 = plt.subplot(121)
-                fmsd.showPlots(axes1)
-
-                axes2 = plt.subplot(122)
-                fmsd.showAvgPlot(axes2)
-
-                figtype = 'png'  # png, pdf, ps, eps and svg.
-                figname = fmsd.compiledfile.replace('csv', figtype)
-                plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-                plt.show()
-        except ValueError as e:
-            self.Warn("Batch Histogram error: %s" % e.message)
-
-        self.ShowFeedBack(False, type)
-
-    def RunMSD(self, event,expt=None):
-        type = 'msd'
-        if expt is None:
-            expt = ''
-        self.ShowFeedBack(True, type)
-        # loop through directory
-        for prefix in self.prefixes:
-            self.statusbar.SetStatusText("Running %s script: %s (%s)" % (type.title(),expt, prefix))
-            self.gauge_msd.SetFocus()
-            fmsd = CompareMSD(self.inputdir, self.outputdir, prefix, expt,self.configfile)
-            compiledfile = fmsd.compile()
-            self.resultbox.AppendText("MSD BATCH: %s: %s\n\t%s\n\t%s\n" % (expt, prefix, compiledfile, areasfile))
-            self.result_msd.SetLabel("Complete")
-            # Set the figure
-            fig = plt.figure(figsize=(10, 5))
-            axes1 = plt.subplot(121)
-            areasfile = fmsd.showPlotsWithAreas(axes1)
-
-            axes2 = plt.subplot(122)
-            fmsd.showAvgPlot(axes2)
-
-            figtype = 'png'  # png, pdf, ps, eps and svg.
-            figname = fmsd.compiledfile.replace('csv', figtype)
-            plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-            plt.show()
-
-
-        self.ShowFeedBack(False, type)
-
-
 
     def OnQuit(self, e):
         self.Close()
