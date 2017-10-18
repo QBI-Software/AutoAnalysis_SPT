@@ -63,8 +63,8 @@ class MSDConfig(ConfigPanel):
     def __init__(self, parent):
         super(MSDConfig, self).__init__(parent)
         self.encoding = 'ISO-8859-1'
-        if parent.loaded:
-            self.__loadValues(parent)
+        if parent.controller.loaded:
+            self.__loadValues(parent.controller)
 
     def __loadValues(self, parent):
         print("Config loaded")
@@ -87,7 +87,6 @@ class MSDConfig(ConfigPanel):
         self.m_tcGroup2.SetValue(parent.group2)
 
     def OnSaveConfig(self, event):
-        print("In config - onsave - saving to cfg file")
         config = ConfigObj()
         config.filename = join(expanduser('~'), '.msdcfg')
         config.encoding = self.encoding
@@ -109,7 +108,12 @@ class MSDConfig(ConfigPanel):
         config['GROUP1'] = self.m_tcGroup1.GetValue()
         config['GROUP2'] = self.m_tcGroup2.GetValue()
         config.write()
-        event.Skip()
+        #Reload to parent
+        try:
+            self.Parent.controller.loadConfig(config)
+            self.m_status.SetLabel("Config updated")
+        except IOError as e:
+            self.Parent.Warn("Config error:", e.message)
 
     def OnLoadConfig(self,event):
         print("Load From Config dialog")
@@ -117,10 +121,16 @@ class MSDConfig(ConfigPanel):
                                        wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_CHANGE_DIR)
         openFileDialog.SetDirectory(expanduser('~'))
         if openFileDialog.ShowModal() == wx.ID_OK:
-            self.configfile = str(openFileDialog.GetPath())
-            self.loaded = self.__loadConfig()
-            self.statusbar.SetStatusText("Config Loaded: %s\n" % self.configfile)
-            self.Warn("Save new Config from Config->Edit->Save")
+            configfile = str(openFileDialog.GetPath())
+            try:
+                config = ConfigObj(configfile, encoding='ISO-8859-1')
+                self.Parent.controller.loadConfig(config)
+                self.Parent.controller.config.filename = join(expanduser('~'), '.msdcfg') #save over existing?
+                self.Parent.controller.config.write()
+                self.__loadValues(self.Parent.controller)
+                self.m_status.SetLabel("Config Loaded: %s" % configfile)
+            except IOError as e:
+                self.Parent.Warn("Config error:", e.message)
         openFileDialog.Destroy()
 
 ########################################################################
@@ -138,12 +148,11 @@ class MyFileDropTarget(wx.FileDropTarget):
 class FileSelectPanel(FilesPanel):
     def __init__(self,parent):
         super(FileSelectPanel, self).__init__(parent)
-        self.m_dataViewListCtrl1.GetColumn(0).SetMinWidth(20)
-        self.m_dataViewListCtrl1.GetColumn(1).SetMinWidth(200)
+        self.col_file.SetMinWidth(200)
 
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
-        self.datafile = parent.datafile
+        self.datafile = parent.controller.datafile
 
     def OnInputdir(self, e):
         """ Open a file"""
@@ -179,6 +188,8 @@ class FileSelectPanel(FilesPanel):
 
         for fname in filenames:
             self.m_dataViewListCtrl1.AppendItem([True,fname])
+
+        self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
         print("Total Files loaded: ", self.m_dataViewListCtrl1.GetItemCount())
 
     def OnSelectall(self, event):
@@ -201,8 +212,38 @@ class ProcessRunPanel(ProcessPanel):
     def OnShowDescription( self, event ):
         print(event.String)
         desc = [p['description'] for p in self.controller.processes if p['caption']==event.String]
-        print(desc)
+        filesIn = [p['files'] for p in self.controller.processes if p['caption']==event.String]
+        filesOut = [p['filesout'] for p in self.controller.processes if p['caption']==event.String]
+        #Load from Config
+        filesIn = [self.controller.config[f] for f in filesIn[0].split(", ")]
+        filesOut = [self.controller.config[f] for f in filesOut[0].split(", ")]
+        #Load to GUI
         self.m_stDescription.SetLabelText(desc[0])
+        self.m_stFilesin.SetLabelText(", ".join(filesIn))
+        self.m_stFilesout.SetLabelText(", ".join(filesOut))
+
+
+    def getFilePanel(self):
+        """
+        Get access to filepanel
+        :return:
+        """
+        filepanel = None
+
+        for fp in self.Parent.Children:
+            if isinstance(fp, FileSelectPanel):
+                filepanel = fp
+                break
+        return filepanel
+
+    def OnCancelScripts( self, event ):
+        """
+        Find a way to stop processes
+        :param event:
+        :return:
+        """
+        #self.Parent.controller.mm.
+        wx.YieldIfNeeded()
 
     def OnRunScripts(self, event):
         """
@@ -210,18 +251,17 @@ class ProcessRunPanel(ProcessPanel):
         :param e:
         :return:
         """
+        #Clear processing window
+        self.m_dataViewListCtrlRunning.DeleteAllItems()
+        #Disable Run button
+        self.m_btnRunProcess.Disable()
+        #Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
         #Get data from other panels
-        filepanel = None
-        configpanel = None
-        for fp in self.Parent.Children:
-            if isinstance(fp,FileSelectPanel):
-                filepanel = fp
-            elif isinstance(fp, MSDConfig):
-                configpanel = fp
-        if filepanel is None or configpanel is None:
-            raise ValueError("Cannot locate other panels - exiting")
+        filepanel = self.getFilePanel()
+        if filepanel is None:
+            self.Parent.Warn("Cannot locate other panels - exiting")
         filenames = []
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         print('All Files:', num_files)
@@ -229,23 +269,28 @@ class ProcessRunPanel(ProcessPanel):
             if filepanel.m_dataViewListCtrl1.GetToggleValue(i,0):
                 filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i,1))
         print('Selected Files:', len(filenames))
+        outputdir = filepanel.txtOutputdir.GetValue() #for batch processes
         expt = filepanel.m_tcSearch.GetValue()
         print("Expt:", expt)
-        i=0
+        row = 0
+        #For each process
         for p in selections:
             print("Running:", p)
             #Filter process
             self.m_dataViewListCtrlRunning.AppendItem([p,0,"running"])
-            #self.m_dataViewListCtrlRunning.SetValue(0, i, 1) #status progressbar
-            results=[]
-            if p['caption'] == self.controller.processes[0]['caption']:
-                checkedfilenames = self.CheckFilenames(filenames, p['files'])
+
+            if p == self.controller.processes[0]['caption']:
+                filesIn = [self.controller.config[f] for f in self.controller.processes[0]['files'].split(", ")]
+                checkedfilenames = self.CheckFilenames(filenames, filesIn)
                 print("Checked:", checkedfilenames)
-                results = "Completed - testonly" #self.controller.RunFilter(event,checkedfilenames)
-            self.m_dataViewListCtrlRunning.SetValue(results, i, 2)
-            i = i+1
+                results = self.controller.RunFilter(checkedfilenames, self.m_dataViewListCtrlRunning, row)
+                msg = "Processed: %d" % len(results)
+                self.m_dataViewListCtrlRunning.SetValue(msg, row=row, col=2)
+            row = row+1
 
         print("Completed processes")
+        # Enable Run button
+        self.m_btnRunProcess.Enable()
 
     def CheckFilenames(self,filenames, configfiles):
         """
@@ -254,17 +299,14 @@ class ProcessRunPanel(ProcessPanel):
         :param configfiles: matching filename for script as in config
         :return: filtered list
         """
-        #TODO: works for Filter script but others? -STRIP DIRECTORY
+        newfiles = []
         for conf in configfiles:
-            search = self.Parent.config[conf]
-            print("Searching for:", search)
-            newfiles = []
             for f in filenames:
                 parts = split(f)
-                if search in parts[1]:
+                if conf in parts[1]:
                     newfiles.append(f)
 
-            return newfiles
+        return newfiles
 
 
 
@@ -279,50 +321,21 @@ class AppMain(wx.Listbook):
         logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
                             datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
-        self.configfile = "msdapp\\msd.cfg" #join(expanduser('~'), '.msdcfg')
-        self.loaded = self.__loadConfig()
-        if self.loaded:
-            self.prefixes = [self.group1, self.group2]
+        self.configfile = join(expanduser('~'), '.msdcfg')
+        self.controller = MSDController(self.configfile)
+        if self.controller.loaded:
+            self.prefixes = [self.controller.group1, self.controller.group2]
         else:
             self.prefixes = ['stim', 'nostim']  # default
-        #self.processes =OrderedDict({'filter':'Filter data','histo':'Generate Histograms','stats':'Compile All Histograms','msd':'Compile All MSD'})
-        self.controller = MSDController(self.configfile)
 
         self.InitUI()
-        self.Centre()
+        self.Centre(wx.BOTH)
         self.Show()
 
-    def __loadConfig(self):
-        if self.configfile is not None:
-            try:
-                if access(self.configfile, R_OK):
-                    print("Loading config file")
-                    config = ConfigObj(self.configfile, encoding='ISO-8859-1')
-                    self.config = config
-                    self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
-                    self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
-                    self.filteredfname = config['FILTERED_FILENAME']
-                    self.filtered_msd = config['FILTERED_MSD']
-                    self.histofile = config['HISTOGRAM_FILENAME']
-                    self.diffcolumn = config['DIFF_COLUMN']
-                    self.logcolumn = config['LOG_COLUMN']
-                    self.msdpoints = config['MSD_POINTS']
-                    self.minlimit = config['MINLIMIT']
-                    self.maxlimit = config['MAXLIMIT']
-                    self.timeint = config['TIME_INTERVAL']
-                    self.binwidth = config['BINWIDTH']
-                    self.threshold = config['THRESHOLD']
-                    self.allstats = config['ALLSTATS_FILENAME']
-                    self.msdcompare = config['AVGMSD_FILENAME']
-                    self.group1 = config['GROUP1']
-                    self.group2 = config['GROUP2']
-                    return True
 
-            except:
-                raise IOError
-        return False
 
     def InitUI(self):
+
         # make an image list using the LBXX images
         # il = wx.ImageList(32, 32)
         # # for x in [wx.ArtProvider.]:
@@ -348,25 +361,27 @@ class AppMain(wx.Listbook):
             self.AddPage(page, label)
             imID += 1
 
+        self.GetListView().SetColumnWidth(0, wx.LIST_AUTOSIZE)
+
         self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGING, self.OnPageChanging)
 
     # ----------------------------------------------------------------------
     def OnPageChanged(self, event):
-        old = event.GetOldSelection()
-        new = event.GetSelection()
-        sel = self.GetSelection()
-        msg = 'OnPageChanged,  old:%d, new:%d, sel:%d\n' % (old, new, sel)
-        print(msg)
+        # old = event.GetOldSelection()
+        # new = event.GetSelection()
+        # sel = self.GetSelection()
+        # msg = 'OnPageChanged,  old:%d, new:%d, sel:%d\n' % (old, new, sel)
+        # print(msg)
         event.Skip()
 
     # ----------------------------------------------------------------------
     def OnPageChanging(self, event):
-        old = event.GetOldSelection()
-        new = event.GetSelection()
-        sel = self.GetSelection()
-        msg = 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
-        print(msg)
+        # old = event.GetOldSelection()
+        # new = event.GetSelection()
+        # sel = self.GetSelection()
+        # msg = 'OnPageChanging, old:%d, new:%d, sel:%d\n' % (old, new, sel)
+        # print(msg)
         event.Skip()
 
     def Warn(self, message, caption='Warning!'):
@@ -400,7 +415,7 @@ class MSDFrame(wx.Frame):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "MSD Autoanalysis",
-                          size=(700, 400)
+                          size=(800, 700)
                           )
         panel = wx.Panel(self)
 

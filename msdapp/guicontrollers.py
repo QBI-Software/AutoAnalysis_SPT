@@ -5,6 +5,8 @@ from msdapp.msd.filterMSD import FilterMSD
 import time
 from glob import glob
 from multiprocessing import Manager, Process
+from multiprocessing.managers import SyncManager
+import signal
 from threading import Thread
 from os import access, R_OK, walk, mkdir
 from os.path import join, expanduser, dirname, exists, split
@@ -44,36 +46,41 @@ class MSDController():
              'filesout': 'AVGMSD_FILENAME'}
         ]
         self.configfile = configfile
-        self.loaded = self.__loadConfig()
+        self.loaded = self.loadConfig()
+        self.timer = wx.Timer()
 
-    def __loadConfig(self):
-        if self.configfile is not None:
-            try:
-                if access(self.configfile, R_OK):
-                    print("Loading config file")
-                    config = ConfigObj(self.configfile, encoding='ISO-8859-1')
-                    self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
-                    self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
-                    self.filteredfname = config['FILTERED_FILENAME']
-                    self.filtered_msd = config['FILTERED_MSD']
-                    self.histofile = config['HISTOGRAM_FILENAME']
-                    self.diffcolumn = config['DIFF_COLUMN']
-                    self.logcolumn = config['LOG_COLUMN']
-                    self.msdpoints = config['MSD_POINTS']
-                    self.minlimit = config['MINLIMIT']
-                    self.maxlimit = config['MAXLIMIT']
-                    self.timeint = config['TIME_INTERVAL']
-                    self.binwidth = config['BINWIDTH']
-                    self.threshold = config['THRESHOLD']
-                    self.allstats = config['ALLSTATS_FILENAME']
-                    self.msdcompare = config['AVGMSD_FILENAME']
-                    self.group1 = config['GROUP1']
-                    self.group2 = config['GROUP2']
-                    return True
+    def loadConfig(self, config=None):
+        rtn = False
+        try:
+            if self.configfile is not None and access(self.configfile, R_OK):
+                print("Loading config file:", self.configfile)
+                config = ConfigObj(self.configfile, encoding='ISO-8859-1')
+            else:
+                print("Loading config object:", config.filename)
 
-            except:
-                raise IOError
-        return False
+            self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
+            self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
+            self.filteredfname = config['FILTERED_FILENAME']
+            self.filtered_msd = config['FILTERED_MSD']
+            self.histofile = config['HISTOGRAM_FILENAME']
+            self.diffcolumn = config['DIFF_COLUMN']
+            self.logcolumn = config['LOG_COLUMN']
+            self.msdpoints = config['MSD_POINTS']
+            self.minlimit = config['MINLIMIT']
+            self.maxlimit = config['MAXLIMIT']
+            self.timeint = config['TIME_INTERVAL']
+            self.binwidth = config['BINWIDTH']
+            self.threshold = config['THRESHOLD']
+            self.allstats = config['ALLSTATS_FILENAME']
+            self.msdcompare = config['AVGMSD_FILENAME']
+            self.group1 = config['GROUP1']
+            self.group2 = config['GROUP2']
+            self.config = config
+            rtn = True
+
+        except:
+            raise IOError
+        return rtn
 
     def processFilter(self, datafile, q):
         """
@@ -82,19 +89,36 @@ class MSDController():
         :param q:
         :return:
         """
-        datafile_msd = datafile.replace(self.datafile, self.msdfile)
-        outputdir = join(dirname(datafile), 'processed')  # subdir as inputfiles
-        if not exists(outputdir):
-            mkdir(outputdir)
-        fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, self.minlimit, self.maxlimit)
-        q[datafile] = fmsd.runFilter()
+        try:
+            datafile_msd = datafile.replace(self.datafile, self.msdfile)
+            outputdir = join(dirname(datafile), 'processed')  # subdir as inputfiles
+            if not exists(outputdir):
+                mkdir(outputdir)
+            fmsd = FilterMSD(self.configfile, datafile, datafile_msd, outputdir, self.minlimit, self.maxlimit)
+            q[datafile] = fmsd.runFilter()
+        except KeyboardInterrupt:
+            print("Keyboard interrupt in process: ", datafile)
+        finally:
+            print("cleaning up thread", datafile)
 
     def processHistogram(self, datafile, q):
         outputdir = dirname(datafile)  # same dir as inputfile Filtered*
         fd = HistogramLogD(self.minlimit, self.maxlimit, self.binwidth, datafile, self.configfile)
         q[datafile] = fd.generateHistogram(outputdir)
 
-    def RunFilter(self, event, filenames):
+    def ShowFeedBack(self, show):
+        # self.result.Show(not show)
+        if show:
+            self.timer.Start(250)
+        else:
+            self.timer.Stop()
+
+    # initializer for SyncManager
+    def mgr_init(self):
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        print("initialized manager")
+
+    def RunFilter(self, filenames, progresswidget=None,row=None):
         """
 
         :param event:
@@ -102,42 +126,54 @@ class MSDController():
         :return:
         """
         type = 'filter'
-        # self.ShowFeedBack(True, type)
+
+        self.ShowFeedBack(True)
         # find datafile - assume same directory for msd file
         # result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
 
         if len(filenames) > 0:
             total_tasks = len(filenames)
             tasks = []
-            mm = Manager()
-            q = mm.dict()
+            # mm = Manager()
+            # q = mm.dict()
+            # now using SyncManager vs a Manager
+            mm = SyncManager()
+            # explicitly starting the manager, and telling it to ignore the interrupt signal
+            mm.start(self.mgr_init)
 
-            for i in range(total_tasks):
-                self.count = 1
-                # self.StatusBar.SetStatusText(
-                #     "Running %s script: %s (%d of %d)" % (type.title(), result[i], i, total_tasks))
-                p = Process(target=self.processFilter, args=(filenames[i], q))
-                tasks.append(p)
-                p.start()
+            try:
+                q = mm.dict()
+                for i in range(total_tasks):
+                    self.count = 1
+                    p = Process(target=self.processFilter, args=(filenames[i], q))
+                    p.start()
+                    tasks.append(p)
 
-            for p in tasks:
-                # self.gauge_filter.SetFocus()
-                while p.is_alive():
-                    time.sleep(1)
-                    self.count = self.count + 1
-                    # self.gauge_filter.SetValue(self.count)
-                p.join()
+                try:
+                    for p in tasks:
+                        # self.gauge_filter.SetFocus()
+                        while p.is_alive():
+                            time.sleep(1)
+                            self.count = self.count + 1
+                            progresswidget.SetValue(self.count, row=row, col=1)
+                        p.join()
+                except KeyboardInterrupt:
+                    print("Keyboard interrupt in main")
+                    progresswidget.SetValue("Interrupt", row=row, col=2)
 
-            headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
-            results = pd.DataFrame.from_dict(q, orient='index')
-            results.columns = headers
+                headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
+                results = pd.DataFrame.from_dict(q, orient='index')
+                results.columns = headers
+                return results
+            finally:
+                # to be safe -- explicitly shutting down the manager
+                mm.shutdown()
 
-            return results
 
         else:
             raise ValueError("Cannot find any datafiles: %s" % self.datafile)
 
-            # self.ShowFeedBack(False, type)
+        self.ShowFeedBack(False, type)
 
     def RunHistogram(self, event):
         type = 'histo'
