@@ -4,6 +4,7 @@ from os.path import join, exists, dirname
 from msdapp.msd.filterMSD import FilterMSD
 import time
 from glob import glob
+import multiprocessing
 from multiprocessing import Manager, Process
 from multiprocessing.managers import SyncManager
 import signal
@@ -14,6 +15,7 @@ import logging
 import matplotlib.pyplot as plt
 import pandas as pd
 import wx
+import types
 from configobj import ConfigObj
 from tabulate import tabulate
 
@@ -48,6 +50,11 @@ class MSDController():
         self.configfile = configfile
         self.loaded = self.loadConfig()
         self.timer = wx.Timer()
+        #Multiprocessing settings
+        multiprocessing.log_to_stderr()
+        logger = multiprocessing.get_logger()
+        logger.setLevel(logging.INFO)
+
 
     def loadConfig(self, config=None):
         rtn = False
@@ -113,12 +120,8 @@ class MSDController():
         else:
             self.timer.Stop()
 
-    # initializer for SyncManager
-    def mgr_init(self):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        print("initialized manager")
 
-    def RunFilter(self, filenames, progresswidget=None,row=None):
+    def RunFilter(self, filenames, progressfunc=None,row=None):
         """
 
         :param event:
@@ -134,12 +137,7 @@ class MSDController():
         if len(filenames) > 0:
             total_tasks = len(filenames)
             tasks = []
-            # mm = Manager()
-            # q = mm.dict()
-            # now using SyncManager vs a Manager
-            mm = SyncManager()
-            # explicitly starting the manager, and telling it to ignore the interrupt signal
-            mm.start(self.mgr_init)
+            mm = Manager()
 
             try:
                 q = mm.dict()
@@ -148,18 +146,17 @@ class MSDController():
                     p = Process(target=self.processFilter, args=(filenames[i], q))
                     p.start()
                     tasks.append(p)
+                    while p.is_alive():
+                        time.sleep(5)
+                        self.count = self.count + 1
+                        wx.CallAfter(progressfunc, self.count, row, 1)
 
                 try:
                     for p in tasks:
-                        # self.gauge_filter.SetFocus()
-                        while p.is_alive():
-                            time.sleep(1)
-                            self.count = self.count + 1
-                            progresswidget.SetValue(self.count, row=row, col=1)
                         p.join()
                 except KeyboardInterrupt:
                     print("Keyboard interrupt in main")
-                    progresswidget.SetValue("Interrupt", row=row, col=2)
+
 
                 headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
                 results = pd.DataFrame.from_dict(q, orient='index')

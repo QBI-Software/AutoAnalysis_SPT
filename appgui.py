@@ -283,7 +283,7 @@ class ProcessRunPanel(ProcessPanel):
                 filesIn = [self.controller.config[f] for f in self.controller.processes[0]['files'].split(", ")]
                 checkedfilenames = self.CheckFilenames(filenames, filesIn)
                 print("Checked:", checkedfilenames)
-                results = self.controller.RunFilter(checkedfilenames, self.m_dataViewListCtrlRunning, row)
+                results = self.controller.RunFilter(checkedfilenames, self.m_dataViewListCtrlRunning.SetValue, row)
                 msg = "Processed: %d" % len(results)
                 self.m_dataViewListCtrlRunning.SetValue(msg, row=row, col=2)
             row = row+1

@@ -1,0 +1,11 @@
+D:/Projects/MSDAnalysis/sampleMultiprocessing.py:44: wxPyDeprecationWarning: Call to deprecated item. Use SetToolTip instead.
+  self.start_bt.SetToolTipString('Start the execution of tasks')
+D:/Projects/MSDAnalysis/sampleMultiprocessing.py:44: wxPyDeprecationWarning: Call to deprecated item. Use SetToolTip instead.
+  self.start_bt.SetToolTipString('Start the execution of tasks')
+Traceback (most recent call last):
+  File "D:\Programs\PyCharm\helpers\pydev\_pydevd_bundle\pydevd_exec2.py", line 3, in Exec
+    exec(exp, global_vars, local_vars)
+  File "<input>", line 1, in <module>
+TypeError: update() missing 1 required positional argument: 'output'
+D:/Projects/MSDAnalysis/sampleMultiprocessing.py:44: wxPyDeprecationWarning: Call to deprecated item. Use SetToolTip instead.
+  self.start_bt.SetToolTipString('Start the execution of tasks')
