@@ -18,6 +18,7 @@ from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
 from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
+from msdapp.guicontrollers import EVT_RESULT,EVT_RESULT_ID,ResultEvent
 
 
 ########################################################################
@@ -206,8 +207,13 @@ class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
         self.controller = parent.controller
+        # Bind timer event
+        #self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
         processes = [p['caption'] for p in self.controller.processes]
         self.m_checkListProcess.AppendItems(processes)
+        # Set up event handler for any worker thread results
+        EVT_RESULT(self, self.progressfunc)
+        #EVT_CANCEL(self, self.stopfunc)
 
     def OnShowDescription( self, event ):
         print(event.String)
@@ -221,6 +227,26 @@ class ProcessRunPanel(ProcessPanel):
         self.m_stDescription.SetLabelText(desc[0])
         self.m_stFilesin.SetLabelText(", ".join(filesIn))
         self.m_stFilesout.SetLabelText(", ".join(filesOut))
+
+
+
+    def progressfunc(self, msg):
+        """
+        Update progress bars in table - multithreaded
+        :param count:
+        :param row:
+        :param col:
+        :return:
+        """
+        (count, row) = msg.data
+        print("\nProgress updated: ", time.ctime())
+        print('count = ', count)
+        if count < 100:
+            self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
+            self.m_dataViewListCtrlRunning.SetValue("Running", row=row, col=2)
+        else:
+            self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
+            self.m_dataViewListCtrlRunning.SetValue("Done", row=row, col=2)
 
 
     def getFilePanel(self):
@@ -242,8 +268,10 @@ class ProcessRunPanel(ProcessPanel):
         :param event:
         :return:
         """
-        #self.Parent.controller.mm.
-        wx.YieldIfNeeded()
+        if self.controller.mm is not None:
+            self.controller.mm.shutdown()
+            print("Cancel multiprocessor")
+        event.Skip()
 
     def OnRunScripts(self, event):
         """
@@ -254,7 +282,9 @@ class ProcessRunPanel(ProcessPanel):
         #Clear processing window
         self.m_dataViewListCtrlRunning.DeleteAllItems()
         #Disable Run button
-        self.m_btnRunProcess.Disable()
+        #self.m_btnRunProcess.Disable()
+        btn = event.GetEventObject()
+        btn.Disable()
         #Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
@@ -273,19 +303,19 @@ class ProcessRunPanel(ProcessPanel):
         expt = filepanel.m_tcSearch.GetValue()
         print("Expt:", expt)
         row = 0
+
         #For each process
         for p in selections:
             print("Running:", p)
             #Filter process
-            self.m_dataViewListCtrlRunning.AppendItem([p,0,"running"])
-
+            count = 0
+            self.m_dataViewListCtrlRunning.AppendItem([p,count,"Pending"])
             if p == self.controller.processes[0]['caption']:
                 filesIn = [self.controller.config[f] for f in self.controller.processes[0]['files'].split(", ")]
                 checkedfilenames = self.CheckFilenames(filenames, filesIn)
                 print("Checked:", checkedfilenames)
-                results = self.controller.RunFilter(checkedfilenames, self.m_dataViewListCtrlRunning.SetValue, row)
-                msg = "Processed: %d" % len(results)
-                self.m_dataViewListCtrlRunning.SetValue(msg, row=row, col=2)
+                self.controller.RunFilterThread(self, checkedfilenames, row)
+
             row = row+1
 
         print("Completed processes")
@@ -417,6 +447,9 @@ class MSDFrame(wx.Frame):
                           "MSD Autoanalysis",
                           size=(800, 700)
                           )
+
+        # self.timer = wx.Timer(self)
+        # self.Bind(wx.EVT_TIMER, self.update, self.timer)
         panel = wx.Panel(self)
 
         notebook = AppMain(panel)
@@ -424,7 +457,7 @@ class MSDFrame(wx.Frame):
         sizer.Add(notebook, 1, wx.ALL | wx.EXPAND, 5)
         panel.SetSizer(sizer)
         self.Layout()
-
+        self.Center(wx.BOTH)
         self.Show()
 
 

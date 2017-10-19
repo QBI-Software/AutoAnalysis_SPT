@@ -1,31 +1,98 @@
-from msdapp.msd.filterMSD import FilterMSD
-from os.path import join, exists, dirname
-
-from msdapp.msd.filterMSD import FilterMSD
 import time
-from glob import glob
-import multiprocessing
-from multiprocessing import Manager, Process
-from multiprocessing.managers import SyncManager
-import signal
+from multiprocessing import Manager, Process, freeze_support
+from os import access, R_OK, mkdir
+from os.path import join, dirname, exists
 from threading import Thread
-from os import access, R_OK, walk, mkdir
-from os.path import join, expanduser, dirname, exists, split
-import logging
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import wx
-import types
 from configobj import ConfigObj
-from tabulate import tabulate
 
 from msdapp.msd.batchCompareMSD import CompareMSD
 from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
-from msdapp.msd.msdStats import MSDStats
-from noname import AppConfiguration, StatsDialog
 
+freeze_support()
+# Define notification event for thread completion
+EVT_RESULT_ID = wx.NewId()
+
+
+def EVT_RESULT(win, func):
+    """Define Result Event."""
+    win.Connect(-1, -1, EVT_RESULT_ID, func)
+
+def EVT_CANCEL(win, func):
+    """Define Result Event."""
+    win.Connect(-1, -1, EVT_RESULT_ID, func)
+
+
+
+class ResultEvent(wx.PyEvent):
+    """Simple event to carry arbitrary result data."""
+
+    def __init__(self, data):
+        """Init Result Event."""
+        wx.PyEvent.__init__(self)
+        self.SetEventType(EVT_RESULT_ID)
+        self.data = data
+
+########################################################################
+class FilterThread(Thread):
+    """Test Worker Thread Class."""
+
+    # ----------------------------------------------------------------------
+    def __init__(self, controller,wxObject, filenames, row):
+        """Init Worker Thread Class."""
+        Thread.__init__(self)
+        self.controller = controller
+        self.wxObject = wxObject
+        self.filenames = filenames
+        self.row = row
+        self.start()  # start the thread
+
+    # ----------------------------------------------------------------------
+    def run(self):
+        """Run Worker Thread."""
+        # This is the code executing in the new thread.
+        total_tasks = len(self.filenames)
+        results = []
+
+        if total_tasks > 0:
+            print("Running thread")
+            tasks = []
+            try:
+                self.controller.mm = Manager()
+                q = self.controller.mm.dict()
+                count = 1
+                for i in range(total_tasks):
+                    p = Process(target=self.controller.processFilter, args=(self.filenames[i], q))
+                    p.start()
+                    tasks.append(p)
+                    # while p.is_alive():
+                    #     time.sleep(5)
+                    #     wx.PostEvent(self.wxObject, ResultEvent((count, self.row)))
+                    #     count += 10
+                n = 1
+                for p in tasks:
+                    p.join()
+                    count = (n / total_tasks) * 100
+                    wx.PostEvent(self.wxObject, ResultEvent((count, self.row)))
+                    n += 1
+
+                #self.controller.results = pd.DataFrame.from_dict(q, orient='index')
+                wx.PostEvent(self.wxObject, ResultEvent((100,self.row)))
+                print("Thread ended")
+            except KeyboardInterrupt:
+                print("Keyboard interrupt in THREAD")
+
+            finally:
+                # to be safe -- explicitly shutting down the manager
+                self.controller.mm.shutdown()
+        #return results
+
+########################################################################
 
 class MSDController():
     def __init__(self, configfile):
@@ -50,10 +117,11 @@ class MSDController():
         self.configfile = configfile
         self.loaded = self.loadConfig()
         self.timer = wx.Timer()
+
         #Multiprocessing settings
-        multiprocessing.log_to_stderr()
-        logger = multiprocessing.get_logger()
-        logger.setLevel(logging.INFO)
+        # multiprocessing.log_to_stderr()
+        # logger = multiprocessing.get_logger()
+        # logger.setLevel(logging.INFO)
 
 
     def loadConfig(self, config=None):
@@ -120,6 +188,18 @@ class MSDController():
         else:
             self.timer.Stop()
 
+    def processTest(self,datafile,q):
+        result = 0
+        for i in range(10):
+            result += i
+        q[datafile] = result
+
+    def RunFilterThread(self, wxGui,filenames, row=0):
+        print("Running Filter Thread - start")
+        FilterThread(self,wxGui,filenames, row)
+        print("Running Filter Thread - complete")
+        return len(filenames)
+
 
     def RunFilter(self, filenames, progressfunc=None,row=None):
         """
@@ -128,55 +208,50 @@ class MSDController():
         :param filenames:
         :return:
         """
-        type = 'filter'
-
-        self.ShowFeedBack(True)
-        # find datafile - assume same directory for msd file
-        # result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.datafile))]
-
         if len(filenames) > 0:
             total_tasks = len(filenames)
             tasks = []
             mm = Manager()
-
+            self.ShowFeedBack(True)
             try:
                 q = mm.dict()
                 for i in range(total_tasks):
                     self.count = 1
-                    p = Process(target=self.processFilter, args=(filenames[i], q))
+                    p = Process(target=self.processTest, args=(filenames[i], q))
                     p.start()
                     tasks.append(p)
-                    while p.is_alive():
-                        time.sleep(5)
-                        self.count = self.count + 1
-                        wx.CallAfter(progressfunc, self.count, row, 1)
 
+                    print('loop1: timer is running=', self.timer.IsRunning())
                 try:
                     for p in tasks:
                         p.join()
+                        self.count = self.count + 10
+                        wx.CallAfter(progressfunc, self.count, row, 1)
+
+                        print('loop2: timer is running=', self.timer.IsRunning())
+
                 except KeyboardInterrupt:
                     print("Keyboard interrupt in main")
 
-
                 headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
                 results = pd.DataFrame.from_dict(q, orient='index')
-                results.columns = headers
+                #results.columns = headers
+                self.ShowFeedBack(False)
                 return results
             finally:
                 # to be safe -- explicitly shutting down the manager
                 mm.shutdown()
-
-
         else:
-            raise ValueError("Cannot find any datafiles: %s" % self.datafile)
+            #logger("Error:Cannot find any datafiles: %s" % self.datafile)
+            return 0
 
-        self.ShowFeedBack(False, type)
 
-    def RunHistogram(self, event):
+
+    def RunHistogram(self, event, result):
         type = 'histo'
-        self.ShowFeedBack(True, type)
+        self.ShowFeedBack(True)
         # find datafile - assume same directory for msd file
-        result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.filteredfname))]
+        #result = [y for x in walk(self.inputdir) for y in glob(join(x[0], self.filteredfname))]
         if len(result) > 0:
             total_tasks = len(result)
             tasks = []
