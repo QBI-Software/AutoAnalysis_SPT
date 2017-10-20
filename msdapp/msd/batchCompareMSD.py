@@ -24,7 +24,7 @@ Created on Tue Sep 5 2017
 
 import argparse
 from os import R_OK, access, walk, sep
-from os.path import join, expanduser, commonpath
+from os.path import join, expanduser, commonpath, isdir
 from glob import glob, iglob
 from collections import OrderedDict
 import numpy as np
@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 from configobj import ConfigObj
 
 class CompareMSD():
-    def __init__(self, inputdir, outputdir,prefix, expt,configfile=None):
+    def __init__(self, inputfiles, outputdir,prefix, expt,configfile=None):
         self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
@@ -44,8 +44,14 @@ class CompareMSD():
             self.msdpoints = 10
             self.timeint = 0.02
 
-        self.numcells = 0
-        self.inputdir = inputdir
+        self.searchtext = self.expt + self.prefix
+        if isdir(inputfiles):
+            self.base = inputfiles.split(sep)
+            self.inputfiles = self.getSelectedFiles(inputfiles, self.msdfile, self.searchtext)
+        else:
+            self.inputfiles = inputfiles
+            self.base = commonpath(self.inputfiles) #assumes common root directory
+        self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
         self.prefix = prefix
         self.expt = expt
@@ -105,19 +111,11 @@ class CompareMSD():
             raise IOError(msg)
         return allfiles
 
-    def compile(self, selectedfiles=None):
-        try:
-            searchtext = self.expt + self.prefix
-            if selectedfiles is None:
-                result = self.getSelectedFiles(self.inputdir,self.msdfile,searchtext)
-                base = self.inputdir.split(sep)
-            else:
-                result = selectedfiles
-                base = commonpath(result)
-            self.numcells = len(result)
-            print("Files Selected: ", self.numcells)
-            # Compile all selected files
 
+
+    def compile(self):
+        try:
+            # Compile all selected files
             timepoints = [str(x) for x in range(1,self.msdpoints + 1)]
             cols = ['Cell','Stats'] + timepoints
             data = pd.DataFrame(columns=cols, dtype=float)
@@ -126,16 +124,16 @@ class CompareMSD():
             f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Filtered_MSD.csv'
 
             n = 1
-            for f in result:
+            for f in self.inputfiles:
                 df = pd.read_csv(f0)
                 #Generate unique cell ID
                 cells = f.split(sep)
                 #cell = cells[len(base)]
-                if len(base) > 0:
-                    cell = "_".join(cells[len(base):len(base)+3])
+                if len(self.base) > 0:
+                    cell = "_".join(cells[len(self.base):len(self.base)+3])
                 else:
                     cellid = '_c{0:03d}'.format(n)
-                    cell = "_".join(searchtext,cellid)
+                    cell = "_".join(self.searchtext,cellid)
                     n = n + 1
                 stats=OrderedDict({'avgs': [cell,'Mean'],
                        'counts': [cell,'Count'],

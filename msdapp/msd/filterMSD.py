@@ -22,7 +22,7 @@ import pandas
 
 
 class FilterMSD():
-    def __init__(self, configfile, datafile, datafile_msd, outputdir, minlimit, maxlimit):
+    def __init__(self, configfile, datafile, datafile_msd, outputdir, minlimit=-5.0, maxlimit=1.0):
         self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
@@ -37,7 +37,7 @@ class FilterMSD():
 
             # Load data
         self.outputdir = outputdir
-        print("Loading data ...")
+        print("FilterMSD: Loading data ...")
         (self.data, self.msd) = self.load_datafiles(datafile, datafile_msd)
         print("...loaded")
 

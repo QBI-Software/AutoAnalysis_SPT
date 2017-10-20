@@ -26,7 +26,7 @@ Created on Sep 8 2017
 
 import argparse
 from os import R_OK, access, walk, sep
-from os.path import join
+from os.path import join, isdir
 from glob import glob, iglob
 from configobj import ConfigObj
 import re
@@ -37,7 +37,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 class HistoStats():
-    def __init__(self, inputdir, outputdir,prefix, expt,configfile=None):
+    def __init__(self, inputfiles, outputdir,prefix, expt,configfile=None):
         self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
@@ -45,7 +45,11 @@ class HistoStats():
             self.outputfile='AllHistogram_log10D.csv'
             self.histofile = 'Histogram_log10D.csv'
             self.threshold = -1.6
-        self.inputdir = inputdir
+        if isdir(inputfiles):
+            self.inputfiles = self.getfilelist(inputfiles)
+        else:
+            self.inputfiles = inputfiles
+        #self.inputdir = inputdir
         self.outputdir = outputdir
         self.prefix = prefix
         self.expt = expt
@@ -84,19 +88,21 @@ class HistoStats():
 
         return itemlist
 
-    def compile(self, selectedfiles=None):
-        #get list of files to compile
-        if access(self.inputdir, R_OK):
+    def getfilelist(self,inputdir):
+        allhistofiles =[]
+        if access(inputdir, R_OK):
             #allhistofiles = [y for x in walk(self.inputdir) for y in iglob(join(x[0], self.histofile))]
             allhistofiles = [y for y in iglob(join(self.inputdir, '**', self.histofile), recursive=True)]
             print("Files Found: ", len(allhistofiles))
             if len(allhistofiles)== 0:
                 msg = "No files found"
                 raise ValueError(msg)
+        return allhistofiles
 
-            #Filter on expt and prefix
+    def compile(self):
+        if len(self.inputfiles) >0:
             searchtext = self.expt+self.prefix
-            result = [f for f in allhistofiles if re.search(searchtext,f, flags=re.IGNORECASE)]
+            result = [f for f in self.inputfiles if re.search(searchtext,f, flags=re.IGNORECASE)]
             self.numcells = len(result)
             print("Files Matching search: ", self.numcells)
             if self.numcells == 0:
@@ -134,7 +140,7 @@ class HistoStats():
             else:
                 return None
         else:
-            msg = "Error: Cannot access directory : %s" % self.inputdir
+            msg = "Error: Cannot find any files to process"
             raise IOError(msg)
 
 

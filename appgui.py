@@ -3,9 +3,11 @@ import logging
 import time
 from glob import glob, iglob
 from multiprocessing import Manager, Process
+import threading
 from os import access, R_OK, walk, mkdir
 from os.path import join, expanduser, dirname, exists, split
 import re
+from queue import Queue
 import matplotlib.pyplot as plt
 import pandas as pd
 import wx
@@ -238,15 +240,18 @@ class ProcessRunPanel(ProcessPanel):
         :param col:
         :return:
         """
-        (count, row) = msg.data
+        (count, row,i,total, process) = msg.data
         print("\nProgress updated: ", time.ctime())
         print('count = ', count)
-        if count < 100:
+        status = "%d of %d files" % (i, total)
+        if count ==0:
+            self.m_dataViewListCtrlRunning.AppendItem([process, count, "Pending"])
+        elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
-            self.m_dataViewListCtrlRunning.SetValue("Running", row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("Running " + status, row=row, col=2)
         else:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
-            self.m_dataViewListCtrlRunning.SetValue("Done", row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("Done "+ status, row=row, col=2)
 
 
     def getFilePanel(self):
@@ -268,9 +273,8 @@ class ProcessRunPanel(ProcessPanel):
         :param event:
         :return:
         """
-        if self.controller.mm is not None:
-            self.controller.mm.shutdown()
-            print("Cancel multiprocessor")
+        self.controller.shutdown()
+        print("Cancel multiprocessor")
         event.Skip()
 
     def OnRunScripts(self, event):
@@ -303,20 +307,23 @@ class ProcessRunPanel(ProcessPanel):
         expt = filepanel.m_tcSearch.GetValue()
         print("Expt:", expt)
         row = 0
-
         #For each process
         for p in selections:
             print("Running:", p)
-            #Filter process
-            count = 0
-            self.m_dataViewListCtrlRunning.AppendItem([p,count,"Pending"])
-            if p == self.controller.processes[0]['caption']:
-                filesIn = [self.controller.config[f] for f in self.controller.processes[0]['files'].split(", ")]
+            i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']]
+            if len(i) ==1:
+                i = i[0]
+                filesIn = [self.controller.config[f] for f in self.controller.processes[i]['files'].split(", ")]
                 checkedfilenames = self.CheckFilenames(filenames, filesIn)
                 print("Checked:", checkedfilenames)
-                self.controller.RunFilterThread(self, checkedfilenames, row)
+                type = self.controller.processes[i]['href']
+                wx.PostEvent(self, ResultEvent((0, row, 0, len(filenames), p)))
+                t = self.controller.RunThread(self, checkedfilenames, type, outputdir, expt, row)
+                if t is not None:
+                    t.start()
 
             row = row+1
+            print('Next process: row=', row)
 
         print("Completed processes")
         # Enable Run button
@@ -335,7 +342,10 @@ class ProcessRunPanel(ProcessPanel):
                 parts = split(f)
                 if conf in parts[1]:
                     newfiles.append(f)
-
+                else:
+                    #extract directory and seek files
+                    newfiles = newfiles + [y for y in iglob(join(parts[0], '**', conf), recursive=True)]
+        #print("Checked: ",newfiles)
         return newfiles
 
 

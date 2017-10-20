@@ -28,7 +28,7 @@ from configobj import ConfigObj
 
 
 class HistogramLogD():
-    def __init__(self, minlimit, maxlimit,binwidth,datafile, configfile=None):
+    def __init__(self, datafile, configfile=None,minlimit=-5, maxlimit=1,binwidth=0.02,):
         self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     print("Input:", datafile)
 
     try:
-        fd = HistogramLogD(float(args.minlimit), float(args.maxlimit),args.binwidth,datafile, args.config)
+        fd = HistogramLogD(datafile, args.config,float(args.minlimit), float(args.maxlimit),args.binwidth)
         fd.generateHistogram(outputdir)
         # Plotly Offline
         data = fd.data[fd.logcolumn]
