@@ -26,7 +26,7 @@ Created on Sep 8 2017
 
 import argparse
 from os import R_OK, access, walk, sep
-from os.path import join, isdir
+from os.path import join, isdir, commonpath
 from glob import glob, iglob
 from configobj import ConfigObj
 import re
@@ -45,19 +45,24 @@ class HistoStats():
             self.outputfile='AllHistogram_log10D.csv'
             self.histofile = 'Histogram_log10D.csv'
             self.threshold = -1.6
-        if isdir(inputfiles):
-            self.inputfiles = self.getfilelist(inputfiles)
+        #self.expt = expt
+        #self.prefix = prefix
+        self.searchtext = expt + prefix
+
+        if not isinstance(inputfiles, list) and isdir(inputfiles):
+            self.base = inputfiles.split(sep)
+            self.inputfiles = self.getSelectedFiles(inputfiles, self.histofile, self.searchtext)
         else:
             self.inputfiles = inputfiles
-        #self.inputdir = inputdir
+            self.base = commonpath(self.inputfiles)
+        self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
-        self.prefix = prefix
-        self.expt = expt
-        self.compiledfile = join(outputdir, expt + "_" + prefix + "_" + self.outputfile)
+        self.compiledfile = join(outputdir, self.searchtext + "_" + self.outputfile)
         self.compiled = pd.DataFrame()
-        self.numcells = 0
+        self.n = 1 #generating id
+
         #TODO: Testing Only:
-        self.histofile = 'AllROI-D.txt'
+        #self.histofile = 'AllROI-D.txt'
 
     def __loadConfig(self, configfile=None):
         if configfile is not None:
@@ -88,38 +93,53 @@ class HistoStats():
 
         return itemlist
 
-    def getfilelist(self,inputdir):
-        allhistofiles =[]
+    def getSelectedFiles(self,inputdir, datafile, searchtext=None):
+        # get list of files to compile
+        allfiles = []
         if access(inputdir, R_OK):
-            #allhistofiles = [y for x in walk(self.inputdir) for y in iglob(join(x[0], self.histofile))]
-            allhistofiles = [y for y in iglob(join(self.inputdir, '**', self.histofile), recursive=True)]
-            print("Files Found: ", len(allhistofiles))
-            if len(allhistofiles)== 0:
+            allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
+            print("Files Found: ", len(allfiles))
+            if len(allfiles) > 0:
+                # Filter on searchtext
+                if searchtext is not None:
+                    allfiles = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+                    if len(allfiles) == 0:
+                        msg = "No matching files found: %s" % searchtext
+                        raise IOError(msg)
+            else:
                 msg = "No files found"
-                raise ValueError(msg)
-        return allhistofiles
+                raise IOError(msg)
+        else:
+            msg = "ERROR: Unable to access inputdir: %s" % inputdir
+            raise IOError(msg)
+        return allfiles
+
+    def generateID(self,f):
+        # Generate unique cell ID
+        cells = f.split(sep)
+        base = self.base.split(sep)
+        if len(base) > 4:
+            cell = "_".join(cells[len(self.base):len(self.base) + 3])
+        else:
+            cellid = 'c{0:03d}'.format(self.n)
+            cell = "_".join([self.searchtext, cellid])
+            self.n += 1
+        return cell
 
     def compile(self):
-        if len(self.inputfiles) >0:
-            searchtext = self.expt+self.prefix
-            result = [f for f in self.inputfiles if re.search(searchtext,f, flags=re.IGNORECASE)]
-            self.numcells = len(result)
-            print("Files Matching search: ", self.numcells)
-            if self.numcells == 0:
-                msg = "No matching files found: %s" % searchtext
-                raise ValueError(msg)
-
+        try:
             #Compile all selected files
+            print("Compiling %d files" % self.numcells)
             c = pd.DataFrame()
-            base = self.inputdir.split(sep)
+            #base = self.base.split(sep)
             suffixes = ['bins']
             # TODO: Test with dummy file
-            f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Histogram_log10D.csv'
-            for f in result:
-                df = pd.read_csv(f0)
-                cell = f.split(sep)
-                suffixes.append("_".join(cell[len(base):len(base)+3]))
-
+            #f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Histogram_log10D.csv'
+            #D:\data\msddata\NOSTIM\CELL1\data
+            for f in self.inputfiles:
+                df = pd.read_csv(f)
+                cell = self.generateID(f)
+                suffixes.append(cell)
                 if c.empty:
                     c = df
                 else:
@@ -139,8 +159,8 @@ class HistoStats():
                 return self.compiledfile
             else:
                 return None
-        else:
-            msg = "Error: Cannot find any files to process"
+        except Exception as e:
+            msg = "Error: in BatchHisto compile process - %s" % e
             raise IOError(msg)
 
 
@@ -180,7 +200,7 @@ class HistoStats():
             df_results = pd.DataFrame({'Cell': labels, 'Immobile': immobile, 'Mobile': mobile})
             df_results['Ratio'] = df_results['Mobile']/ df_results['Immobile']
 
-            ratiofile = join(self.outputdir,self.expt + self.prefix + "_ratios.csv")
+            ratiofile = join(self.outputdir,self.searchtext + "_ratios.csv")
             df_results.to_csv(ratiofile, index=False)
             print("Output ratios:", ratiofile)
 
@@ -203,7 +223,7 @@ class HistoStats():
             plt.axvline(x=self.threshold, color='r', linestyle='-', linewidth=0.5)
         lines, _ = ax.get_legend_handles_labels()
         ax.legend(lines, labels, loc=2, fontsize='xx-small')
-        plt.title(self.prefix.upper() + " "  + "Individual cells")
+        plt.title(self.searchtext.upper() + " " + "Individual cells")
         plt.xlabel('Log10(D)')
         plt.ylabel(r'Frequency distribution (fractions)')
 
@@ -217,7 +237,7 @@ class HistoStats():
         plt.errorbar(df['bins'],df['MEAN'],yerr=df['SEM'], fmt='--o')
         #df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Log10(D)')
-        plt.title(self.prefix.upper() +" " + 'Average with SEM')
+        plt.title(self.searchtext.upper() +" " + 'Average with SEM')
 
 
 #################################################################################################

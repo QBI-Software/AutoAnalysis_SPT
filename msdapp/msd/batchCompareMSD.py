@@ -43,9 +43,10 @@ class CompareMSD():
             self.msdfile = 'Filtered_MSD.csv'
             self.msdpoints = 10
             self.timeint = 0.02
-
-        self.searchtext = self.expt + self.prefix
-        if isdir(inputfiles):
+        #self.expt = expt
+        #self.prefix = prefix
+        self.searchtext = expt + prefix
+        if not isinstance(inputfiles, list) and isdir(inputfiles):
             self.base = inputfiles.split(sep)
             self.inputfiles = self.getSelectedFiles(inputfiles, self.msdfile, self.searchtext)
         else:
@@ -53,12 +54,13 @@ class CompareMSD():
             self.base = commonpath(self.inputfiles) #assumes common root directory
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
-        self.prefix = prefix
-        self.expt = expt
-        self.compiledfile = join(outputdir, expt + "_" + prefix + "_" + self.msdcompare)
+
+        self.compiledfile = join(outputdir, self.searchtext + "_" + self.msdcompare)
         self.compiled = pd.DataFrame()
+        self.n = 1  # generating id
+
         # TODO: Testing Only for filenames:
-        self.msdfile = 'AllROI-D.txt'
+        #self.msdfile = 'AllROI-D.txt'
 
     def __loadConfig(self, configfile=None):
         if configfile is not None:
@@ -111,7 +113,17 @@ class CompareMSD():
             raise IOError(msg)
         return allfiles
 
-
+    def generateID(self,f):
+        # Generate unique cell ID
+        cells = f.split(sep)
+        base = self.base.split(sep)
+        if len(base) > 4:
+            cell = "_".join(cells[len(self.base):len(self.base) + 3])
+        else:
+            cellid = 'c{0:03d}'.format(self.n)
+            cell = "_".join([self.searchtext, cellid])
+            self.n += 1
+        return cell
 
     def compile(self):
         try:
@@ -121,20 +133,12 @@ class CompareMSD():
             data = pd.DataFrame(columns=cols, dtype=float)
             ctr = 0
             # TODO: Test with dummy file
-            f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Filtered_MSD.csv'
-
+            #f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Filtered_MSD.csv'
+            base = self.base.split(sep)
             n = 1
             for f in self.inputfiles:
-                df = pd.read_csv(f0)
-                #Generate unique cell ID
-                cells = f.split(sep)
-                #cell = cells[len(base)]
-                if len(self.base) > 0:
-                    cell = "_".join(cells[len(self.base):len(self.base)+3])
-                else:
-                    cellid = '_c{0:03d}'.format(n)
-                    cell = "_".join(self.searchtext,cellid)
-                    n = n + 1
+                df = pd.read_csv(f)
+                cell = self.generateID()
                 stats=OrderedDict({'avgs': [cell,'Mean'],
                        'counts': [cell,'Count'],
                        'stds':[cell,'Std'],
@@ -213,11 +217,11 @@ class CompareMSD():
             plt.legend(labels)
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m2/s)')
-            plt.title(self.prefix.replace("_"," ") + 'MSDs per cell')
+            plt.title(self.searchtext.upper() + ' MSDs per cell')
             #plt.show()
             #save areas to new file
             df_area = pd.DataFrame({'Cell':labels, 'MSD Area': areas}, columns=['Cell','MSD Area'])
-            areasfile = join(self.outputdir, self.prefix + "areas.csv")
+            areasfile = join(self.outputdir, self.searchtext + "_areas.csv")
             df_area.to_csv(areasfile, index=False)
             print('Areas output to', areasfile)
             return areasfile
@@ -235,7 +239,7 @@ class CompareMSD():
             allmeans = all.groupby('Stats').get_group('Mean')
             allsems = all.groupby('Stats').get_group('SEM')
             plt.errorbar(xi,allmeans[x].iloc[0],yerr=allsems[x].iloc[0])
-            plt.title(self.prefix.replace("_"," ") + 'Average MSD')
+            plt.title(self.searchtext.upper() + ' Average MSD')
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m2/s)')
             #plt.show()

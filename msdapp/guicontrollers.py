@@ -282,71 +282,71 @@ class MSDController():
         print('Process Test - end')
 
     # ----------------------------------------------------------------------
-    def RunFilter(self, wxGui,filenames, row=0):
-        lock.acquire(True)
-        type = 'filter'
-        files = [f for f in filenames if self.datafile in f]
-        if len(files) > 0:
-            total_files = len(files)
-            tasks = []
-            mm = Manager()
-            q = mm.dict()
-
-            for i in range(total_files):
-                print("Running %s script: %s (%d of %d)" % (type.title(), files[i], i, total_files))
-                p = Process(target=self.processFilter, args=(files[i], q))
-                tasks.append(p)
-                p.start()
-
-            i=0
-            for p in tasks:
-                p.join()
-                count = (i + 1 / total_files) * 100
-                wx.PostEvent(wxGui, ResultEvent((count, row, i + 1, total_files, type)))
-                i += 1
-
-            headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
-            results = pd.DataFrame.from_dict(q, orient='index')
-            results.columns = headers
-            for i, row in results.iterrows():
-                print("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s\n" % (
-                    i, row['Filtered'], row['Total'], row['Data'], row['MSD']))
-            print("Complete")
-            lock.release()
-        else:
-            print("RunFilter: Cannot find any datafiles")
-
-    # ----------------------------------------------------------------------
-    def RunHistogram(self, wxGui,filenames, row=0):
-        lock.acquire(True)
-        type = 'histo'
-        if len(filenames) > 0:
-            total_files = len(filenames)
-            tasks = []
-            mm = Manager()
-            q = mm.dict()
-            for i in range(total_files):
-                print("Running %s script: %s (%d of %d)" % (type.title(), filenames[i], i, total_files))
-                count = (i + 1 / total_files) * 100
-                wx.PostEvent(wxGui, ResultEvent((count, row, i + 1, total_files, type)))
-                p = Process(target=self.processHistogram, args=(filenames[i], q))
-                tasks.append(p)
-                p.start()
-
-            for p in tasks:
-                p.join()
-
-            headers = ['Figure', 'Histogram data']
-            results = pd.DataFrame.from_dict(q, orient='index')
-            results.columns = headers
-            for i, row in results.iterrows():
-                print("HISTOGRAM: %s\n\t%s\n\t%s\n" % (
-                    i, row['Figure'], row['Histogram data']))
-            print("Complete")
-            lock.release()
-
-        else:
-            print("RunHistogram: Cannot find any datafiles")
+    # def RunFilter(self, wxGui,filenames, row=0):
+    #     lock.acquire(True)
+    #     type = 'filter'
+    #     files = [f for f in filenames if self.datafile in f]
+    #     if len(files) > 0:
+    #         total_files = len(files)
+    #         tasks = []
+    #         mm = Manager()
+    #         q = mm.dict()
+    #
+    #         for i in range(total_files):
+    #             print("Running %s script: %s (%d of %d)" % (type.title(), files[i], i, total_files))
+    #             p = Process(target=self.processFilter, args=(files[i], q))
+    #             tasks.append(p)
+    #             p.start()
+    #
+    #         i=0
+    #         for p in tasks:
+    #             p.join()
+    #             count = (i + 1 / total_files) * 100
+    #             wx.PostEvent(wxGui, ResultEvent((count, row, i + 1, total_files, type)))
+    #             i += 1
+    #
+    #         headers = ['Data', 'MSD', 'Total', 'Filtered', 'Total_MSD', 'Filtered_MSD']
+    #         results = pd.DataFrame.from_dict(q, orient='index')
+    #         results.columns = headers
+    #         for i, row in results.iterrows():
+    #             print("FILTER: %s\n\t%d of %d rows filtered\n\t%s\n\t%s\n" % (
+    #                 i, row['Filtered'], row['Total'], row['Data'], row['MSD']))
+    #         print("Complete")
+    #         lock.release()
+    #     else:
+    #         print("RunFilter: Cannot find any datafiles")
+    #
+    # # ----------------------------------------------------------------------
+    # def RunHistogram(self, wxGui,filenames, row=0):
+    #     lock.acquire(True)
+    #     type = 'histo'
+    #     if len(filenames) > 0:
+    #         total_files = len(filenames)
+    #         tasks = []
+    #         mm = Manager()
+    #         q = mm.dict()
+    #         for i in range(total_files):
+    #             print("Running %s script: %s (%d of %d)" % (type.title(), filenames[i], i, total_files))
+    #             count = (i + 1 / total_files) * 100
+    #             wx.PostEvent(wxGui, ResultEvent((count, row, i + 1, total_files, type)))
+    #             p = Process(target=self.processHistogram, args=(filenames[i], q))
+    #             tasks.append(p)
+    #             p.start()
+    #
+    #         for p in tasks:
+    #             p.join()
+    #
+    #         headers = ['Figure', 'Histogram data']
+    #         results = pd.DataFrame.from_dict(q, orient='index')
+    #         results.columns = headers
+    #         for i, row in results.iterrows():
+    #             print("HISTOGRAM: %s\n\t%s\n\t%s\n" % (
+    #                 i, row['Figure'], row['Histogram data']))
+    #         print("Complete")
+    #         lock.release()
+    #
+    #     else:
+    #         print("RunHistogram: Cannot find any datafiles")
 
     # ----------------------------------------------------------------------
     def RunStats(self, wxGui,filenames, outputdir, expt=None, row=0):
@@ -355,27 +355,34 @@ class MSDController():
             expt = ''
         # loop through directory structure and locate prefixes with expt name
         try:
-            for group in [self.group1,self.group2]:
+            groups = [self.group1,self.group2]
+            total = len(groups)
+            i = 1
+            for group in groups:
                 print("Running %s script: %s (%s)" % (type.title(), expt, group))
                 fmsd = HistoStats(filenames, outputdir, group, expt, self.configfile)
                 fmsd.compile()
                 compiledfile = fmsd.runStats()
                 # Split to Mobile/immobile fractions - output
                 ratiofile = fmsd.splitMobile()
+                count = (i/ total) * 100
+                wx.PostEvent(wxGui, ResultEvent((count, row, i, total, type)))
                 print("HISTOGRAM BATCH: %s: %s\n\t%s\n\t%s\n" % (expt, group, compiledfile, ratiofile))
                 #self.result_stats.SetLabel("Complete - Close plot to continue")
                 # Set the figure
-                # fig = plt.figure(figsize=(10, 5))
-                # axes1 = plt.subplot(121)
-                # fmsd.showPlots(axes1)
-                #
-                # axes2 = plt.subplot(122)
-                # fmsd.showAvgPlot(axes2)
-                #
-                # figtype = 'png'  # png, pdf, ps, eps and svg.
-                # figname = fmsd.compiledfile.replace('csv', figtype)
-                # plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-                # plt.show()
+                fig = plt.figure(figsize=(10, 5))
+                axes1 = plt.subplot(121)
+                fmsd.showPlots(axes1)
+
+                axes2 = plt.subplot(122)
+                fmsd.showAvgPlot(axes2)
+
+                figtype = 'png'  # png, pdf, ps, eps and svg.
+                figname = fmsd.compiledfile.replace('csv', figtype)
+                plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+                plt.show()
+                i += 1
+            wx.PostEvent(wxGui, ResultEvent((100, row, i-1, total, type)))
         except ValueError as e:
             print("Batch Histogram error: %s" % e)
 
@@ -386,24 +393,30 @@ class MSDController():
         if expt is None:
             expt = ''
         try:
-            for group in [self.group1,self.group2]:
+            groups = [self.group1, self.group2]
+            total = len(groups)
+            i = 1
+            for group in groups:
                 print("Running %s script: %s (%s)" % (type.title(), expt, group))
                 fmsd = CompareMSD(filenames, outputdir, group, expt, self.configfile)
                 compiledfile = fmsd.compile()
-                print("MSD BATCH: %s: %s\n\t%s\n" % (expt, group, compiledfile))
+                count = (i / total) * 100
+                wx.PostEvent(wxGui, ResultEvent((count, row, i, total, type)))
                 #self.result_msd.SetLabel("Complete")
-                # Set the figure
-                # fig = plt.figure(figsize=(10, 5))
-                # axes1 = plt.subplot(121)
-                # areasfile = fmsd.showPlotsWithAreas(axes1)
-                #
-                # axes2 = plt.subplot(122)
-                # fmsd.showAvgPlot(axes2)
-                #
-                # figtype = 'png'  # png, pdf, ps, eps and svg.
-                # figname = fmsd.compiledfile.replace('csv', figtype)
-                # plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-                # plt.show()
+                #Set the figure
+                fig = plt.figure(figsize=(10, 5))
+                axes1 = plt.subplot(121)
+                areasfile = fmsd.showPlotsWithAreas(axes1)
+                print("MSD BATCH: %s: %s\n\t%s\t%s\n" % (expt, group, compiledfile, areasfile))
+                axes2 = plt.subplot(122)
+                fmsd.showAvgPlot(axes2)
+
+                figtype = 'png'  # png, pdf, ps, eps and svg.
+                figname = fmsd.compiledfile.replace('csv', figtype)
+                plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+                plt.show()
+                i+=1
+            wx.PostEvent(wxGui, ResultEvent((100, row, i-1, total, type)))
         except ValueError as e:
             print("Batch MSD error: %s" % e)
 
@@ -434,10 +447,12 @@ class MSDController():
             lock.acquire(True)
             #StatsThread(self, wxGui, filenames, type, row)
             self.RunStats(wxGui, filenames, outputdir, expt, row)
+            lock.release()
         elif type == 'msd':
             lock.acquire(True)
             #MsdThread(self, wxGui, filenames, type, row)
             self.RunMSD(wxGui, filenames, outputdir, expt, row)
+            lock.release()
 
 
 
