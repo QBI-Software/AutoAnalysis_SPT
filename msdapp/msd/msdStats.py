@@ -29,39 +29,28 @@ import matplotlib.pyplot as plt
 
 
 class MSDStats():
-    def __init__(self, dir1, dir2, outputdir, prefix1=None, prefix2=None, configfile=None):
+    def __init__(self, inputdirs, outputdir, prefixes=None, configfile=None):
         """
         Load initial data
-        :param ratio1: Full Filename of ratios.csv
-        :param ratio2: Full Filename of ratios.csv
-        :param prefix1: Prefix of file 1 - if none will try and get from underscore
-        :param prefix2: Prefix of file 2 - if none will try and get from underscore
+        :param inputdirs: [in1, in2]
+        :param outputdir: outputdir
+        :param prefixes: [prefix1, prefix2]
+        :param configfile: config params
         """
         self.encoding = 'ISO-8859-1'
-        if not access(dir1,R_OK) or not access(dir2,R_OK):
-            raise IOError("Cannot access group directories")
-        if configfile is not None:
-            self.__loadConfig(configfile)
-        else:
-            self.histo = 'AllHistogram_log10D.csv'
-            self.msd = 'Avg_MSD.csv'
-            self.msdpoints = 10
-            self.timeint = 0.02
+        self.__loadConfig(configfile)
         self.outputdir = outputdir
-
-        if prefix1 is not None and prefix2 is not None:
-            self.prefixes = [prefix1, prefix2]
+        if prefixes is None:
+            self.prefixes = [self.group1,self.group2]
         else:
-            self.prefixes = ['NOSTIM', 'STIM']
+            self.prefixes = prefixes
         self.outputfilename = "_".join(self.prefixes) + '_stats.csv'
-        self.histodata = self.__loadData(dir1, dir2, self.histo,'bins')
-        self.ratiodata = self.__loadData(dir1, dir2,'ratios.csv','Cell')
-        self.areadata = self.__loadData(dir1, dir2,'areas.csv','Cell')
-        self.msddata = self.__loadData(dir1, dir2, self.msd, 'Cell')
+        self.histodata = self.__loadData(inputdirs[0], inputdirs[1], self.histo,'bins')
+        self.ratiodata = self.__loadData(inputdirs[0], inputdirs[1],'ratios.csv','Cell')
+        self.areadata = self.__loadData(inputdirs[0], inputdirs[1],'areas.csv','Cell')
+        self.msddata = self.__loadData(inputdirs[0], inputdirs[1], self.msd, 'Cell')
         self.msddatafiles = []
-        dirs = [dir1,dir2]
-        self.msddatafiles = [join(dirs[i], self.prefixes[i] + "_" + self.msd) for i in [0,1]]
-
+        self.msddatafiles = [join(inputdirs[i], self.prefixes[i] + "_" + self.msd) for i in [0,1]]
 
 
     def __loadConfig(self, configfile):
@@ -71,14 +60,24 @@ class MSDStats():
         :return:
         """
         try:
-            if not access(configfile, R_OK):
-                raise IOError("Cannot access configfile: %s" % configfile)
-            config = ConfigObj(configfile, encoding=self.encoding)
-            self.histo = config['ALLSTATS_FILENAME']
-            self.msd = config['AVGMSD_FILENAME']
-            self.msdpoints = int(config['MSD_POINTS'])
-            self.timeint = float(config['TIME_INTERVAL'])
-            print("MSDStats: Config file loaded")
+            if configfile is not None and access(configfile, R_OK):
+                config = ConfigObj(configfile, encoding=self.encoding)
+                self.config = config
+                self.histo = config['ALLSTATS_FILENAME']
+                self.msd = config['AVGMSD_FILENAME']
+                self.msdpoints = int(config['MSD_POINTS'])
+                self.timeint = float(config['TIME_INTERVAL'])
+                self.group1 = config['GROUP1']
+                self.group2 = config['GROUP2']
+                print("MSDStats: Config file loaded")
+            else:
+                self.histo = 'AllHistogram_log10D.csv'
+                self.msd = 'Avg_MSD.csv'
+                self.msdpoints = 10
+                self.timeint = 0.02
+                self.group1 = 'STIM'
+                self.group2 = 'NOSTIM'
+                print("MSDStats: using config defaults")
         except ConfigObjError as c:
             raise ValueError("ERROR: config file load error: %s", configfile)
 

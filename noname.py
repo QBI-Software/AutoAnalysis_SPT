@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*- 
 
 ###########################################################################
-## Python code generated with wxFormBuilder (version Jun 17 2015)
+## Python code generated with wxFormBuilder (version Dec 21 2016)
 ## http://www.wxformbuilder.org/
 ##
 ## PLEASE DO "NOT" EDIT THIS FILE!
@@ -30,7 +30,7 @@ class AppConfiguration ( wx.Frame ):
 		
 		self.m_Title = wx.StaticText( self, wx.ID_ANY, u"MSD Config params", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
 		self.m_Title.Wrap( -1 )
-		self.m_Title.SetFont( wx.Font( 12, 70, 90, 90, False, wx.EmptyString ) )
+		self.m_Title.SetFont( wx.Font( 12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
 		
 		fgSizer1.Add( self.m_Title, 0, wx.ALL|wx.EXPAND, 5 )
 		
@@ -196,7 +196,7 @@ class StatsDialog ( wx.Frame ):
 		
 		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Group Statistics", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText18.Wrap( -1 )
-		self.m_staticText18.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
+		self.m_staticText18.SetFont( wx.Font( 12, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
 		bSizer4.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
@@ -291,13 +291,13 @@ class ConfigPanel ( wx.Panel ):
 		
 		self.m_Title = wx.StaticText( self, wx.ID_ANY, u"Configuration", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
 		self.m_Title.Wrap( -1 )
-		self.m_Title.SetFont( wx.Font( 12, 70, 90, 92, False, wx.EmptyString ) )
+		self.m_Title.SetFont( wx.Font( 12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
 		fgSizer1.Add( self.m_Title, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		self.m_status = wx.StaticText( self, wx.ID_ANY, u"Settings for processing scripts", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_status.Wrap( -1 )
-		self.m_status.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 93, 90, False, wx.EmptyString ) )
+		self.m_status.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
 		
 		fgSizer1.Add( self.m_status, 0, wx.ALL, 5 )
 		
@@ -471,7 +471,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_staticText85 = wx.StaticText( self, wx.ID_ANY, u"Run Selected Processes", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText85.Wrap( -1 )
-		self.m_staticText85.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
+		self.m_staticText85.SetFont( wx.Font( 12, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
 		bSizer19.Add( self.m_staticText85, 0, wx.ALL, 5 )
 		
@@ -488,19 +488,19 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_staticText56 = wx.StaticText( self, wx.ID_ANY, u"DESCRIPTION", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText56.Wrap( -1 )
-		self.m_staticText56.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		self.m_staticText56.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
 		bSizer15.Add( self.m_staticText56, 0, wx.ALL, 5 )
 		
 		self.m_stDescription = wx.StaticText( self, wx.ID_ANY, u"Process Description", wx.DefaultPosition, wx.Size( 380,80 ), wx.ST_NO_AUTORESIZE )
 		self.m_stDescription.Wrap( 370 )
-		self.m_stDescription.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 90, 91, False, wx.EmptyString ) )
+		self.m_stDescription.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT, False, wx.EmptyString ) )
 		
 		bSizer15.Add( self.m_stDescription, 0, wx.ALL, 5 )
 		
 		self.m_staticText57 = wx.StaticText( self, wx.ID_ANY, u"FILES IN", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText57.Wrap( -1 )
-		self.m_staticText57.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		self.m_staticText57.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
 		bSizer15.Add( self.m_staticText57, 0, wx.ALL, 5 )
 		
@@ -510,7 +510,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_staticText59 = wx.StaticText( self, wx.ID_ANY, u"FILES OUT", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText59.Wrap( -1 )
-		self.m_staticText59.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		self.m_staticText59.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
 		bSizer15.Add( self.m_staticText59, 0, wx.ALL, 5 )
 		
@@ -583,37 +583,36 @@ class ProcessPanel ( wx.Panel ):
 class ComparePanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( -1,-1 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 639,678 ), style = wx.SIMPLE_BORDER|wx.TAB_TRAVERSAL )
 		
 		bSizer1 = wx.BoxSizer( wx.VERTICAL )
 		
-		bSizer4 = wx.BoxSizer( wx.VERTICAL )
-		
 		self.m_staticText18 = wx.StaticText( self, wx.ID_ANY, u"Comparison of Group Statistics", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText18.Wrap( -1 )
-		self.m_staticText18.SetFont( wx.Font( 12, 71, 90, 92, False, wx.EmptyString ) )
+		self.m_staticText18.SetFont( wx.Font( 12, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, False, wx.EmptyString ) )
 		
-		bSizer4.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
+		bSizer1.Add( self.m_staticText18, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
 		self.m_staticline1 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
-		bSizer4.Add( self.m_staticline1, 0, wx.EXPAND |wx.ALL, 5 )
+		bSizer1.Add( self.m_staticline1, 0, wx.EXPAND, 5 )
 		
-		
-		bSizer1.Add( bSizer4, 1, wx.EXPAND, 5 )
+		self.m_staticText58 = wx.StaticText( self, wx.ID_ANY, u"Select different or same directories containing compiled ratios, areas, avg MSD and avg Log10D for each group and provide matching prefix as group name", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_CENTRE )
+		self.m_staticText58.Wrap( 500 )
+		bSizer1.Add( self.m_staticText58, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
 		fgSizer2 = wx.FlexGridSizer( 0, 4, 0, 0 )
 		fgSizer2.SetFlexibleDirection( wx.BOTH )
-		fgSizer2.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+		fgSizer2.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_NONE )
 		
 		self.m_staticText19 = wx.StaticText( self, wx.ID_ANY, u"Group 1", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText19.Wrap( -1 )
 		fgSizer2.Add( self.m_staticText19, 0, wx.ALL, 5 )
 		
-		self.m_textCtrlGp1 = wx.TextCtrl( self, wx.ID_ANY, u"STIM", wx.DefaultPosition, wx.Size( 60,-1 ), 0 )
-		fgSizer2.Add( self.m_textCtrlGp1, 0, wx.ALL, 5 )
+		self.m_tcGp1 = wx.TextCtrl( self, wx.ID_ANY, u"STIM", wx.DefaultPosition, wx.Size( 100,-1 ), 0 )
+		fgSizer2.Add( self.m_tcGp1, 0, wx.ALL, 5 )
 		
-		self.m_tcRatioFile1 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
-		fgSizer2.Add( self.m_tcRatioFile1, 0, wx.ALL, 5 )
+		self.m_tcGp1Files = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
+		fgSizer2.Add( self.m_tcGp1Files, 0, wx.ALL, 5 )
 		
 		self.m_btnGp1 = wx.Button( self, wx.ID_ANY, u"Browse", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer2.Add( self.m_btnGp1, 0, wx.ALL, 5 )
@@ -622,11 +621,11 @@ class ComparePanel ( wx.Panel ):
 		self.m_staticText20.Wrap( -1 )
 		fgSizer2.Add( self.m_staticText20, 0, wx.ALL, 5 )
 		
-		self.m_textCtrlGp2 = wx.TextCtrl( self, wx.ID_ANY, u"NOSTIM", wx.DefaultPosition, wx.Size( 60,-1 ), 0 )
-		fgSizer2.Add( self.m_textCtrlGp2, 0, wx.ALL, 5 )
+		self.m_tcGp2 = wx.TextCtrl( self, wx.ID_ANY, u"NOSTIM", wx.DefaultPosition, wx.Size( 100,-1 ), 0 )
+		fgSizer2.Add( self.m_tcGp2, 0, wx.ALL, 5 )
 		
-		self.m_tcRatioFile2 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
-		fgSizer2.Add( self.m_tcRatioFile2, 0, wx.ALL, 5 )
+		self.m_tcGp2Files = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
+		fgSizer2.Add( self.m_tcGp2Files, 0, wx.ALL, 5 )
 		
 		self.m_btnGp2 = wx.Button( self, wx.ID_ANY, u"Browse", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer2.Add( self.m_btnGp2, 0, wx.ALL, 5 )
@@ -634,39 +633,48 @@ class ComparePanel ( wx.Panel ):
 		
 		bSizer1.Add( fgSizer2, 1, wx.EXPAND, 5 )
 		
-		bSizer2 = wx.BoxSizer( wx.HORIZONTAL )
-		
-		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,100 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER|wx.VSCROLL )
-		bSizer2.Add( self.m_tcResults, 0, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5 )
-		
-		
-		bSizer1.Add( bSizer2, 1, wx.EXPAND, 5 )
-		
 		bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
 		
-		self.m_btnRatioRun = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer3.Add( self.m_btnRatioRun, 0, wx.ALL, 5 )
+		self.m_btnCompareRun = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
+		self.m_btnCompareRun.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DLIGHT ) )
+		self.m_btnCompareRun.SetBackgroundColour( wx.Colour( 0, 128, 64 ) )
 		
-		self.m_btnRatioClose = wx.Button( self, wx.ID_ANY, u"Close", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer3.Add( self.m_btnRatioClose, 0, wx.ALL, 5 )
+		bSizer3.Add( self.m_btnCompareRun, 0, wx.ALL, 5 )
+		
+		self.m_btnCompareStop = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer3.Add( self.m_btnCompareStop, 0, wx.ALL, 5 )
 		
 		
-		bSizer1.Add( bSizer3, 1, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.RIGHT, 5 )
+		bSizer1.Add( bSizer3, 1, wx.ALIGN_RIGHT|wx.RIGHT, 5 )
+		
+		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,400 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER|wx.VSCROLL )
+		bSizer1.Add( self.m_tcResults, 0, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5 )
 		
 		
 		self.SetSizer( bSizer1 )
 		self.Layout()
-		bSizer1.Fit( self )
 		
 		# Connect Events
-		self.m_btnRatioClose.Bind( wx.EVT_BUTTON, self.OnClose )
+		self.m_btnGp1.Bind( wx.EVT_BUTTON, self.OnBrowseGp1 )
+		self.m_btnGp2.Bind( wx.EVT_BUTTON, self.OnBrowseGp2 )
+		self.m_btnCompareRun.Bind( wx.EVT_BUTTON, self.OnCompareRun )
+		self.m_btnCompareStop.Bind( wx.EVT_BUTTON, self.OnCompareStop )
 	
 	def __del__( self ):
 		pass
 	
 	
 	# Virtual event handlers, overide them in your derived class
-	def OnClose( self, event ):
+	def OnBrowseGp1( self, event ):
+		event.Skip()
+	
+	def OnBrowseGp2( self, event ):
+		event.Skip()
+	
+	def OnCompareRun( self, event ):
+		event.Skip()
+	
+	def OnCompareStop( self, event ):
 		event.Skip()
 	
 
@@ -683,7 +691,7 @@ class WelcomePanel ( wx.Panel ):
 		
 		self.m_staticText23 = wx.StaticText( self, wx.ID_ANY, u"MSD Automated Analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText23.Wrap( -1 )
-		self.m_staticText23.SetFont( wx.Font( 14, 71, 90, 90, False, wx.EmptyString ) )
+		self.m_staticText23.SetFont( wx.Font( 14, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
 		
 		bSizer18.Add( self.m_staticText23, 0, wx.ALL, 5 )
 		
@@ -715,13 +723,13 @@ class FilesPanel ( wx.Panel ):
 		
 		self.m_staticText23 = wx.StaticText( self, wx.ID_ANY, u"Select Files for analysis", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText23.Wrap( -1 )
-		self.m_staticText23.SetFont( wx.Font( 14, 71, 90, 90, False, wx.EmptyString ) )
+		self.m_staticText23.SetFont( wx.Font( 14, wx.FONTFAMILY_DECORATIVE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
 		
 		bSizer5.Add( self.m_staticText23, 0, wx.ALL, 5 )
 		
 		self.m_staticText25 = wx.StaticText( self, wx.ID_ANY, u"AutoFind and/or Manual Select", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText25.Wrap( -1 )
-		self.m_staticText25.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 93, 90, False, wx.EmptyString ) )
+		self.m_staticText25.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString ) )
 		
 		bSizer5.Add( self.m_staticText25, 0, wx.ALL, 5 )
 		

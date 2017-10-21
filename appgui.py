@@ -5,7 +5,7 @@ from glob import glob, iglob
 from multiprocessing import Manager, Process
 import threading
 from os import access, R_OK, walk, mkdir
-from os.path import join, expanduser, dirname, exists, split
+from os.path import join, expanduser, dirname, exists, split, isdir
 import re
 from queue import Queue
 import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
 from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
-from msdapp.guicontrollers import EVT_RESULT,EVT_RESULT_ID,ResultEvent
+from msdapp.guicontrollers import EVT_RESULT,EVT_DATA, EVT_RESULT_ID,ResultEvent
 
 
 ########################################################################
@@ -310,18 +310,8 @@ class ProcessRunPanel(ProcessPanel):
         #For each process
         for p in selections:
             print("Running:", p)
-            i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']]
-            if len(i) ==1:
-                i = i[0]
-                filesIn = [self.controller.config[f] for f in self.controller.processes[i]['files'].split(", ")]
-                checkedfilenames = self.CheckFilenames(filenames, filesIn)
-                print("Checked:", checkedfilenames)
-                type = self.controller.processes[i]['href']
-                wx.PostEvent(self, ResultEvent((0, row, 0, len(filenames), p)))
-                t = self.controller.RunThread(self, checkedfilenames, type, outputdir, expt, row)
-                if t is not None:
-                    t.start()
-
+            i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
+            self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
             row = row+1
             print('Next process: row=', row)
 
@@ -329,27 +319,68 @@ class ProcessRunPanel(ProcessPanel):
         # Enable Run button
         self.m_btnRunProcess.Enable()
 
-    def CheckFilenames(self,filenames, configfiles):
+########################################################################
+class CompareRunPanel(ComparePanel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.controller = parent.controller
+        EVT_DATA(self, self.updateResults)
+
+    def updateResults(self, msg):
+        (df) = msg.data
+        print("\nProgress updated: ", time.ctime())
+        print('data = ', df)
+        cols = df.columns.tolist()
+        self.m_tcResults.AppendText("Independent paired T-Test results\n***********\n")
+        for i, row in df.iterrows():
+            for col in cols:
+                msg = "%s: %s\n" % (col, str(row[col]))
+                print(msg)
+                self.m_tcResults.AppendText(msg)
+            self.m_tcResults.AppendText("\n***********\n")
+
+
+    def OnBrowseGp1( self, event ):
+        """ Open a file"""
+        dlg = wx.DirDialog(self, "Choose a directory containing data files")
+        if dlg.ShowModal() == wx.ID_OK:
+            self.inputdir1 = str(dlg.GetPath())
+            self.m_tcGp1Files.SetValue(self.inputdir1)
+        dlg.Destroy()
+
+    def OnBrowseGp2( self, event ):
+        """ Open a file"""
+        dlg = wx.DirDialog(self, "Choose a directory containing data files")
+        if dlg.ShowModal() == wx.ID_OK:
+            self.inputdir2 = str(dlg.GetPath())
+            self.m_tcGp2Files.SetValue(self.inputdir2)
+        dlg.Destroy()
+
+    def OnCompareRun( self, event ):
+        inputdirs = [self.inputdir1, self.inputdir2]
+        for d in inputdirs:
+            if not isdir(d) or not access(d, R_OK):
+                self.Parent.Warn("Please check input directories are entered")
+        outputdir = self.getFilePanel().txtOutputdir.GetValue()
+        searchtext = self.getFilePanel().m_tcSearch.GetValue()
+        prefixes = [self.m_tcGp1.GetValue(),self.m_tcGp2.GetValue()]
+        self.controller.RunCompare(self, inputdirs, outputdir, prefixes,searchtext)
+
+    def OnCompareStop( self, event ):
+            print('Stopping process')
+
+    def getFilePanel(self):
         """
-        Check that filenames are appropriate for the script required
-        :param filenames: list of full path filenames
-        :param configfiles: matching filename for script as in config
-        :return: filtered list
+        Get access to filepanel
+        :return:
         """
-        newfiles = []
-        for conf in configfiles:
-            for f in filenames:
-                parts = split(f)
-                if conf in parts[1]:
-                    newfiles.append(f)
-                else:
-                    #extract directory and seek files
-                    newfiles = newfiles + [y for y in iglob(join(parts[0], '**', conf), recursive=True)]
-        #print("Checked: ",newfiles)
-        return newfiles
+        filepanel = None
 
-
-
+        for fp in self.Parent.Children:
+            if isinstance(fp, FileSelectPanel):
+                filepanel = fp
+                break
+        return filepanel
 
 ########################################################################
 class AppMain(wx.Listbook):
@@ -394,7 +425,7 @@ class AppMain(wx.Listbook):
                  (MSDConfig(self), "Configure"),
                  (FileSelectPanel(self), "Select Files"),
                  (ProcessRunPanel(self), "Run Processes"),
-                 (ComparePanel(self),"Compare Groups")]
+                 (CompareRunPanel(self),"Compare Groups")]
         imID = 0
         for page, label in pages:
             #self.AddPage(page, label, imageId=imID)
