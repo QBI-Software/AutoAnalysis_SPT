@@ -226,6 +226,7 @@ class ProcessRunPanel(ProcessPanel):
         filesIn = [self.controller.config[f] for f in filesIn[0].split(", ")]
         filesOut = [self.controller.config[f] for f in filesOut[0].split(", ")]
         #Load to GUI
+        self.m_stTitle.SetLabelText(event.String)
         self.m_stDescription.SetLabelText(desc[0])
         self.m_stFilesin.SetLabelText(", ".join(filesIn))
         self.m_stFilesout.SetLabelText(", ".join(filesOut))
@@ -243,13 +244,17 @@ class ProcessRunPanel(ProcessPanel):
         (count, row,i,total, process) = msg.data
         print("\nProgress updated: ", time.ctime())
         print('count = ', count)
-        status = "%d of %d files" % (i, total)
+        status = "%d of %d files " % (i, total)
         if count ==0:
             self.m_dataViewListCtrlRunning.AppendItem([process, count, "Pending"])
+            self.start[process] = time.time()
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Running " + status, row=row, col=2)
         else:
+            endtime = time.time() - self.start[process]
+            status = "%s (%d secs)" % (status, round(endtime,4))
+            print(status)
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Done "+ status, row=row, col=2)
 

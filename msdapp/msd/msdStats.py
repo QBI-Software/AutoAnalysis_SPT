@@ -232,9 +232,9 @@ class MSDStats():
         axes4 = plt.subplot(224)
         self.showAreaPlot(axes4)
 
-        # figtype = 'png'  # png, pdf, ps, eps and svg.
-        # figname = join(self.outputdir,self.outputfilename).replace('csv', figtype)
-        # plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+        figtype = 'png'  # png, pdf, ps, eps and svg.
+        figname = join(self.outputdir,self.outputfilename).replace('csv', figtype)
+        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
 
 
         plt.show()
