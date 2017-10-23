@@ -94,8 +94,11 @@ class BatchStats:
         # Generate unique cell ID
         cells = f.split(sep)
         base = self.base.split(sep)
-        if len(base) > 4:
-            cell = "_".join(cells[len(self.base):len(self.base) + 3])
+        num = 3
+        if 'CELLID' in self.config:
+            num = int(self.config['CELLID'])
+        if len(cells) > (len(base) + num + 1):
+            cell = "_".join(cells[len(base):len(base) + num])
         else:
             cellid = 'c{0:03d}'.format(self.n)
             cell = "_".join([self.searchtext, cellid])

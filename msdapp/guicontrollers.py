@@ -1,7 +1,8 @@
 import logging
-import sys
+import os
 import threading
 from glob import iglob
+from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support, Pool
 from os import access, R_OK, mkdir
 from os.path import join, dirname, exists, split
@@ -51,6 +52,14 @@ class DataEvent(wx.PyEvent):
         self.SetEventType(EVT_DATA_ID)
         self.data = data
 
+#### LoggingConfig
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logfile = join("logs", 'msdanalysis.log')
+handler = RotatingFileHandler(filename=logfile, maxBytes=10000000, backupCount=10)
+formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] (%(threadName)-9s) %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 ########################################################################
 
@@ -73,34 +82,37 @@ class FilterThread(threading.Thread):
         self.row = row
         self.type = type
         self.processname = processname
-
+        logger = logging.getLogger(processname)
         # self.start()  # start the thread
 
     # ----------------------------------------------------------------------
     def run(self):
+        i = 0
         try:
             event.set()
             lock.acquire(True)
             # Do work
             q = dict()
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
-            print("Checked by type: (", self.processname, "): ", checkedfilenames)
+            logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             files = [f for f in checkedfilenames if self.controller.datafile in f]
             total_files = len(files)
             for i in range(total_files):
                 count = ((i + 1) * 100) / total_files
-                print("FilterThread.run: count=", count)
+                logger.info("FilterThread.run: count= %d", count)
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.processname)))
                 self.processFilter(files[i], q)
 
             # self.controller.results[self.type] = pd.DataFrame.from_dict(q, orient='index')
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
-
+        except Exception as e:
+            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i + 1, total_files, self.processname)))
+            logging.error(e)
         except KeyboardInterrupt:
-            print("Keyboard interrupt in FilterThread")
+            logger.warning("Keyboard interrupt in FilterThread")
             self.terminate()
         finally:
-            print('Finished FilterThread')
+            logger.info('Finished FilterThread')
             lock.release()
             event.clear()
 
@@ -112,20 +124,21 @@ class FilterThread(threading.Thread):
         :param q:
         :return:
         """
-        print("Process Filter with file:", filename)
+        logger.info("Process Filter with file: %s", filename)
         datafile_msd = filename.replace(self.controller.datafile, self.controller.msdfile)
-        if not access(datafile_msd, R_OK):
-            raise IOError("Cannot find msd file: %s" % datafile_msd)
         # create local subdir for output
         outputdir = join(dirname(filename), 'processed')
         if not exists(outputdir):
             mkdir(outputdir)
         fmsd = FilterMSD(self.controller.configfile, filename, datafile_msd, outputdir)
-        q[filename] = fmsd.runFilter()
+        if fmsd.data is not None:
+            q[filename] = fmsd.runFilter()
+        else:
+            q[filename] = None
 
-    # ----------------------------------------------------------------------
+            # ----------------------------------------------------------------------
     def terminate(self):
-        print("Terminating Filter Thread")
+        logger.info("Terminating Filter Thread")
         self.terminate()
 
 ########################################################################
@@ -133,7 +146,7 @@ class HistogramThread(threading.Thread):
     """Multi Worker Thread Class."""
 
     # ----------------------------------------------------------------------
-    def __init__(self, controller, wxObject, filenames, filesIn, type, row, pname):
+    def __init__(self, controller, wxObject, filenames, filesIn, type, row, processname):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self.controller = controller
@@ -142,7 +155,8 @@ class HistogramThread(threading.Thread):
         self.filesIn = filesIn
         self.row = row
         self.type = type
-        self.pname = pname
+        self.processname = processname
+        logger = logging.getLogger(processname)
         # self.start()  # start the thread after
 
     # ----------------------------------------------------------------------
@@ -152,37 +166,38 @@ class HistogramThread(threading.Thread):
             lock.acquire(True)
             q = dict()
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
-            print("Checked by type: (", self.pname, "): ", checkedfilenames)
+            logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             total_files = len(checkedfilenames)
             for i in range(total_files):
                 count = (i + 1 / total_files) * 100
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
                 datafile = checkedfilenames[i]
-                print("Process histogram with file:", datafile)
+                logger.info("Process histogram with file: %s", datafile)
                 outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, self.controller.configfile)
                 q[datafile] = fd.generateHistogram(outputdir)
 
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.pname)))
-
+            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
+        except Exception as e:
+            logging.error(e)
         except KeyboardInterrupt:
-            print("Keyboard interrupt in HistogramThread")
+            logger.warning("Keyboard interrupt in HistogramThread")
             self.terminate()
         finally:
-            print('Finished HistogramThread')
+            logger.info('Finished HistogramThread')
             lock.release()
             hevent.clear()
 
     # ----------------------------------------------------------------------
     def terminate(self):
-        print("Terminating Histogram Thread")
+        logger.info("Terminating Histogram Thread")
         self.terminate()
 
 ##########################################################################################################
 class StatsThread(threading.Thread):
     """Multi Worker Thread Class."""
     # ----------------------------------------------------------------------
-    def __init__(self, controller, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, pname):
+    def __init__(self, controller, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self.controller = controller
@@ -194,7 +209,9 @@ class StatsThread(threading.Thread):
         self.expt = expt
         self.groups = groups
         self.outputdir = outputdir
-        self.pname = pname
+        self.processname = processname
+        logger = logging.getLogger(processname)
+
         # self.start()  # start the thread after
 
     # ----------------------------------------------------------------------
@@ -204,43 +221,45 @@ class StatsThread(threading.Thread):
             q = dict()
             total = len(self.groups)
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
-            print("Checked by type: (", self.pname, "): ", checkedfilenames)
+            logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             i = 1
-            pool = Pool()
+            pool = Pool(processes=2)
             fmsds = []
             for group in self.groups:
-                print("Running %s script: %s (%s)" % (self.type.title(), self.expt, group))
+                logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
                 fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.controller.configfile)
                 fmsd.compile()
                 compiledfile = fmsd.runStats()
                 # Split to Mobile/immobile fractions - output
                 ratiofile = fmsd.splitMobile()
                 count = (i / total) * 100
-                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.pname)))
-                print("HISTOGRAM BATCH: %s: %s\n\t%s\n\t%s\n" % (self.expt, group, compiledfile, ratiofile))
+                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
+                logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile, ratiofile)
                 fmsds.append(fmsd)
                 i += 1
             # Set the figures
             pool.map(self.controller.histplot, fmsds)
-            # self.controller.results[self.type] = pd.DataFrame.from_dict(q, orient='index')
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.pname)))
+            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
+        except Exception as e:
+            logging.error(e)
         except KeyboardInterrupt:
-            print("Keyboard interrupt in StatsThread")
+            logger.warning("Keyboard interrupt in StatsThread")
             self.terminate()
         finally:
-            print('Finished StatsThread')
+            logger.info('Finished StatsThread')
+            pool.close()
             lock.release()
 
     # ----------------------------------------------------------------------
     def terminate(self):
-        print("Terminating Stats Thread")
+        logger.info("Terminating Stats Thread")
         self.terminate()
 
 ############################################################################
 class MsdThread(threading.Thread):
     """Multi Worker Thread Class."""
     # ----------------------------------------------------------------------
-    def __init__(self, controller, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, pname):
+    def __init__(self, controller, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname):
         """Init Worker Thread Class."""
         self._stopevent = threading.Event()
         threading.Thread.__init__(self)
@@ -253,7 +272,8 @@ class MsdThread(threading.Thread):
         self.expt = expt
         self.groups = groups
         self.outputdir = outputdir
-        self.pname = pname
+        self.processname = processname
+        logger = logging.getLogger(processname)
         # self.start()  # start the thread after
 
     # ----------------------------------------------------------------------
@@ -262,40 +282,44 @@ class MsdThread(threading.Thread):
             lock.acquire(True)
             q = dict()
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
-            print("Checked by type: (", self.pname, "): ", checkedfilenames)
+            logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             total = len(self.groups)
             i = 1
             pool = Pool()
             fmsds = []
             for group in self.groups:
-                print("Running %s script: %s (%s)" % (self.pname.title(), self.expt, group))
+                logger.info("Running %s script: %s (%s)", self.processname.title(), self.expt, group)
                 fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.controller.configfile)
                 compiledfile = fmsd.compile()
                 count = (i / total) * 100
-                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.pname)))
-                print("MSD BATCH: %s: %s\n\t%s\n" % (self.expt, group, compiledfile))
+                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
+                logger.info("MSD BATCH: %s: %s\nFILES CREATED:\n\t%s\n", self.expt, group, compiledfile)
                 i += 1
                 fmsds.append(fmsd)
 
             # Set the figure
             pool.map(self.controller.msdplot, fmsds)
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.pname)))
+            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
+        except Exception as e:
+            logging.error(e)
         except KeyboardInterrupt:
-            print("Keyboard interrupt in MsdThread")
+            logger.warning("Keyboard interrupt in MsdThread")
             self.terminate()
         finally:
-            print('Finished MsdThread')
+            logger.info('Finished MsdThread')
+            pool.close()
             lock.release()
 
     # ----------------------------------------------------------------------
     def terminate(self):
-        print("Terminating MSD Thread")
+        logger.info("Terminating MSD Thread")
         self.terminate()
 
 ########################################################################
 
 class MSDController():
     def __init__(self, configfile):
+        logger = logging.getLogger('Controller')
 
         self.processes = [
             {'caption': '1. Filter Data', 'href': 'filter',
@@ -315,16 +339,11 @@ class MSDController():
              'files': 'FILTERED_MSD',
              'filesout': 'AVGMSD_FILENAME'}
         ]
+
         self.configfile = configfile
         self.loaded = self.loadConfig()
-        self.timer = wx.Timer()
-        logging.basicConfig(level=logging.DEBUG, filename='msdthread.log',
-                            format='[%(levelname)s] (%(threadName)-9s) %(message)s', )
 
-        # Multiprocessing settings
-        # multiprocessing.log_to_stderr()
-        # logger = multiprocessing.get_logger()
-        # logger.setLevel(logging.INFO)
+
 
     # ----------------------------------------------------------------------
     def loadConfig(self, config=None):
@@ -336,10 +355,10 @@ class MSDController():
         rtn = False
         try:
             if self.configfile is not None and access(self.configfile, R_OK):
-                print("Loading config file:", self.configfile)
+                logger.debug("Loading config file:%s", self.configfile)
                 config = ConfigObj(self.configfile, encoding='ISO-8859-1')
             else:
-                print("Loading config object:", config.filename)
+                logger.debug("Loading config object:%s", config.filename)
 
             self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
             self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
@@ -358,6 +377,7 @@ class MSDController():
             self.msdcompare = config['AVGMSD_FILENAME']
             self.group1 = config['GROUP1']
             self.group2 = config['GROUP2']
+            self.cellid = config['CELLID']
             self.config = config
             rtn = True
 
@@ -366,21 +386,6 @@ class MSDController():
         return rtn
 
     # ----------------------------------------------------------------------
-    def processTest(self, datafile, q):
-        """
-        For testing multi-processing
-        :param datafile:
-        :param q:
-        :return:
-        """
-        print('Process Test - started')
-        ##lock.acquire(True)
-        result = 0
-        for i in range(10):
-            result += i
-        q[datafile] = result
-        ##lock.release()
-        print('Process Test - end')
 
     def msdplot(self, fmsd):
         fig = plt.figure(figsize=(10, 5))
@@ -415,20 +420,22 @@ class MSDController():
 
     # ----------------------------------------------------------------------
     def RunCompare(self, wxGui, indirs, outputdir, prefixes, searchtext):
-        if len(outputdir) <= 0:
-            outputdir = indirs[0]  # default
-        rs = MSDStats(indirs, outputdir, prefixes, self.configfile)
-        results_df = rs.runTtests()
-        print("RunCompare results:", results_df)
-        wx.PostEvent(wxGui, DataEvent(results_df))
-        # # Show plots
-        # if len(searchtext) <= 0:
-        #     searchtext = " ".join(prefixes)
-        # rs.showPlots(searchtext + " comparison")
-        pool = Pool()
-        if len(searchtext) <= 0:
-            searchtext = " ".join(prefixes)
-        pool.map(self.compareplot, [(rs, searchtext)])
+        try:
+            if len(outputdir) <= 0:
+                outputdir = indirs[0]  # default
+            rs = MSDStats(indirs, outputdir, prefixes, self.configfile)
+            results_df = rs.runTtests()
+            logger.info("RunCompare results: %d files", len(results_df))
+            wx.PostEvent(wxGui, DataEvent(results_df))
+            # Show plots
+            pool = Pool()
+            if len(searchtext) <= 0:
+                searchtext = " ".join(prefixes)
+            pool.map(self.compareplot, [(rs, searchtext)])
+        except Exception as e:
+            logging.error(e)
+        finally:
+            pool.close()
 
     # ----------------------------------------------------------------------
     def CheckFilenames(self, filenames, configfiles):
@@ -447,7 +454,6 @@ class MSDController():
                 else:
                     # extract directory and seek files
                     newfiles = newfiles + [y for y in iglob(join(parts[0], '**', conf), recursive=True)]
-        # print("Checked: ",newfiles)
         return newfiles
 
     # ----------------------------------------------------------------------
@@ -461,37 +467,40 @@ class MSDController():
         :return:
         """
         type = self.processes[i]['href']
-        pname = self.processes[i]['caption']
+        processname = self.processes[i]['caption']
         filesIn = [self.config[f] for f in self.processes[i]['files'].split(", ")]
-        print("Running Threads - start: ", type, " Expt: ", expt)
-        wx.PostEvent(wxGui, ResultEvent((0, row, 0, len(filenames), pname)))
+        logger.info("Running Threads - start: %s (Expt prefix: %s) [row: %d]", type,expt, row)
+        wx.PostEvent(wxGui, ResultEvent((0, row, 0, len(filenames), processname)))
         if type == 'filter':
-            t = FilterThread(self, wxGui, filenames, filesIn, type, row, pname)
+            t = FilterThread(self, wxGui, filenames, filesIn, type, row, processname)
             t.start()
         elif type == 'histogram':
-            event.wait()
-            t = HistogramThread(self, wxGui, filenames, filesIn, type, row, pname)
+            if row > 1:
+                event.wait()
+            t = HistogramThread(self, wxGui, filenames, filesIn, type, row, processname)
             t.start()
         elif type == 'stats':
-            event.wait()
-            hevent.wait()
+            if row > 2:
+                event.wait()
+            if row > 1:
+                hevent.wait()
             t = StatsThread(self, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row,
-                            pname)
+                            processname)
             t.start()
         elif type == 'msd':
-            event.wait()
+            if row > 1:
+                event.wait()
             t = MsdThread(self, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row,
-                          pname)
+                          processname)
             t.start()
 
-        print("Running Thread - loaded: ", type)
-        # print("Thread Results: ", self.results)
+        logger.info("Running Thread - loaded: %s", type)
+
 
     # ----------------------------------------------------------------------
     def shutdown(self):
-        logging.debug('Call to shutdown')
-        print(sys.thread_info)
-        for t in threading.enumerate():
-            logging.debug('closing %s', t.getName())
-            if t.is_alive():
-                t.terminate()
+        logger.info('Call to shutdown')
+        t = threading.current_thread()
+        if t.is_alive():
+            logger.info('Shutdown: closing %s', t.getName())
+            t.terminate()

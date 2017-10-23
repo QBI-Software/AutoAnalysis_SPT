@@ -48,8 +48,8 @@ class MSDStats():
         self.histodata = self.__loadData(inputdirs[0], inputdirs[1], self.histo,'bins')
         self.ratiodata = self.__loadData(inputdirs[0], inputdirs[1],'ratios.csv','Cell')
         self.areadata = self.__loadData(inputdirs[0], inputdirs[1],'areas.csv','Cell')
-        self.msddata = self.__loadData(inputdirs[0], inputdirs[1], self.msd, 'Cell')
-        self.msddatafiles = []
+        #self.msddata = self.__loadData(inputdirs[0], inputdirs[1], self.msd, 'Cell')
+        #self.msddatafiles = []
         self.msddatafiles = [join(inputdirs[i], self.prefixes[i] + "_" + self.msd) for i in [0,1]]
 
 
@@ -123,7 +123,10 @@ class MSDStats():
         df = pd.DataFrame(columns=headers)
         # Ratios comparison
         if self.ratiodata is not None:
-            (dstats, p) = stats.ttest_rel(self.ratiodata['Ratio_' + self.prefixes[0]], self.ratiodata['Ratio_' + self.prefixes[1]], nan_policy='omit')
+            #extract data columns for testing
+            cond1 = [s for s in self.ratiodata['Ratio_' + self.prefixes[0]] if not isnan(s)]
+            cond2 = [s for s in self.ratiodata['Ratio_' + self.prefixes[1]] if not isnan(s)]
+            (dstats, p) = stats.ttest_ind(cond1,cond2)
             #Output as CSV
             if not isnan(p):
                 signif =(p >= 0.05)
@@ -136,11 +139,13 @@ class MSDStats():
         #Areas comparison
         if self.areadata is not None:
             # Exclude ALL row
-            individareas = self.areadata[self.areadata['Cell'] != 'ALL']
-            (dstats, p) = stats.ttest_rel(individareas['MSD Area_' + self.prefixes[0]], individareas['MSD Area_' + self.prefixes[1]], nan_policy='omit')
+            areas = self.areadata[self.areadata['Cell'] != 'ALL']
+            cond1 = [s for s in areas['MSD Area_' + self.prefixes[0]] if not isnan(s)]
+            cond2 = [s for s in areas['MSD Area_' + self.prefixes[1]] if not isnan(s)]
+            (dstats, p) = stats.ttest_ind(cond1, cond2)
             # Output as CSV
             if not isnan(p):
-                signif =(p >= 0.05)
+                signif =(p < 0.05)
             else:
                 signif = 'unknown'
             data = ['MSD Area', " vs ".join(self.prefixes), dstats, p, signif]

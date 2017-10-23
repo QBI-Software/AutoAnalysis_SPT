@@ -16,6 +16,7 @@ import argparse
 from os import R_OK, access
 from os.path import join
 from configobj import ConfigObj
+import logging
 
 import numpy as np
 import pandas
@@ -39,7 +40,10 @@ class FilterMSD():
         self.outputdir = outputdir
         print("FilterMSD: Loading data ...")
         (self.data, self.msd) = self.load_datafiles(datafile, datafile_msd)
-        print("...loaded")
+        if self.data is None:
+            raise ValueError("Processing error")
+        else:
+            print("...loaded")
 
     def __loadConfig(self, configfile=None):
         if configfile is not None:
@@ -66,29 +70,38 @@ class FilterMSD():
         :param datafile_msd:
         :return:
         """
-        data = pandas.read_csv(datafile, encoding=self.encoding, skiprows=2, delimiter='\t')
-        # Uneven rows - detect max columns
-        max_msdpoints = self.msdpoints + 2  # max msd points plus first 2 cols
-        cols = ['ROI', 'Trace'] + [str(x) for x in range(1, self.msdpoints + 1)]
-        msd = pandas.DataFrame([])
-        f = open(datafile_msd, encoding=self.encoding)
-        f.seek(0)
-        for row in f.readlines():
-            if row.startswith('#'):
-                continue
-            s = pandas.Series(row.split('\t'))
-            s = s[0:max_msdpoints]  # only first 10 points
-            s1 = s.iloc[-1].split('\n')  # remove end of line if present
-            s.iloc[-1] = s1[0]
-            # padding
-            x = list(s.values) + [np.nan for i in range(len(s), max_msdpoints)]
-            s = pandas.Series(x)
-            msd = msd.append(s, ignore_index=True)
-        msd.columns = cols
-        # Add log10 column
-        data[self.logcolumn] = np.log10(data[self.diffcolumn])
+        try:
+            data = pandas.read_csv(datafile, encoding=self.encoding, skiprows=2, delimiter='\t')
+            # Uneven rows - detect max columns
+            max_msdpoints = self.msdpoints + 2  # max msd points plus first 2 cols
+            cols = ['ROI', 'Trace'] + [str(x) for x in range(1, self.msdpoints + 1)]
+            msd = pandas.DataFrame([])
+            f = open(datafile_msd, encoding=self.encoding)
+            f.seek(0)
+            if len(f.readline().strip()) > 0:
+                for row in f.readlines():
+                    if row.startswith('#'):
+                        continue
+                    s = pandas.Series(row.split('\t'))
+                    s = s[0:max_msdpoints]  # only first 10 points
+                    s1 = s.iloc[-1].split('\n')  # remove end of line if present
+                    s.iloc[-1] = s1[0]
+                    # padding
+                    x = list(s.values) + [np.nan for i in range(len(s), max_msdpoints)]
+                    s = pandas.Series(x)
+                    msd = msd.append(s, ignore_index=True)
+                msd.columns = cols
+                # Add log10 column
+                data[self.logcolumn] = np.log10(data[self.diffcolumn])
+                return (data, msd)
+            else:
+                msg = "Processing error: datafile maybe corrupt: %s" % datafile_msd
+                raise Exception(msg)
+        except Exception as e:
+            print(e)
+            logging.error(e)
+        return (None,None)
 
-        return (data, msd)
 
     def runFilter(self):
         """
@@ -165,7 +178,8 @@ if __name__ == "__main__":
 
     try:
         fmsd = FilterMSD(args.config, datafile, datafile_msd, outputdir, float(args.minlimit), float(args.maxlimit))
-        fmsd.runFilter()
+        if fmsd.data is not None:
+            fmsd.runFilter()
 
     except ValueError as e:
         print("Error: ", e)

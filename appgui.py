@@ -88,6 +88,7 @@ class MSDConfig(ConfigPanel):
         self.m_textCtrl18.SetValue(parent.msdcompare)
         self.m_tcGroup1.SetValue(parent.group1)
         self.m_tcGroup2.SetValue(parent.group2)
+        self.m_tcCellid.SetValue(parent.cellid)
 
     def OnSaveConfig(self, event):
         config = ConfigObj()
@@ -110,6 +111,7 @@ class MSDConfig(ConfigPanel):
         config['AVGMSD_FILENAME'] = self.m_textCtrl18.GetValue()
         config['GROUP1'] = self.m_tcGroup1.GetValue()
         config['GROUP2'] = self.m_tcGroup2.GetValue()
+        config['CELLID'] = self.m_tcCellid.GetValue()
         config.write()
         #Reload to parent
         try:
@@ -181,7 +183,8 @@ class FileSelectPanel(FilesPanel):
         :param event:
         :return:
         """
-
+        self.btnAutoFind.Disable()
+        self.m_status.SetLabelText("Loading files ... please wait")
         allfiles = [y for y in iglob(join(self.inputdir, '**', self.datafile), recursive=True)]
         searchtext = self.m_tcSearch.GetValue()
         if (len(searchtext) > 0):
@@ -193,7 +196,9 @@ class FileSelectPanel(FilesPanel):
             self.m_dataViewListCtrl1.AppendItem([True,fname])
 
         self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
-        print("Total Files loaded: ", self.m_dataViewListCtrl1.GetItemCount())
+        msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
+        self.m_status.SetLabelText(msg)
+        self.btnAutoFind.Enable(True)
 
     def OnSelectall(self, event):
         for i in range(0, self.m_dataViewListCtrl1.GetItemCount()):
@@ -216,6 +221,8 @@ class ProcessRunPanel(ProcessPanel):
         # Set up event handler for any worker thread results
         EVT_RESULT(self, self.progressfunc)
         #EVT_CANCEL(self, self.stopfunc)
+        # Set timer handler
+        self.start = {}
 
     def OnShowDescription( self, event ):
         print(event.String)
@@ -230,6 +237,7 @@ class ProcessRunPanel(ProcessPanel):
         self.m_stDescription.SetLabelText(desc[0])
         self.m_stFilesin.SetLabelText(", ".join(filesIn))
         self.m_stFilesout.SetLabelText(", ".join(filesOut))
+        self.Layout()
 
 
 
@@ -248,15 +256,20 @@ class ProcessRunPanel(ProcessPanel):
         if count ==0:
             self.m_dataViewListCtrlRunning.AppendItem([process, count, "Pending"])
             self.start[process] = time.time()
+        elif count < 0:
+            self.m_dataViewListCtrlRunning.SetValue("ERROR in " + status, row=row, col=2)
+            self.m_btnRunProcess.Enable()
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Running " + status, row=row, col=2)
         else:
-            endtime = time.time() - self.start[process]
-            status = "%s (%d secs)" % (status, round(endtime,4))
+            if process in self.start:
+                endtime = time.time() - self.start[process]
+                status = "%s (%d secs)" % (status, endtime)
             print(status)
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Done "+ status, row=row, col=2)
+            self.m_btnRunProcess.Enable()
 
 
     def getFilePanel(self):
@@ -299,30 +312,35 @@ class ProcessRunPanel(ProcessPanel):
         print("Processes selected: ", len(selections))
         #Get data from other panels
         filepanel = self.getFilePanel()
-        if filepanel is None:
-            self.Parent.Warn("Cannot locate other panels - exiting")
         filenames = []
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         print('All Files:', num_files)
-        for i in range(0, num_files):
-            if filepanel.m_dataViewListCtrl1.GetToggleValue(i,0):
-                filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i,1))
-        print('Selected Files:', len(filenames))
-        outputdir = filepanel.txtOutputdir.GetValue() #for batch processes
-        expt = filepanel.m_tcSearch.GetValue()
-        print("Expt:", expt)
-        row = 0
-        #For each process
-        for p in selections:
-            print("Running:", p)
-            i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
-            self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
-            row = row+1
-            print('Next process: row=', row)
+        if len(selections) > 0 and num_files > 0:
+            for i in range(0, num_files):
+                if filepanel.m_dataViewListCtrl1.GetToggleValue(i,0):
+                    filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i,1))
+            print('Selected Files:', len(filenames))
+            outputdir = filepanel.txtOutputdir.GetValue() #for batch processes
+            expt = filepanel.m_tcSearch.GetValue()
+            print("Expt:", expt)
+            row = 0
+            #For each process
+            for p in selections:
+                print("Running:", p)
+                i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
+                self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
+                row = row+1
+                print('Next process: row=', row)
 
-        print("Completed processes")
-        # Enable Run button
-        self.m_btnRunProcess.Enable()
+            print("Completed processes")
+        else:
+            if len(selections) <= 0:
+                msg = "No processes selected"
+            else:
+                msg = "No files selected - please go to Files Panel and add to list"
+            self.Parent.Warn(msg)
+            # Enable Run button
+            self.m_btnRunProcess.Enable()
 
 ########################################################################
 class CompareRunPanel(ComparePanel):
@@ -491,7 +509,7 @@ class MSDFrame(wx.Frame):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "MSD Autoanalysis",
-                          size=(800, 700)
+                          size=(900, 900)
                           )
 
         # self.timer = wx.Timer(self)
