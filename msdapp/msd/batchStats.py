@@ -19,7 +19,7 @@ import re
 from glob import iglob
 from os import R_OK, access
 from os.path import join, isdir, commonpath, sep
-
+import logging
 import numpy as np
 from configobj import ConfigObj
 
@@ -28,13 +28,19 @@ class BatchStats:
     def __init__(self, inputfiles, outputdir, prefix, expt, configfile=None):
         self.encoding = 'ISO-8859-1'
         self.__loadConfig(configfile)
+        if self.config is not None and self.datafield is not None:
+            self.datafile = self.config[self.datafield]
         self.searchtext = expt + prefix
 
         if not isinstance(inputfiles, list) and isdir(inputfiles):
-            self.base = inputfiles.split(sep)
-            self.inputfiles = self.getSelectedFiles(inputfiles, self.datafile, self.searchtext)
+            self.base = inputfiles #.split(sep)
+            self.inputfiles = self.getSelectedFiles(inputfiles, self.datafile, expt,prefix)
         else:
-            self.inputfiles = inputfiles
+            searchtext = prefix+expt
+            files = [f for f in inputfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+            if len(files)==0:
+                files= [f for f in inputfiles if prefix.upper() in f.upper().split(sep)]
+            self.inputfiles = files
             self.base = commonpath(self.inputfiles)
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
@@ -46,9 +52,11 @@ class BatchStats:
             if configfile is not None and access(configfile, R_OK):
                 config = ConfigObj(configfile, encoding=self.encoding)
                 self.config = config
-                self.datafile = ''
-                self.outputfile = ''
+                # self.datafile = ''
+                # self.outputfile = ''
                 print("Config file loaded")
+            else:
+                self.config = None
 
         except:
             raise IOError("Cannot load Config file")
@@ -68,26 +76,33 @@ class BatchStats:
 
         return itemlist
 
-    def getSelectedFiles(self, inputdir, datafile, searchtext=None):
+    def getSelectedFiles(self, inputdir, datafile, expt, prefix):
         # get list of files to compile
         allfiles = []
+        searchtext = expt + prefix
         if access(inputdir, R_OK):
             allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
-            print("Files Found: ", len(allfiles))
+            print("All Files Found: ", len(allfiles))
             if len(allfiles) > 0:
-                # Filter on searchtext
-                if searchtext is not None:
-                    allfiles = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
-                    if len(allfiles) == 0:
-                        msg = "No matching files found: %s" % searchtext
-                        raise IOError(msg)
+                # Filter on searchtext - single word in directory path
+                files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+                if len(files) <= 0:
+                    msg = "No matching files found for searchtext: %s" % searchtext
+                    print(msg)
+                    logging.warning(msg)
+                    #try separate expt and prefix - case insensitive on windows but ?mac
+                    allfiles = [y for y in iglob(join(inputdir, '**', prefix, '**', datafile), recursive=True)]
+                    files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]
+                    if len(files) <= 0:
+                        msg= "No matching files found for expt + prefix: %s %s" % (expt,prefix)
+                        logging.info(msg)
             else:
                 msg = "No files found"
                 raise IOError(msg)
         else:
             msg = "ERROR: Unable to access inputdir: %s" % inputdir
             raise IOError(msg)
-        return allfiles
+        return files
 
     def generateID(self, f):
         # Generate unique cell ID

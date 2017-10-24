@@ -1,9 +1,13 @@
 .idea/
 data/
 uploads/
+build/
+dist/
+logs/
 *.pyc
 msdapp/__pycache__/
 __pycache__/
 *.ipynb
 *.pyc
 *.csv
+*.pem

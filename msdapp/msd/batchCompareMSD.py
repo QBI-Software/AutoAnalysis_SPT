@@ -23,19 +23,19 @@ Created on Tue Sep 5 2017
 """
 
 import argparse
-from os import R_OK, access, walk, sep
-from os.path import join, expanduser, commonpath, isdir
-from glob import glob, iglob
 from collections import OrderedDict
+from os.path import join
+
 import numpy as np
 import pandas as pd
-import re
+
 import matplotlib.pyplot as plt
-from configobj import ConfigObj
 from msdapp.msd.batchStats import BatchStats
+
 
 class CompareMSD(BatchStats):
     def __init__(self, *args):
+        self.datafield='FILTERED_MSD'
         super().__init__(*args)
         if self.config is not None:
             self.datafile = self.config['FILTERED_MSD']
@@ -49,42 +49,39 @@ class CompareMSD(BatchStats):
             self.msdpoints = 10
             self.timeint = 0.02
             print("MSD: Using config defaults")
+
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
         self.compiled = pd.DataFrame()
-
 
     def compile(self):
         try:
             # Compile all selected files
-            timepoints = [str(x) for x in range(1,self.msdpoints + 1)]
-            cols = ['Cell','Stats'] + timepoints
+            timepoints = [str(x) for x in range(1, self.msdpoints + 1)]
+            cols = ['Cell', 'Stats'] + timepoints
             data = pd.DataFrame(columns=cols, dtype=float)
             ctr = 0
-            # TODO: Test with dummy file
-            #f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Filtered_MSD.csv'
-            #base = self.base.split(sep)
-            n = 1
+
             for f in self.inputfiles:
                 df = pd.read_csv(f)
                 cell = self.generateID(f)
-                stats=OrderedDict({'avgs': [cell,'Mean'],
-                       'counts': [cell,'Count'],
-                       'stds':[cell,'Std'],
-                       'sems':[cell,'SEM'],
-                       'medians': [cell,'Median']})
+                stats = OrderedDict({'avgs': [cell, 'Mean'],
+                                     'counts': [cell, 'Count'],
+                                     'stds': [cell, 'Std'],
+                                     'sems': [cell, 'SEM'],
+                                     'medians': [cell, 'Median']})
 
                 for i in timepoints:
                     stats['avgs'].append(df[i].mean())
                     stats['counts'].append(df[i].count())
                     stats['stds'].append(df[i].std())
-                    stats['sems'].append(df[i].std()/np.sqrt(df[i].count()))
+                    stats['sems'].append(df[i].std() / np.sqrt(df[i].count()))
                     stats['medians'].append(df[i].median())
 
                 for key in stats.keys():
                     data.loc[ctr] = stats[key]
                     ctr += 1
 
-            #Calculate avgs of avg
+            # Calculate avgs of avg
             cell = 'ALL'
             # stats = OrderedDict({'avgs': [cell, 'Avg_Mean'],
             #                      'counts': [cell, 'Avg_Count'],
@@ -108,10 +105,10 @@ class CompareMSD(BatchStats):
                 data.loc[ctr] = stats[key]
                 ctr += 1
 
-            #Sort by Stats
+            # Sort by Stats
             df1 = data.sort_values(by=['Stats', 'Cell'])
             self.compiled = df1
-            #Write to CSV
+            # Write to CSV
             df1.to_csv(self.compiledfile, index=False)
             print("Data compiled to " + self.compiledfile)
 
@@ -119,9 +116,7 @@ class CompareMSD(BatchStats):
             raise e
         return self.compiledfile
 
-
-
-    def showPlotsWithAreas(self,ax=None):
+    def showPlotsWithAreas(self, ax=None):
         """
         Plots each cells MSD, calculates areas and saves to areas file
         :param ax:
@@ -135,9 +130,9 @@ class CompareMSD(BatchStats):
             sems = df.groupby('Stats').get_group('SEM')
             x = [str(x) for x in range(1, self.msdpoints + 1)]
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
-            labels=[]
+            labels = []
             areas = []
-            for ctr in range(0,len(means)):
+            for ctr in range(0, len(means)):
                 labels.append(means['Cell'].iloc[ctr])
                 plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr])
                 areas.append(np.trapz(means[x].iloc[ctr], dx=self.timeint))
@@ -146,14 +141,13 @@ class CompareMSD(BatchStats):
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m2/s)')
             plt.title(self.searchtext.upper() + ' MSDs per cell')
-            #plt.show()
-            #save areas to new file
-            df_area = pd.DataFrame({'Cell':labels, 'MSD Area': areas}, columns=['Cell','MSD Area'])
+            # plt.show()
+            # save areas to new file
+            df_area = pd.DataFrame({'Cell': labels, 'MSD Area': areas}, columns=['Cell', 'MSD Area'])
             areasfile = join(self.outputdir, self.searchtext + "_areas.csv")
             df_area.to_csv(areasfile, index=False)
             print('Areas output to', areasfile)
             return areasfile
-
 
     def showAvgPlot(self, ax=None):
         if self.compiled is not None:
@@ -162,19 +156,21 @@ class CompareMSD(BatchStats):
             if ax is None:
                 fig, ax = plt.subplots()
             x = [str(x) for x in range(1, self.msdpoints + 1)]
-            xi = [x * self.timeint for x in range(1, self.msdpoints + 1)] #convert to times
+            xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]  # convert to times
             all = df.groupby('Cell').get_group('ALL')
             allmeans = all.groupby('Stats').get_group('Mean')
             allsems = all.groupby('Stats').get_group('SEM')
-            plt.errorbar(xi,allmeans[x].iloc[0],yerr=allsems[x].iloc[0])
+            plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0])
             plt.title(self.searchtext.upper() + ' Average MSD')
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m2/s)')
-            #plt.show()
+            # plt.show()
+
 
 #################################################################################################
 if __name__ == "__main__":
     import sys
+
     parser = argparse.ArgumentParser(prog=sys.argv[0],
                                      description='''\
             Compiles histogram data from a directory (recursively looks for Filtered_MSD.csv) into an output file with stats
@@ -183,14 +179,15 @@ if __name__ == "__main__":
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
-    parser.add_argument('--expt', action='store', help='ProteinCelltype as shown on directory names', default="ProteinCelltype")
-    parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
+    parser.add_argument('--expt', action='store', help='ProteinCelltype as shown on directory names',
+                        default="ProteinCelltype")
+    parser.add_argument('--config', action='store', help='Config file for parameters', default="..\\..\\resources\\msd.cfg")
     args = parser.parse_args()
 
     print("Loading Input from :", args.filedir)
 
     try:
-        fmsd = CompareMSD(args.filedir,args.outputdir,args.prefix,args.expt,args.config)
+        fmsd = CompareMSD(args.filedir, args.outputdir, args.prefix, args.expt, args.config)
         fmsd.compile()
 
         # Set the figure
@@ -210,4 +207,3 @@ if __name__ == "__main__":
         print("IOError: ", e)
     except ValueError as e:
         print("Error: ", e)
-

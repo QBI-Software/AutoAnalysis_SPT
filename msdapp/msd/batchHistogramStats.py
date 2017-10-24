@@ -26,7 +26,6 @@ Created on Sep 8 2017
 
 import argparse
 from os.path import join
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -36,6 +35,7 @@ from msdapp.msd.batchStats import BatchStats
 
 class HistoStats(BatchStats):
     def __init__(self, *args):
+        self.datafield = 'HISTOGRAM_FILENAME'
         super().__init__(*args)
         if self.config is not None:
             self.datafile = self.config['HISTOGRAM_FILENAME']

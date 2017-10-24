@@ -19,12 +19,11 @@ Created on Tue Sep 5 2017
 import argparse
 from os import R_OK, access
 from os.path import join, expanduser
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from configobj import ConfigObj, ConfigObjError
-from numpy import isnan
+from numpy import isnan, inf
 from scipy import stats
 
 
@@ -142,7 +141,7 @@ class MSDStats():
             (dstats, p) = stats.ttest_ind(cond1, cond2)
             # Output as CSV
             if not isnan(p):
-                signif = (p < 0.05)
+                signif = (p >= 0.05)
             else:
                 signif = 'unknown'
             data = ['MSD Area', " vs ".join(self.prefixes), dstats, p, signif]
@@ -193,8 +192,9 @@ class MSDStats():
             fig, ax = plt.subplots()
         df = self.ratiodata
         cols = ['Ratio_' + prefix for prefix in self.prefixes]
-        sns.swarmplot(data=df[cols])
-        df.boxplot(cols)
+        ax = sns.boxplot(data=df[cols],whis=inf)
+        ax = sns.swarmplot(data=df[cols], color="gray")
+        #df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
         plt.ylabel('Mobile Fraction')
@@ -205,8 +205,9 @@ class MSDStats():
             fig, ax = plt.subplots()
         df = self.areadata[self.areadata['Cell'] != 'ALL']
         cols = ['MSD Area_' + prefix for prefix in self.prefixes]
-        sns.swarmplot(data=df[cols])
-        df.boxplot(cols)
+        ax = sns.boxplot(data=df[cols], whis=inf)
+        ax = sns.swarmplot(data=df[cols], color="gray")
+        #df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
         plt.ylabel('Mobile Fraction')
