@@ -21,7 +21,6 @@ from os import R_OK, access
 from os.path import join, isdir, commonpath, sep
 
 import numpy as np
-import pandas as pd
 from configobj import ConfigObj
 
 

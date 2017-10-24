@@ -18,14 +18,14 @@ Created on Tue Sep 5 2017
 
 import argparse
 from os import R_OK, access
-from os.path import basename, join, expanduser
+from os.path import join, expanduser
 
-import pandas as pd
-from configobj import ConfigObj, ConfigObjError
-from scipy import stats
-from numpy import isnan
-import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from configobj import ConfigObj, ConfigObjError
+from numpy import isnan
+from scipy import stats
 
 
 class MSDStats():
@@ -41,17 +41,16 @@ class MSDStats():
         self.__loadConfig(configfile)
         self.outputdir = outputdir
         if prefixes is None:
-            self.prefixes = [self.group1,self.group2]
+            self.prefixes = [self.group1, self.group2]
         else:
             self.prefixes = prefixes
         self.outputfilename = "_".join(self.prefixes) + '_stats.csv'
-        self.histodata = self.__loadData(inputdirs[0], inputdirs[1], self.histo,'bins')
-        self.ratiodata = self.__loadData(inputdirs[0], inputdirs[1],'ratios.csv','Cell')
-        self.areadata = self.__loadData(inputdirs[0], inputdirs[1],'areas.csv','Cell')
-        #self.msddata = self.__loadData(inputdirs[0], inputdirs[1], self.msd, 'Cell')
-        #self.msddatafiles = []
-        self.msddatafiles = [join(inputdirs[i], self.prefixes[i] + "_" + self.msd) for i in [0,1]]
-
+        self.histodata = self.__loadData(inputdirs[0], inputdirs[1], self.histo, 'bins')
+        self.ratiodata = self.__loadData(inputdirs[0], inputdirs[1], 'ratios.csv', 'Cell')
+        self.areadata = self.__loadData(inputdirs[0], inputdirs[1], 'areas.csv', 'Cell')
+        # self.msddata = self.__loadData(inputdirs[0], inputdirs[1], self.msd, 'Cell')
+        # self.msddatafiles = []
+        self.msddatafiles = [join(inputdirs[i], self.prefixes[i] + "_" + self.msd) for i in [0, 1]]
 
     def __loadConfig(self, configfile):
         """
@@ -81,7 +80,7 @@ class MSDStats():
         except ConfigObjError as c:
             raise ValueError("ERROR: config file load error: %s", configfile)
 
-    def __loadData(self,dir1,dir2,basename, mergefield):
+    def __loadData(self, dir1, dir2, basename, mergefield):
         """
         Find AllHistogram files for each
         :param dir1: group1 directory
@@ -92,13 +91,13 @@ class MSDStats():
         # Load from csv and merge
         data = None
         try:
-            dirs = [dir1,dir2]
-            files =[]
+            dirs = [dir1, dir2]
+            files = []
             i = 0
             for prefix in self.prefixes:
                 files.append(join(dirs[i], prefix + "_" + basename))
-                i = i+1
-            prefixes = ["_"+p for p in self.prefixes]
+                i = i + 1
+            prefixes = ["_" + p for p in self.prefixes]
             if len(files) == 2:
                 data = pd.read_csv(files[0])
                 data2 = pd.read_csv(files[1])
@@ -110,8 +109,6 @@ class MSDStats():
 
         return data
 
-
-
     def runTtests(self):
         """
          T-test on TWO RELATED samples of scores, a and b.
@@ -119,24 +116,24 @@ class MSDStats():
         :return: dataframe
         """
         print("Running t-tests on data")
-        headers = ['Compare', 'Groups','T-test', 'p-value','Significance (0.05)']
+        headers = ['Compare', 'Groups', 'T-test', 'p-value', 'Significance (0.05)']
         df = pd.DataFrame(columns=headers)
         # Ratios comparison
         if self.ratiodata is not None:
-            #extract data columns for testing
+            # extract data columns for testing
             cond1 = [s for s in self.ratiodata['Ratio_' + self.prefixes[0]] if not isnan(s)]
             cond2 = [s for s in self.ratiodata['Ratio_' + self.prefixes[1]] if not isnan(s)]
-            (dstats, p) = stats.ttest_ind(cond1,cond2)
-            #Output as CSV
+            (dstats, p) = stats.ttest_ind(cond1, cond2)
+            # Output as CSV
             if not isnan(p):
-                signif =(p >= 0.05)
+                signif = (p >= 0.05)
             else:
-                signif ='unknown'
+                signif = 'unknown'
             data = ['Ratios', " vs ".join(self.prefixes), dstats, p, signif]
             df1 = pd.DataFrame([data], columns=headers)
             df = df.append(df1)
 
-        #Areas comparison
+        # Areas comparison
         if self.areadata is not None:
             # Exclude ALL row
             areas = self.areadata[self.areadata['Cell'] != 'ALL']
@@ -145,7 +142,7 @@ class MSDStats():
             (dstats, p) = stats.ttest_ind(cond1, cond2)
             # Output as CSV
             if not isnan(p):
-                signif =(p < 0.05)
+                signif = (p < 0.05)
             else:
                 signif = 'unknown'
             data = ['MSD Area', " vs ".join(self.prefixes), dstats, p, signif]
@@ -154,7 +151,7 @@ class MSDStats():
 
         return df
 
-    def showMSDAvgPlot(self,ax=None):
+    def showMSDAvgPlot(self, ax=None):
         """
         Overlay Avg MSD plots for each group
         :param ax:
@@ -176,13 +173,13 @@ class MSDStats():
         plt.legend(self.prefixes)
         # plt.show()
 
-    def showHistoAvgPlot(self,ax=None):
+    def showHistoAvgPlot(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots()
         df = self.histodata
         width = 0.15
         for prefix in self.prefixes:
-            meancol = 'MEAN_'+prefix
+            meancol = 'MEAN_' + prefix
             semcol = 'SEM_' + prefix
             plt.errorbar(df['bins'], df[meancol], yerr=df[semcol], fmt='--o')
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
@@ -191,11 +188,11 @@ class MSDStats():
         plt.title('Mean D with SEM')
         plt.legend(self.prefixes)
 
-    def showRatioPlot(self,ax=None):
+    def showRatioPlot(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots()
         df = self.ratiodata
-        cols = ['Ratio_' + prefix  for prefix in self.prefixes]
+        cols = ['Ratio_' + prefix for prefix in self.prefixes]
         sns.swarmplot(data=df[cols])
         df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
@@ -203,19 +200,17 @@ class MSDStats():
         plt.ylabel('Mobile Fraction')
         plt.title('Mobile/Immobile Ratios')
 
-
-    def showAreaPlot(self,ax=None):
+    def showAreaPlot(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots()
         df = self.areadata[self.areadata['Cell'] != 'ALL']
-        cols = ['MSD Area_' + prefix  for prefix in self.prefixes]
+        cols = ['MSD Area_' + prefix for prefix in self.prefixes]
         sns.swarmplot(data=df[cols])
         df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
         plt.ylabel('Mobile Fraction')
         plt.title('MSD Areas under curve')
-
 
     def showPlots(self, plottitle):
         """
@@ -238,11 +233,11 @@ class MSDStats():
         self.showAreaPlot(axes4)
 
         figtype = 'png'  # png, pdf, ps, eps and svg.
-        figname = join(self.outputdir,self.outputfilename).replace('csv', figtype)
+        figname = join(self.outputdir, self.outputfilename).replace('csv', figtype)
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
 
-
         plt.show()
+
 
 ############################################################################################
 if __name__ == "__main__":
@@ -262,7 +257,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     configfile = join(expanduser('~'), '.msdcfg')
     try:
-        rs = MSDStats(args.dir1, args.dir2, args.outputdir, args.prefix1,args.prefix2,configfile)
+        rs = MSDStats(args.dir1, args.dir2, args.outputdir, args.prefix1, args.prefix2, configfile)
         results_df = rs.runTtests()
         print(results_df)
         rs.showPlots("Test cells")

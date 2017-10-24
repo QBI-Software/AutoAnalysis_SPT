@@ -25,17 +25,14 @@ Created on Sep 8 2017
 """
 
 import argparse
-from os import R_OK, access, walk, sep
-from os.path import join, isdir, commonpath, sep
-from glob import glob, iglob
-from configobj import ConfigObj
-import re
-import fnmatch
+from os.path import join
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+
 from msdapp.msd.batchStats import BatchStats
+
 
 class HistoStats(BatchStats):
     def __init__(self, *args):
@@ -52,7 +49,6 @@ class HistoStats(BatchStats):
             print("HIST:Using config defaults")
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
         self.compiled = pd.DataFrame()
-
 
     def compile(self):
         try:

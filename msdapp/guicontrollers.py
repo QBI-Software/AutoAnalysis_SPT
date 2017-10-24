@@ -1,11 +1,10 @@
 import logging
-import os
 import threading
 from glob import iglob
 from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support, Pool
 from os import access, R_OK, mkdir
-from os.path import join, dirname, exists, split
+from os.path import join, dirname, exists, split, splitext
 
 import matplotlib.pyplot as plt
 import wx
@@ -51,6 +50,7 @@ class DataEvent(wx.PyEvent):
         wx.PyEvent.__init__(self)
         self.SetEventType(EVT_DATA_ID)
         self.data = data
+
 
 #### LoggingConfig
 logger = logging.getLogger()
@@ -126,6 +126,11 @@ class FilterThread(threading.Thread):
         """
         logger.info("Process Filter with file: %s", filename)
         datafile_msd = filename.replace(self.controller.datafile, self.controller.msdfile)
+        # Check datafile_msd is accessible - can use txt instead of xls
+        if not access(datafile_msd, R_OK) and '.xls' in splitext(datafile_msd)[1]:
+            f1 = datafile_msd.replace(splitext(datafile_msd)[1], '.txt')
+            if access(f1, R_OK):
+                datafile_msd = f1
         # create local subdir for output
         outputdir = join(dirname(filename), 'processed')
         if not exists(outputdir):
@@ -137,9 +142,11 @@ class FilterThread(threading.Thread):
             q[filename] = None
 
             # ----------------------------------------------------------------------
+
     def terminate(self):
         logger.info("Terminating Filter Thread")
         self.terminate()
+
 
 ########################################################################
 class HistogramThread(threading.Thread):
@@ -193,9 +200,11 @@ class HistogramThread(threading.Thread):
         logger.info("Terminating Histogram Thread")
         self.terminate()
 
+
 ##########################################################################################################
 class StatsThread(threading.Thread):
     """Multi Worker Thread Class."""
+
     # ----------------------------------------------------------------------
     def __init__(self, controller, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname):
         """Init Worker Thread Class."""
@@ -234,7 +243,8 @@ class StatsThread(threading.Thread):
                 ratiofile = fmsd.splitMobile()
                 count = (i / total) * 100
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
-                logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile, ratiofile)
+                logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile,
+                            ratiofile)
                 fmsds.append(fmsd)
                 i += 1
             # Set the figures
@@ -255,9 +265,11 @@ class StatsThread(threading.Thread):
         logger.info("Terminating Stats Thread")
         self.terminate()
 
+
 ############################################################################
 class MsdThread(threading.Thread):
     """Multi Worker Thread Class."""
+
     # ----------------------------------------------------------------------
     def __init__(self, controller, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname):
         """Init Worker Thread Class."""
@@ -315,6 +327,7 @@ class MsdThread(threading.Thread):
         logger.info("Terminating MSD Thread")
         self.terminate()
 
+
 ########################################################################
 
 class MSDController():
@@ -342,8 +355,6 @@ class MSDController():
 
         self.configfile = configfile
         self.loaded = self.loadConfig()
-
-
 
     # ----------------------------------------------------------------------
     def loadConfig(self, config=None):
@@ -469,7 +480,7 @@ class MSDController():
         type = self.processes[i]['href']
         processname = self.processes[i]['caption']
         filesIn = [self.config[f] for f in self.processes[i]['files'].split(", ")]
-        logger.info("Running Threads - start: %s (Expt prefix: %s) [row: %d]", type,expt, row)
+        logger.info("Running Threads - start: %s (Expt prefix: %s) [row: %d]", type, expt, row)
         wx.PostEvent(wxGui, ResultEvent((0, row, 0, len(filenames), processname)))
         if type == 'filter':
             t = FilterThread(self, wxGui, filenames, filesIn, type, row, processname)
@@ -495,7 +506,6 @@ class MSDController():
             t.start()
 
         logger.info("Running Thread - loaded: %s", type)
-
 
     # ----------------------------------------------------------------------
     def shutdown(self):

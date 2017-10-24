@@ -13,13 +13,13 @@ Created on Tue Sep 5 2017
 """
 
 import argparse
-from os import R_OK, access
-from os.path import join
-from configobj import ConfigObj
 import logging
+from os import R_OK, access
+from os.path import join, splitext
 
 import numpy as np
 import pandas
+from configobj import ConfigObj
 
 
 class FilterMSD():
@@ -51,7 +51,7 @@ class FilterMSD():
                 access(configfile, R_OK)
                 config = ConfigObj(configfile)
             except:
-                #Chars work differently for diff OSes
+                # Chars work differently for diff OSes
                 print("Encoding required for Config")
                 config = ConfigObj(configfile, encoding=self.encoding)
             self.filteredfname = config['FILTERED_FILENAME']
@@ -71,37 +71,49 @@ class FilterMSD():
         :return:
         """
         try:
+            data = None
+            msd = None
+            # Load Data file
             data = pandas.read_csv(datafile, encoding=self.encoding, skiprows=2, delimiter='\t')
-            # Uneven rows - detect max columns
+            # Add log10 column
+            data[self.logcolumn] = np.log10(data[self.diffcolumn])
+            logging.info("FilterMSD: datafile loaded with log10D (%s)" % datafile)
+            # Load MSD data file
             max_msdpoints = self.msdpoints + 2  # max msd points plus first 2 cols
-            cols = ['ROI', 'Trace'] + [str(x) for x in range(1, self.msdpoints + 1)]
-            msd = pandas.DataFrame([])
-            f = open(datafile_msd, encoding=self.encoding)
-            f.seek(0)
-            if len(f.readline().strip()) > 0:
-                for row in f.readlines():
-                    if row.startswith('#'):
-                        continue
-                    s = pandas.Series(row.split('\t'))
-                    s = s[0:max_msdpoints]  # only first 10 points
-                    s1 = s.iloc[-1].split('\n')  # remove end of line if present
-                    s.iloc[-1] = s1[0]
-                    # padding
-                    x = list(s.values) + [np.nan for i in range(len(s), max_msdpoints)]
-                    s = pandas.Series(x)
-                    msd = msd.append(s, ignore_index=True)
-                msd.columns = cols
-                # Add log10 column
-                data[self.logcolumn] = np.log10(data[self.diffcolumn])
-                return (data, msd)
+            fpath = splitext(datafile_msd)
+            if '.xls' in fpath[1]:
+                msdall = pandas.read_excel(datafile_msd, sheetname=0, skiprows=1)
+                allcols = ['ROI', 'Trace'] + [i for i in range(1, len(msdall.iloc[0]) - 1)]
+                msdall.columns = allcols
+                msd = msdall.iloc[:, 0:max_msdpoints]
             else:
-                msg = "Processing error: datafile maybe corrupt: %s" % datafile_msd
-                raise Exception(msg)
+                # Txt file is \t delim but has Uneven rows so need to parse line by line - detect max columns
+                # This is very slow but get errors if trying read_csv with pd.read_csv(dmsd, sep='\t')
+                cols = ['ROI', 'Trace'] + [str(x) for x in range(1, self.msdpoints + 1)]
+                msd = pandas.DataFrame([])
+                f = open(datafile_msd, encoding=self.encoding)
+                f.seek(0)
+                if len(f.readline().strip()) > 0:
+                    for row in f.readlines():
+                        if row.startswith('#'):
+                            continue
+                        s = pandas.Series(row.split('\t'))
+                        s = s[0:max_msdpoints]  # only first 10 points
+                        s1 = s.iloc[-1].split('\n')  # remove end of line if present
+                        s.iloc[-1] = s1[0]
+                        # padding
+                        x = list(s.values) + [np.nan for i in range(len(s), max_msdpoints)]
+                        s = pandas.Series(x)
+                        msd = msd.append(s, ignore_index=True)
+                    msd.columns = cols
+                else:
+                    msg = "Processing error: datafile maybe corrupt: %s" % datafile_msd
+                    raise Exception(msg)
+            logging.info("FilterMSD: msdfile loaded (%s)" % datafile_msd)
+            return (data, msd)
         except Exception as e:
             print(e)
             logging.error(e)
-        return (None,None)
-
 
     def runFilter(self):
         """
@@ -114,10 +126,11 @@ class FilterMSD():
             logcolumn = self.logcolumn
             num_data = len(self.data)
             num_msd = len(self.msd)
-            print("Rows filtered: \tData\tMSD")
             (filtered, filtered_msd) = self.filter_datafiles()
-            print("\t\t", num_data, '\t', num_msd)
-            print("\t\t", len(filtered), '\t', len(filtered_msd))
+            msg = "Rows filtered: \tData\tMSD\t\t%d\t%d\n\t" \
+                  "\t%d\t%d" % (num_data, num_msd, len(filtered), len(filtered_msd))
+            print(msg)
+            logging.info(msg)
             # Save files
             fdata = join(self.outputdir, self.filteredfname)
             fmsd = join(self.outputdir, self.filtered_msd)
@@ -145,7 +158,6 @@ class FilterMSD():
         logcolumn = self.logcolumn
         minval = self.minlimit
         maxval = self.maxlimit
-
         minfilter = data[logcolumn] > minval
         maxfilter = data[logcolumn] < maxval
         mmfilter = minfilter & maxfilter
@@ -164,7 +176,7 @@ if __name__ == "__main__":
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
     parser.add_argument('--datafile', action='store', help='Initial data file - D', default="AllROI-D.txt")
-    parser.add_argument('--datafile_msd', action='store', help='Initial data file - MSD', default="AllROI-MSD.txt")
+    parser.add_argument('--datafile_msd', action='store', help='Initial data file - MSD', default="AllROI-MSD.xlsx")
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
     parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")

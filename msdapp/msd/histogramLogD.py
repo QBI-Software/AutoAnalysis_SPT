@@ -17,25 +17,21 @@ import argparse
 from os import R_OK, access
 from os.path import join
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas
-from scipy.stats import norm
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
-from os.path import join, expanduser
 from configobj import ConfigObj
 
 
-
 class HistogramLogD():
-    def __init__(self, datafile, configfile=None,minlimit=-5, maxlimit=1,binwidth=0.02,):
+    def __init__(self, datafile, configfile=None, minlimit=-5, maxlimit=1, binwidth=0.02, ):
         self.encoding = 'ISO-8859-1'
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
             self.msdpoints = 10
             self.histofile = 'Histogram_log10D.csv'
-            self.logcolumn = 'log10D'#'D(µm²/s)' #must be exact label
+            self.logcolumn = 'log10D'  # 'D(µm²/s)' #must be exact label
             # Frequency range limits
             self.fmin = float(minlimit)
             self.fmax = float(maxlimit)
@@ -45,7 +41,7 @@ class HistogramLogD():
         self.data = None
         self.fig = None
 
-        #Load data
+        # Load data
         self.__load_datafiles(datafile)
 
     def __loadConfig(self, configfile=None):
@@ -58,16 +54,16 @@ class HistogramLogD():
                 self.fmin = float(config['MINLIMIT'])
                 self.fmax = float(config['MAXLIMIT'])
                 self.binwidth = float(config['BINWIDTH'])
-                self.logcolumn =config['LOG_COLUMN']
+                self.logcolumn = config['LOG_COLUMN']
             except:
                 raise IOError
 
-    def __load_datafiles(self,datafile):
-        self.data = pandas.read_csv(datafile,encoding = self.encoding)
+    def __load_datafiles(self, datafile):
+        self.data = pandas.read_csv(datafile, encoding=self.encoding)
         print("Data loaded:", len(self.data))
-        #Allow overwrite of range?
-        #self.fmin = min(self.data[self.logcolumn])
-        #self.fmax = max(self.data[self.logcolumn])
+        # Allow overwrite of range?
+        # self.fmin = min(self.data[self.logcolumn])
+        # self.fmax = max(self.data[self.logcolumn])
 
     def getStats(self, bimodal=True):
         """
@@ -84,17 +80,17 @@ class HistogramLogD():
                 variance = np.var(ndata)
                 print("Mean:", mean)
             else:
-                #two sets
+                # two sets
                 mean = np.median(self.data[self.logcolumn])
                 print("Median:", mean)
             variance = np.var(self.data[self.logcolumn])
             print("Variance:", variance)
-        return (mean,variance)
+        return (mean, variance)
 
-    def gauss(self,x, mu, sigma, A):
+    def gauss(self, x, mu, sigma, A):
         return A * np.exp(-(x - mu) ** 2 / 2 / sigma ** 2)
 
-    def bimodal(self,x, mu1, sigma1, A1, mu2, sigma2, A2):
+    def bimodal(self, x, mu1, sigma1, A1, mu2, sigma2, A2):
         return self.gauss(x, mu1, sigma1, A1) + self.gauss(x, mu2, sigma2, A2)
 
     def generateHistogram(self, outputdir=None):
@@ -105,32 +101,34 @@ class HistogramLogD():
         """
         if not self.data.empty:
             print("Generating histogram")
-            num_bins = abs(int((self.fmax-self.fmin)/self.binwidth)) #smaller binwidth better for fitting eg 0.1 or 0.05
+            num_bins = abs(
+                int((self.fmax - self.fmin) / self.binwidth))  # smaller binwidth better for fitting eg 0.1 or 0.05
             data = self.data[self.logcolumn]
             # Use numpy with density as more accurate - include extra bin for equal
             hist = np.histogram(data, bins=num_bins + 1, range=[int(self.fmin), int(self.fmax) + self.binwidth],
                                 density=True)
             self.histdata = pandas.DataFrame({'bins': hist[1][0:-1], 'log10D': hist[0]})
 
-            #Create figure
+            # Create figure
             self.fig = plt.figure()
-            n, bins, patches = plt.hist(data, bins=hist[1][0:-1], align='mid',normed=1, alpha=0.75)
+            n, bins, patches = plt.hist(data, bins=hist[1][0:-1], align='mid', normed=1, alpha=0.75)
             plt.grid(which='major')
             plt.xlabel('log10D')
             plt.ylabel('Frequency')
 
-            #Save plot to figure
+            # Save plot to figure
             if outputdir is not None:
-                figtype='png' #png, pdf, ps, eps and svg.
+                figtype = 'png'  # png, pdf, ps, eps and svg.
                 fname = self.histofile.replace('csv', figtype)
-                outputfile = join(outputdir,fname)
+                outputfile = join(outputdir, fname)
                 plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
                 print("Saved histogram to ", outputfile)
                 outputfile2 = join(outputdir, self.histofile)
                 self.histdata.to_csv(outputfile2, index=False)
                 print("Saved histogram data to ", outputfile2)
-            #For testing - will stop here until fig closes
-            #plt.show()
+            plt.close()
+            # For testing - will stop here until fig closes
+            # plt.show()
             return (outputfile, outputfile2)
 
 
@@ -138,7 +136,8 @@ class HistogramLogD():
 if __name__ == "__main__":
     import sys
     import plotly
-    from plotly.graph_objs import Scatter, Layout, Histogram
+    from plotly.graph_objs import Layout, Histogram
+
     parser = argparse.ArgumentParser(prog=sys.argv[0],
                                      description='''\
             Generates frequency histogram from datafile to output directory
@@ -158,7 +157,7 @@ if __name__ == "__main__":
     print("Input:", datafile)
 
     try:
-        fd = HistogramLogD(datafile, args.config,float(args.minlimit), float(args.maxlimit),args.binwidth)
+        fd = HistogramLogD(datafile, args.config, float(args.minlimit), float(args.maxlimit), args.binwidth)
         fd.generateHistogram(outputdir)
         # Plotly Offline
         data = fd.data[fd.logcolumn]
@@ -169,5 +168,3 @@ if __name__ == "__main__":
 
     except ValueError as e:
         print("Error:", e)
-
-

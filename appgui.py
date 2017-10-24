@@ -1,26 +1,18 @@
-#import images
+# import images
 import logging
-import time
-from glob import glob, iglob
-from multiprocessing import Manager, Process
-import threading
-from os import access, R_OK, walk, mkdir
-from os.path import join, expanduser, dirname, exists, split, isdir
 import re
-from queue import Queue
-import matplotlib.pyplot as plt
-import pandas as pd
+import time
+from glob import iglob
+from os import access, R_OK
+from os.path import join, expanduser, isdir
+
 import wx
 import wx.html2
 from configobj import ConfigObj
-from collections import OrderedDict
+
+from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
-from msdapp.msd.batchCompareMSD import CompareMSD
-from msdapp.msd.batchHistogramStats import HistoStats
-from msdapp.msd.filterMSD import FilterMSD
-from msdapp.msd.histogramLogD import HistogramLogD
 from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
-from msdapp.guicontrollers import EVT_RESULT,EVT_DATA, EVT_RESULT_ID,ResultEvent
 
 
 ########################################################################
@@ -38,13 +30,17 @@ class HomePanel(WelcomePanel):
         # self.SetSizer(hbox)
         self.m_richText1.AddParagraph(r'''***Welcome to the MSD Automated Analysis App***''')
         self.m_richText1.AddParagraph(r''' To process your files: ''')
-        #self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
-        self.m_richText1.AddParagraph(r'1. Check the Configuration options, particularly the column names and filenames used for matching')
-        self.m_richText1.AddParagraph(r"2. Select Files to process either with AutoFind from a top level directory and/or Drag and Drop")
+        # self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
+        self.m_richText1.AddParagraph(
+            r'1. Check the Configuration options, particularly the column names and filenames used for matching')
+        self.m_richText1.AddParagraph(
+            r"2. Select Files to process either with AutoFind from a top level directory and/or Drag and Drop")
         self.m_richText1.AddParagraph(r"3. Select which processes to run and monitor their progress")
-        self.m_richText1.AddParagraph(r"4. Choose Compare Groups to run a statistical comparison of two groups after processing files have been generated")
+        self.m_richText1.AddParagraph(
+            r"4. Choose Compare Groups to run a statistical comparison of two groups after processing files have been generated")
         self.m_richText1.AddParagraph(r"Any queries, contact Liz Cooper-Williams e.cooperwilliams@uq.edu.au")
-        self.m_richText1.AddParagraph(r"Copyright (2017) Apache license v2 (https://github.com/QBI-Software/MSDAnalysis)")
+        self.m_richText1.AddParagraph(
+            r"Copyright (2017) Apache license v2 (https://github.com/QBI-Software/MSDAnalysis)")
 
     def __loadContent(self):
         """
@@ -60,6 +56,7 @@ class HomePanel(WelcomePanel):
        
         '''
         return content
+
 
 ########################################################################
 class MSDConfig(ConfigPanel):
@@ -113,14 +110,14 @@ class MSDConfig(ConfigPanel):
         config['GROUP2'] = self.m_tcGroup2.GetValue()
         config['CELLID'] = self.m_tcCellid.GetValue()
         config.write()
-        #Reload to parent
+        # Reload to parent
         try:
             self.Parent.controller.loadConfig(config)
             self.m_status.SetLabel("Config updated")
         except IOError as e:
             self.Parent.Warn("Config error:", e.message)
 
-    def OnLoadConfig(self,event):
+    def OnLoadConfig(self, event):
         print("Load From Config dialog")
         openFileDialog = wx.FileDialog(self, "Open config file", "", "", "Config files (*.cfg)|*",
                                        wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_CHANGE_DIR)
@@ -130,13 +127,14 @@ class MSDConfig(ConfigPanel):
             try:
                 config = ConfigObj(configfile, encoding='ISO-8859-1')
                 self.Parent.controller.loadConfig(config)
-                self.Parent.controller.config.filename = join(expanduser('~'), '.msdcfg') #save over existing?
+                self.Parent.controller.config.filename = join(expanduser('~'), '.msdcfg')  # save over existing?
                 self.Parent.controller.config.write()
                 self.__loadValues(self.Parent.controller)
                 self.m_status.SetLabel("Config Loaded: %s" % configfile)
             except IOError as e:
                 self.Parent.Warn("Config error:", e.message)
         openFileDialog.Destroy()
+
 
 ########################################################################
 class MyFileDropTarget(wx.FileDropTarget):
@@ -146,12 +144,13 @@ class MyFileDropTarget(wx.FileDropTarget):
 
     def OnDropFiles(self, x, y, filenames):
         for fname in filenames:
-            self.target.AppendItem([True,fname])
+            self.target.AppendItem([True, fname])
         return len(filenames)
+
 
 ########################################################################
 class FileSelectPanel(FilesPanel):
-    def __init__(self,parent):
+    def __init__(self, parent):
         super(FileSelectPanel, self).__init__(parent)
         self.col_file.SetMinWidth(200)
 
@@ -164,7 +163,7 @@ class FileSelectPanel(FilesPanel):
         dlg = wx.DirDialog(self, "Choose a directory containing input files")
         if dlg.ShowModal() == wx.ID_OK:
             self.inputdir = str(dlg.GetPath())
-            #self.statusbar.SetStatusText("Loaded: %s" % self.inputdir)
+            # self.statusbar.SetStatusText("Loaded: %s" % self.inputdir)
             self.txtInputdir.SetValue(self.inputdir)
         dlg.Destroy()
 
@@ -173,7 +172,7 @@ class FileSelectPanel(FilesPanel):
         dlg = wx.DirDialog(self, "Choose a directory for output files")
         if dlg.ShowModal() == wx.ID_OK:
             self.outputdir = str(dlg.GetPath())
-            #self.statusbar.SetStatusText("Loaded: %s\n" % self.outputdir)
+            # self.statusbar.SetStatusText("Loaded: %s\n" % self.outputdir)
             self.txtOutputdir.SetValue(self.outputdir)
         dlg.Destroy()
 
@@ -184,16 +183,16 @@ class FileSelectPanel(FilesPanel):
         :return:
         """
         self.btnAutoFind.Disable()
-        self.m_status.SetLabelText("Loading files ... please wait")
+        self.m_status.SetLabelText("Finding files ... please wait")
         allfiles = [y for y in iglob(join(self.inputdir, '**', self.datafile), recursive=True)]
         searchtext = self.m_tcSearch.GetValue()
         if (len(searchtext) > 0):
-            filenames = [f for f in allfiles if re.search(searchtext,f, flags=re.IGNORECASE)]
+            filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
         else:
             filenames = allfiles
 
         for fname in filenames:
-            self.m_dataViewListCtrl1.AppendItem([True,fname])
+            self.m_dataViewListCtrl1.AppendItem([True, fname])
 
         self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
         msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
@@ -202,12 +201,13 @@ class FileSelectPanel(FilesPanel):
 
     def OnSelectall(self, event):
         for i in range(0, self.m_dataViewListCtrl1.GetItemCount()):
-            self.m_dataViewListCtrl1.SetToggleValue(event.GetSelection(),i,0)
+            self.m_dataViewListCtrl1.SetToggleValue(event.GetSelection(), i, 0)
         print("Toggled selections to: ", event.GetSelection())
 
     def OnClearlist(self, event):
         print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
+
 
 ########################################################################
 class ProcessRunPanel(ProcessPanel):
@@ -215,31 +215,29 @@ class ProcessRunPanel(ProcessPanel):
         super(ProcessRunPanel, self).__init__(parent)
         self.controller = parent.controller
         # Bind timer event
-        #self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
+        # self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
         processes = [p['caption'] for p in self.controller.processes]
         self.m_checkListProcess.AppendItems(processes)
         # Set up event handler for any worker thread results
         EVT_RESULT(self, self.progressfunc)
-        #EVT_CANCEL(self, self.stopfunc)
+        # EVT_CANCEL(self, self.stopfunc)
         # Set timer handler
         self.start = {}
 
-    def OnShowDescription( self, event ):
+    def OnShowDescription(self, event):
         print(event.String)
-        desc = [p['description'] for p in self.controller.processes if p['caption']==event.String]
-        filesIn = [p['files'] for p in self.controller.processes if p['caption']==event.String]
-        filesOut = [p['filesout'] for p in self.controller.processes if p['caption']==event.String]
-        #Load from Config
+        desc = [p['description'] for p in self.controller.processes if p['caption'] == event.String]
+        filesIn = [p['files'] for p in self.controller.processes if p['caption'] == event.String]
+        filesOut = [p['filesout'] for p in self.controller.processes if p['caption'] == event.String]
+        # Load from Config
         filesIn = [self.controller.config[f] for f in filesIn[0].split(", ")]
         filesOut = [self.controller.config[f] for f in filesOut[0].split(", ")]
-        #Load to GUI
+        # Load to GUI
         self.m_stTitle.SetLabelText(event.String)
         self.m_stDescription.SetLabelText(desc[0])
         self.m_stFilesin.SetLabelText(", ".join(filesIn))
         self.m_stFilesout.SetLabelText(", ".join(filesOut))
         self.Layout()
-
-
 
     def progressfunc(self, msg):
         """
@@ -249,11 +247,11 @@ class ProcessRunPanel(ProcessPanel):
         :param col:
         :return:
         """
-        (count, row,i,total, process) = msg.data
+        (count, row, i, total, process) = msg.data
         print("\nProgress updated: ", time.ctime())
         print('count = ', count)
         status = "%d of %d files " % (i, total)
-        if count ==0:
+        if count == 0:
             self.m_dataViewListCtrlRunning.AppendItem([process, count, "Pending"])
             self.start[process] = time.time()
         elif count < 0:
@@ -268,9 +266,8 @@ class ProcessRunPanel(ProcessPanel):
                 status = "%s (%d secs)" % (status, endtime)
             print(status)
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
-            self.m_dataViewListCtrlRunning.SetValue("Done "+ status, row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("Done " + status, row=row, col=2)
             self.m_btnRunProcess.Enable()
-
 
     def getFilePanel(self):
         """
@@ -285,7 +282,7 @@ class ProcessRunPanel(ProcessPanel):
                 break
         return filepanel
 
-    def OnCancelScripts( self, event ):
+    def OnCancelScripts(self, event):
         """
         Find a way to stop processes
         :param event:
@@ -301,35 +298,36 @@ class ProcessRunPanel(ProcessPanel):
         :param e:
         :return:
         """
-        #Clear processing window
+        # Clear processing window
         self.m_dataViewListCtrlRunning.DeleteAllItems()
-        #Disable Run button
-        #self.m_btnRunProcess.Disable()
+        # Disable Run button
+        # self.m_btnRunProcess.Disable()
         btn = event.GetEventObject()
         btn.Disable()
-        #Get selected processes
+        # Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
-        #Get data from other panels
+        # Get data from other panels
         filepanel = self.getFilePanel()
         filenames = []
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         print('All Files:', num_files)
         if len(selections) > 0 and num_files > 0:
             for i in range(0, num_files):
-                if filepanel.m_dataViewListCtrl1.GetToggleValue(i,0):
-                    filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i,1))
+                if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
+                    filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i, 1))
             print('Selected Files:', len(filenames))
-            outputdir = filepanel.txtOutputdir.GetValue() #for batch processes
+            outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
             expt = filepanel.m_tcSearch.GetValue()
             print("Expt:", expt)
             row = 0
-            #For each process
+            # For each process
             for p in selections:
                 print("Running:", p)
-                i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
+                i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][
+                    0]
                 self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
-                row = row+1
+                row = row + 1
                 print('Next process: row=', row)
 
             print("Completed processes")
@@ -341,6 +339,7 @@ class ProcessRunPanel(ProcessPanel):
             self.Parent.Warn(msg)
             # Enable Run button
             self.m_btnRunProcess.Enable()
+
 
 ########################################################################
 class CompareRunPanel(ComparePanel):
@@ -362,8 +361,7 @@ class CompareRunPanel(ComparePanel):
                 self.m_tcResults.AppendText(msg)
             self.m_tcResults.AppendText("\n***********\n")
 
-
-    def OnBrowseGp1( self, event ):
+    def OnBrowseGp1(self, event):
         """ Open a file"""
         dlg = wx.DirDialog(self, "Choose a directory containing data files")
         if dlg.ShowModal() == wx.ID_OK:
@@ -371,7 +369,7 @@ class CompareRunPanel(ComparePanel):
             self.m_tcGp1Files.SetValue(self.inputdir1)
         dlg.Destroy()
 
-    def OnBrowseGp2( self, event ):
+    def OnBrowseGp2(self, event):
         """ Open a file"""
         dlg = wx.DirDialog(self, "Choose a directory containing data files")
         if dlg.ShowModal() == wx.ID_OK:
@@ -379,18 +377,18 @@ class CompareRunPanel(ComparePanel):
             self.m_tcGp2Files.SetValue(self.inputdir2)
         dlg.Destroy()
 
-    def OnCompareRun( self, event ):
+    def OnCompareRun(self, event):
         inputdirs = [self.inputdir1, self.inputdir2]
         for d in inputdirs:
             if not isdir(d) or not access(d, R_OK):
                 self.Parent.Warn("Please check input directories are entered")
         outputdir = self.getFilePanel().txtOutputdir.GetValue()
         searchtext = self.getFilePanel().m_tcSearch.GetValue()
-        prefixes = [self.m_tcGp1.GetValue(),self.m_tcGp2.GetValue()]
-        self.controller.RunCompare(self, inputdirs, outputdir, prefixes,searchtext)
+        prefixes = [self.m_tcGp1.GetValue(), self.m_tcGp2.GetValue()]
+        self.controller.RunCompare(self, inputdirs, outputdir, prefixes, searchtext)
 
-    def OnCompareStop( self, event ):
-            print('Stopping process')
+    def OnCompareStop(self, event):
+        print('Stopping process')
 
     def getFilePanel(self):
         """
@@ -405,9 +403,9 @@ class CompareRunPanel(ComparePanel):
                 break
         return filepanel
 
+
 ########################################################################
 class AppMain(wx.Listbook):
-
     def __init__(self, parent):
         """Constructor"""
         wx.Listbook.__init__(self, parent, wx.ID_ANY, style=wx.BK_DEFAULT)
@@ -426,8 +424,6 @@ class AppMain(wx.Listbook):
         self.Centre(wx.BOTH)
         self.Show()
 
-
-
     def InitUI(self):
 
         # make an image list using the LBXX images
@@ -444,14 +440,14 @@ class AppMain(wx.Listbook):
         # il.Add(bmp)
         # self.AssignImageList(il)
 
-        pages = [(HomePanel(self),"Welcome"),
+        pages = [(HomePanel(self), "Welcome"),
                  (MSDConfig(self), "Configure"),
                  (FileSelectPanel(self), "Select Files"),
                  (ProcessRunPanel(self), "Run Processes"),
-                 (CompareRunPanel(self),"Compare Groups")]
+                 (CompareRunPanel(self), "Compare Groups")]
         imID = 0
         for page, label in pages:
-            #self.AddPage(page, label, imageId=imID)
+            # self.AddPage(page, label, imageId=imID)
             self.AddPage(page, label)
             imID += 1
 
@@ -497,6 +493,7 @@ class AppMain(wx.Listbook):
             self.Destroy()
         else:
             e.Veto()
+
 
 ########################################################################
 class MSDFrame(wx.Frame):
