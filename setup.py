@@ -21,38 +21,49 @@
 #   python setup.py bdist_msi
 # View dist dir contents
 
-application_title = "QBI MSD Analysis"
-main_python_file = "appgui.py"
+application_title = 'QBI MSD Analysis'
+main_python_file = 'appgui.py'
 
 import sys
 import os
 from cx_Freeze import setup, Executable
-os.environ['TCL_LIBRARY'] = 'D:\\Programs\\Python35\\tcl\\tcl8.6'
-os.environ['TK_LIBRARY'] = 'D:\\Programs\\Python35\\tcl\\tk8.6'
+from os.path import join
+
+venvpython = 'D:\\python_venv\\scipyenv\\Lib\\site-packages' #D:\\Dev\\python\\scipyenv\\Lib\\site-packages
+mainpython = 'C:\\Users\\lizcw\\AppData\\Local\\Programs\\Python\\Python35' #D:\\Programs\\Python35
+
+os.environ['TCL_LIBRARY'] = join(mainpython,'tcl','tcl8.6')
+os.environ['TK_LIBRARY'] = join(mainpython,'tcl','tk8.6')
 base = None
-if sys.platform == "win32":
-    base = "Win32GUI"
+if sys.platform == 'win32':
+    base = 'Win32GUI'
 
 build_exe_options = {
-    'includes' : ['seaborn'],
-    'packages' : ['numpy.core._methods','numpy.lib.format','tkinter', 'matplotlib.backends.backend_tkagg', 'seaborn'],
-    'include_files' : ['noname.py','resources/','D:\\Dev\\python\\scipyenv\\Lib\\site-packages\\scipy\\special\\_ufuncs.cp35-win_amd64.pyd','D:\\Programs\\Python35\\DLLs\\tcl86t.dll', 'D:\\Programs\\Python35\\DLLs\\tk86t.dll'],
+    'includes' : [],
+    'excludes': ['gtk', 'PyQt4'],
+    'packages' : ['tkinter','seaborn','numpy.core._methods','numpy.lib.format', 'matplotlib.backends.backend_tkagg'],
+    'include_files' : ['noname.py','resources/',
+                       join(venvpython, 'scipy','special','_ufuncs.cp35-win_amd64.pyd'),
+                       join(venvpython,'scipy','special','_ufuncs_cxx.cp35-win_amd64.pyd'),
+                       join(mainpython,'DLLs','tcl86t.dll'),
+                       join(mainpython,'DLLs','tk86t.dll'),
+                       join(venvpython,'scipy','_distributor_init.py')],
     'include_msvcr' : 1
    }
-# [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > "TARGETDIR"
+# [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
 setup(
         name = application_title,
-        version = "1.0",
-        description = "MSD Analysis scripts with GUI",
-        long_description=open("README.md").read(),
-        author="Liz Cooper-Williams, QBI",
-        author_email="e.cooperwilliams@uq.edu.au",
-        maintainer="QBI Custom Software, UQ",
-        maintainer_email="qbi-dev-admin@uq.edu.au",
-        url="http://github.com/QBI-Software/MSDAnalysis",
-        license="GNU General Public License (GPL)",
-        options = {"build_exe" : build_exe_options,},
-        executables = [Executable(main_python_file, base = base, targetName="msdanalysis.exe",icon="resources/chart128.ico",
-        shortcutName=application_title, shortcutDir="DesktopFolder")]
+        version = '1.0',
+        description = 'MSD Analysis scripts with GUI',
+        long_description=open('README.md').read(),
+        author='Liz Cooper-Williams, QBI',
+        author_email='e.cooperwilliams@uq.edu.au',
+        maintainer='QBI Custom Software, UQ',
+        maintainer_email='qbi-dev-admin@uq.edu.au',
+        url='http://github.com/QBI-Software/MSDAnalysis',
+        license='GNU General Public License (GPL)',
+        options = {'build_exe' : build_exe_options,},
+        executables = [Executable(main_python_file, base = base, targetName='msdanalysis.exe',icon='resources/chart128.ico',
+        shortcutName=application_title, shortcutDir='DesktopFolder')]
 )
 
