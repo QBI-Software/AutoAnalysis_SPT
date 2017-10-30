@@ -15,8 +15,8 @@ from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
 from msdapp.msd.msdStats import MSDStats
-
-freeze_support()
+#Required for dist?
+#freeze_support()
 # Define notification event for thread completion
 EVT_RESULT_ID = wx.NewId()
 EVT_DATA_ID = wx.NewId()

@@ -28,9 +28,12 @@ import sys
 import os
 from cx_Freeze import setup, Executable
 from os.path import join
-
-venvpython = 'D:\\python_venv\\scipyenv\\Lib\\site-packages' #D:\\Dev\\python\\scipyenv\\Lib\\site-packages
-mainpython = 'C:\\Users\\lizcw\\AppData\\Local\\Programs\\Python\\Python35' #D:\\Programs\\Python35
+#devhome
+#venvpython = 'D:\\python_venv\\scipyenv\\Lib\\site-packages'
+#mainpython = 'C:\\Users\\lizcw\\AppData\\Local\\Programs\\Python\\Python35'
+#devwork
+venvpython = 'D:\\Dev\\python\\scipyenv\\Lib\\site-packages'
+mainpython = 'D:\\Programs\\Python35'
 
 os.environ['TCL_LIBRARY'] = join(mainpython,'tcl','tcl8.6')
 os.environ['TK_LIBRARY'] = join(mainpython,'tcl','tk8.6')
@@ -40,14 +43,10 @@ if sys.platform == 'win32':
 
 build_exe_options = {
     'includes' : [],
-    'excludes': ['gtk', 'PyQt4'],
+    'excludes': [],
     'packages' : ['tkinter','seaborn','numpy.core._methods','numpy.lib.format', 'matplotlib.backends.backend_tkagg'],
     'include_files' : ['noname.py','resources/',
-                       join(venvpython, 'scipy','special','_ufuncs.cp35-win_amd64.pyd'),
-                       join(venvpython,'scipy','special','_ufuncs_cxx.cp35-win_amd64.pyd'),
-                       join(mainpython,'DLLs','tcl86t.dll'),
-                       join(mainpython,'DLLs','tk86t.dll'),
-                       join(venvpython,'scipy','_distributor_init.py')],
+                       (join(venvpython, 'scipy','special','_ufuncs.cp35-win_amd64.pyd'),'_ufuncs.pyd')],
     'include_msvcr' : 1
    }
 # [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
