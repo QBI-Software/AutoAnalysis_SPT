@@ -4,7 +4,7 @@ from glob import iglob
 from logging.handlers import RotatingFileHandler
 from multiprocessing import freeze_support, Pool
 from os import access, R_OK, mkdir
-from os.path import join, dirname, exists, split, splitext
+from os.path import join, dirname, exists, split, splitext, expanduser
 
 import matplotlib.pyplot as plt
 import wx
@@ -55,7 +55,12 @@ class DataEvent(wx.PyEvent):
 #### LoggingConfig
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-logfile = join("logs", 'msdanalysis.log')
+homedir = expanduser("~")
+if not access(homedir,R_OK):
+    homedir = '.'
+if not access(join(homedir,"logs"), R_OK):
+    mkdir(join(homedir,"logs"))
+logfile = join(homedir,"logs", 'msdanalysis.log')
 handler = RotatingFileHandler(filename=logfile, maxBytes=10000000, backupCount=10)
 formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] (%(threadName)-9s) %(message)s')
 handler.setFormatter(formatter)

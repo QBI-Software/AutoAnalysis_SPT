@@ -1,5 +1,5 @@
 # import images
-import logging
+#import logging
 import re
 import time
 from glob import iglob
@@ -410,8 +410,8 @@ class AppMain(wx.Listbook):
         """Constructor"""
         wx.Listbook.__init__(self, parent, wx.ID_ANY, style=wx.BK_DEFAULT)
 
-        logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
-                            datefmt='%d-%m-%Y %I:%M:%S %p')
+        # logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
+        #                     datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
         self.configfile = join(expanduser('~'), '.msdcfg')
         self.controller = MSDController(self.configfile)
