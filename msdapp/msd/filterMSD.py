@@ -17,7 +17,8 @@ import logging
 from os import R_OK, access
 from os.path import join, splitext
 
-import numpy as np
+#import numpy as np
+from numpy import log10,nan, isnan
 import pandas
 from configobj import ConfigObj
 
@@ -76,7 +77,7 @@ class FilterMSD():
             # Load Data file
             data = pandas.read_csv(datafile, encoding=self.encoding, skiprows=2, delimiter='\t')
             # Add log10 column
-            data[self.logcolumn] = np.log10(data[self.diffcolumn])
+            data[self.logcolumn] = log10(data[self.diffcolumn])
             logging.info("FilterMSD: datafile loaded with log10D (%s)" % datafile)
             # Load MSD data file
             max_msdpoints = self.msdpoints + 2  # max msd points plus first 2 cols
@@ -102,7 +103,7 @@ class FilterMSD():
                         s1 = s.iloc[-1].split('\n')  # remove end of line if present
                         s.iloc[-1] = s1[0]
                         # padding
-                        x = list(s.values) + [np.nan for i in range(len(s), max_msdpoints)]
+                        x = list(s.values) + [nan for i in range(len(s), max_msdpoints)]
                         s = pandas.Series(x)
                         msd = msd.append(s, ignore_index=True)
                     msd.columns = cols

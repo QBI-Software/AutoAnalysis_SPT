@@ -20,7 +20,8 @@ from glob import iglob
 from os import R_OK, access
 from os.path import join, isdir, commonpath, sep
 import logging
-import numpy as np
+#import numpy as np
+from numpy import unique
 from configobj import ConfigObj
 
 
@@ -67,7 +68,7 @@ class BatchStats:
         :param itemlist:
         :return:
         """
-        u, indices = np.unique(itemlist, return_index=True)
+        u, indices = unique(itemlist, return_index=True)
         duplicates = [x for x in range(0, len(itemlist)) if x not in indices]
         i = 0
         for d in duplicates:

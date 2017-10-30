@@ -26,7 +26,8 @@ import argparse
 from collections import OrderedDict
 from os.path import join
 
-import numpy as np
+#import numpy as np
+from numpy import sqrt,trapz
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -74,7 +75,7 @@ class CompareMSD(BatchStats):
                     stats['avgs'].append(df[i].mean())
                     stats['counts'].append(df[i].count())
                     stats['stds'].append(df[i].std())
-                    stats['sems'].append(df[i].std() / np.sqrt(df[i].count()))
+                    stats['sems'].append(df[i].std() / sqrt(df[i].count()))
                     stats['medians'].append(df[i].median())
 
                 for key in stats.keys():
@@ -135,7 +136,7 @@ class CompareMSD(BatchStats):
             for ctr in range(0, len(means)):
                 labels.append(means['Cell'].iloc[ctr])
                 plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr])
-                areas.append(np.trapz(means[x].iloc[ctr], dx=self.timeint))
+                areas.append(trapz(means[x].iloc[ctr], dx=self.timeint))
 
             plt.legend(labels)
             plt.xlabel('Time (s)')

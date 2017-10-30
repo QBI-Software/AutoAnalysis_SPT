@@ -21,7 +21,7 @@ from os import R_OK, access
 from os.path import join, expanduser
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+from seaborn import boxplot,swarmplot
 from configobj import ConfigObj, ConfigObjError
 from numpy import isnan, inf
 from scipy import stats
@@ -192,8 +192,8 @@ class MSDStats():
             fig, ax = plt.subplots()
         df = self.ratiodata
         cols = ['Ratio_' + prefix for prefix in self.prefixes]
-        ax = sns.boxplot(data=df[cols],whis=inf)
-        ax = sns.swarmplot(data=df[cols], color="gray")
+        ax = boxplot(data=df[cols],whis=inf)
+        ax = swarmplot(data=df[cols], color="gray")
         #df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
@@ -205,8 +205,8 @@ class MSDStats():
             fig, ax = plt.subplots()
         df = self.areadata[self.areadata['Cell'] != 'ALL']
         cols = ['MSD Area_' + prefix for prefix in self.prefixes]
-        ax = sns.boxplot(data=df[cols], whis=inf)
-        ax = sns.swarmplot(data=df[cols], color="gray")
+        ax = boxplot(data=df[cols], whis=inf)
+        ax = swarmplot(data=df[cols], color="gray")
         #df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')

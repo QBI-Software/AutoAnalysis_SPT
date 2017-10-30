@@ -27,7 +27,8 @@ Created on Sep 8 2017
 import argparse
 from os.path import join
 import matplotlib.pyplot as plt
-import numpy as np
+#import numpy as np
+from numpy import sqrt
 import pandas as pd
 
 from msdapp.msd.batchStats import BatchStats
@@ -95,7 +96,7 @@ class HistoStats(BatchStats):
         df['MEAN'] = df.apply(lambda x: (x[1:n].mean()), axis=1)
         df['COUNT'] = df.apply(lambda x: (x[1:n].count()), axis=1)
         df['STD'] = df.apply(lambda x: (x[1:n].std()), axis=1)
-        df['SEM'] = df.apply(lambda x: (x.loc['STD'] / np.sqrt(x.loc['COUNT'])), axis=1)
+        df['SEM'] = df.apply(lambda x: (x.loc['STD'] / sqrt(x.loc['COUNT'])), axis=1)
         df['SUM'] = df.apply(lambda x: (x[1:n].sum()), axis=1)
         # reorder ORDER: mean,sem,count,std,sum
         cols = df.columns[0:n].tolist() + ['MEAN', 'SEM', 'COUNT', 'STD', 'SUM']

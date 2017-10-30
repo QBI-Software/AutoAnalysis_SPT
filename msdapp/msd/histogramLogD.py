@@ -17,7 +17,8 @@ import argparse
 from os import R_OK, access
 from os.path import join
 import matplotlib.pyplot as plt
-import numpy as np
+#import numpy as np
+from numpy import nan, isnan, mean, median, var, std, exp, histogram
 import pandas
 from configobj import ConfigObj
 
@@ -75,19 +76,19 @@ class HistogramLogD():
         if not self.data.empty:
             ndata = self.data[self.logcolumn]
             if not bimodal:
-                mean = np.mean(ndata)
-                variance = np.var(ndata)
+                mean = mean(ndata)
+                variance = var(ndata)
                 print("Mean:", mean)
             else:
                 # two sets
-                mean = np.median(self.data[self.logcolumn])
+                mean = median(self.data[self.logcolumn])
                 print("Median:", mean)
-            variance = np.var(self.data[self.logcolumn])
+            variance = var(self.data[self.logcolumn])
             print("Variance:", variance)
         return (mean, variance)
 
     def gauss(self, x, mu, sigma, A):
-        return A * np.exp(-(x - mu) ** 2 / 2 / sigma ** 2)
+        return A * exp(-(x - mu) ** 2 / 2 / sigma ** 2)
 
     def bimodal(self, x, mu1, sigma1, A1, mu2, sigma2, A2):
         return self.gauss(x, mu1, sigma1, A1) + self.gauss(x, mu2, sigma2, A2)
@@ -104,7 +105,7 @@ class HistogramLogD():
                 int((self.fmax - self.fmin) / self.binwidth))  # smaller binwidth better for fitting eg 0.1 or 0.05
             data = self.data[self.logcolumn]
             # Use numpy with density as more accurate - include extra bin for equal
-            hist = np.histogram(data, bins=num_bins + 1, range=[int(self.fmin), int(self.fmax) + self.binwidth],
+            hist = histogram(data, bins=num_bins + 1, range=[int(self.fmin), int(self.fmax) + self.binwidth],
                                 density=True)
             self.histdata = pandas.DataFrame({'bins': hist[1][0:-1], 'log10D': hist[0]})
 
