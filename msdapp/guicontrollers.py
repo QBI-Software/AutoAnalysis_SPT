@@ -16,7 +16,7 @@ from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
 from msdapp.msd.msdStats import MSDStats
 #Required for dist?
-#freeze_support()
+freeze_support()
 # Define notification event for thread completion
 EVT_RESULT_ID = wx.NewId()
 EVT_DATA_ID = wx.NewId()
@@ -180,14 +180,15 @@ class HistogramThread(threading.Thread):
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             total_files = len(checkedfilenames)
+            #wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total_files, self.type)))
             for i in range(total_files):
                 count = (i + 1 / total_files) * 100
-                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
                 datafile = checkedfilenames[i]
                 logger.info("Process histogram with file: %s", datafile)
                 outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, self.controller.configfile)
                 q[datafile] = fd.generateHistogram(outputdir)
+                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
 
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
         except Exception as e:
@@ -237,8 +238,9 @@ class StatsThread(threading.Thread):
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             i = 1
-            pool = Pool(processes=2)
+            pool = Pool(processes=total)
             fmsds = []
+            #wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
                 fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.controller.configfile)
@@ -304,6 +306,7 @@ class MsdThread(threading.Thread):
             i = 1
             pool = Pool()
             fmsds = []
+            #wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.processname.title(), self.expt, group)
                 fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.controller.configfile)
@@ -516,6 +519,7 @@ class MSDController():
     def shutdown(self):
         logger.info('Call to shutdown')
         t = threading.current_thread()
+        print("Thread counter:", threading._counter)
         if t.is_alive():
             logger.info('Shutdown: closing %s', t.getName())
             t.terminate()

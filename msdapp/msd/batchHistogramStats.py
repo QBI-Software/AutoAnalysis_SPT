@@ -117,8 +117,8 @@ class HistoStats(BatchStats):
             threshold = float(self.threshold)
 
             for label in labels:
-                immobile.append(df[label][df['bins'] <= threshold].sum())
-                mobile.append(df[label][df['bins'] > threshold].sum())
+                immobile.append(df[label][df['bins'] < threshold].sum())
+                mobile.append(df[label][df['bins'] >= threshold].sum())
 
             df_results = pd.DataFrame({'Cell': labels, 'Immobile': immobile, 'Mobile': mobile})
             df_results['Ratio'] = df_results['Mobile'] / df_results['Immobile']

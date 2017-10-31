@@ -13,14 +13,16 @@ Created on Tue Sep 5 2017
 """
 
 import argparse
+import csv
 import logging
+from collections import OrderedDict
 from os import R_OK, access
 from os.path import join, splitext
 
-#import numpy as np
-from numpy import log10,nan, isnan
-import pandas
+import pandas as pd
 from configobj import ConfigObj
+# import numpy as np
+from numpy import log10
 
 
 class FilterMSD():
@@ -75,7 +77,7 @@ class FilterMSD():
             data = None
             msd = None
             # Load Data file
-            data = pandas.read_csv(datafile, encoding=self.encoding, skiprows=2, delimiter='\t')
+            data = pd.read_csv(datafile, encoding=self.encoding, skiprows=2, delimiter='\t')
             # Add log10 column
             data[self.logcolumn] = log10(data[self.diffcolumn])
             logging.info("FilterMSD: datafile loaded with log10D (%s)" % datafile)
@@ -83,7 +85,7 @@ class FilterMSD():
             max_msdpoints = self.msdpoints + 2  # max msd points plus first 2 cols
             fpath = splitext(datafile_msd)
             if '.xls' in fpath[1]:
-                msdall = pandas.read_excel(datafile_msd, sheetname=0, skiprows=1)
+                msdall = pd.read_excel(datafile_msd, sheetname=0, skiprows=1)
                 allcols = ['ROI', 'Trace'] + [i for i in range(1, len(msdall.iloc[0]) - 1)]
                 msdall.columns = allcols
                 msd = msdall.iloc[:, 0:max_msdpoints]
@@ -91,26 +93,36 @@ class FilterMSD():
                 # Txt file is \t delim but has Uneven rows so need to parse line by line - detect max columns
                 # This is very slow but get errors if trying read_csv with pd.read_csv(dmsd, sep='\t')
                 cols = ['ROI', 'Trace'] + [str(x) for x in range(1, self.msdpoints + 1)]
-                msd = pandas.DataFrame([])
-                f = open(datafile_msd, encoding=self.encoding)
-                f.seek(0)
-                if len(f.readline().strip()) > 0:
-                    for row in f.readlines():
-                        if row.startswith('#'):
+                msddata = OrderedDict()
+                for c in cols:
+                    msddata[c] = []
+
+                with open(datafile_msd, encoding=self.encoding) as f:
+                    reader = csv.reader(f, delimiter="\t")
+                    d = list(reader)
+                    print("FilterMSD: MSD file Lines=", len(d))
+                    print(d[0][0])
+                    if not (d[0][0].startswith('#MSD')):
+                        msg = "Processing error: datafile maybe corrupt: %s" % datafile_msd
+                        raise Exception(msg)
+                    for row in d:
+                        if row[0].startswith('#') or len(row[0]) <= 0:
                             continue
-                        s = pandas.Series(row.split('\t'))
-                        s = s[0:max_msdpoints]  # only first 10 points
-                        s1 = s.iloc[-1].split('\n')  # remove end of line if present
-                        s.iloc[-1] = s1[0]
-                        # padding
-                        x = list(s.values) + [nan for i in range(len(s), max_msdpoints)]
-                        s = pandas.Series(x)
-                        msd = msd.append(s, ignore_index=True)
-                    msd.columns = cols
-                else:
-                    msg = "Processing error: datafile maybe corrupt: %s" % datafile_msd
-                    raise Exception(msg)
-            logging.info("FilterMSD: msdfile loaded (%s)" % datafile_msd)
+                        msddata['ROI'].append(row[0])
+                        msddata['Trace'].append(row[1])
+                        for i in range(2, max_msdpoints):
+                            if len(row) > i:
+                                msddata[str(i - 1)].append(row[i])
+                            else:
+                                msddata[str(i - 1)].append('')
+
+                msd = pd.DataFrame.from_dict(msddata)
+            msg = "FilterMSD: msdfile load(%s)" % datafile_msd
+            if msd.empty:
+                msg = "Load failed: " + msg
+                raise Exception(msg)
+            else:
+                logging.info(msg)
             return (data, msd)
         except Exception as e:
             print(e)
@@ -177,8 +189,8 @@ if __name__ == "__main__":
              ''')
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="data")
     parser.add_argument('--datafile', action='store', help='Initial data file - D', default="AllROI-D.txt")
-    parser.add_argument('--datafile_msd', action='store', help='Initial data file - MSD', default="AllROI-MSD.xlsx")
-    parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
+    parser.add_argument('--datafile_msd', action='store', help='Initial data file - MSD', default="AllROI-MSD.txt")
+    parser.add_argument('--outputdir', action='store', help='Output directory', default="..\\..\\data")
     parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
     parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")
     parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
