@@ -126,14 +126,9 @@ class HistogramLogD():
             # Create figure
             #self.fig = plt.figure()
             plt.figure()
-            #n, bins, patches = plt.hist(data, bins=hist[1][0:-1], align='mid', normed=1, alpha=0.75)
-            #n, bins, patches = plt.hist(data, bins=centrebins, align='mid', normed=1, alpha=0.75)
             # Seaborn fig
             sns.set(color_codes=True)
-            #ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
-            ax = sns.barplot(centrebins, n_norm)
-            ax.set_xticks(centrebins[0:len(centrebins):2])
-            # plt.grid(which='major')
+            ax = sns.barplot(centrebins, n_norm )
             plt.xlabel(self.logcolumn)
             plt.ylabel('Relative frequency')
             #plt.title(self.histofile)
@@ -144,7 +139,8 @@ class HistogramLogD():
             outputfile = join(outputdir, fname)
             plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
             print("Saved histogram to ", outputfile)
-            #Also save density plot
+
+            ######Also save density plot
             plt.figure()
             ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
             plt.ylabel('Density')

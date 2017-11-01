@@ -187,14 +187,14 @@ class HistogramThread(threading.Thread):
                 count = (i + 1 / total_files) * 100
                 datafile = checkedfilenames[i]
                 logger.info("Process histogram with file: %s", datafile)
-                #outputdir = dirname(datafile)
+                outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, self.controller.configfile)
-                fds.append(fd)
-                #q[datafile] = fd.generateHistogram(outputdir)
+                #fds.append(fd)
+                q[datafile] = fd.generateHistogram(outputdir)
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
 
-            pool = Pool(processes=4)
-            pool.map(self.runhistograms,fds)
+            #pool = Pool(processes=4)
+            #pool.map(self.runhistograms,fds)
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
         except Exception as e:
             logging.error(e)
@@ -203,8 +203,8 @@ class HistogramThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished HistogramThread')
-            pool.close()
-            pool.join()
+            #pool.close()
+            #pool.join()
             lock.release()
             hevent.clear()
 

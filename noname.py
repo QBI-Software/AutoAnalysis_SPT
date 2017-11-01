@@ -535,6 +535,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		self.m_btnStopProcess = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_btnStopProcess.SetForegroundColour( wx.Colour( 255, 0, 0 ) )
+		self.m_btnStopProcess.Enable( False )
 		
 		bSizer16.Add( self.m_btnStopProcess, 0, wx.ALL, 5 )
 		
@@ -657,6 +658,8 @@ class ComparePanel ( wx.Panel ):
 		bSizer3.Add( self.m_btnCompareRun, 0, wx.ALL, 5 )
 		
 		self.m_btnCompareStop = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_btnCompareStop.Enable( False )
+		
 		bSizer3.Add( self.m_btnCompareStop, 0, wx.ALL, 5 )
 		
 		
