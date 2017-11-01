@@ -112,6 +112,7 @@ class HistogramLogD():
             n_bins = int(abs((self.fmax - self.fmin) / self.binwidth)) + 1
             #Generate histogram counts (cannot use density function - integral density rather than relative frequency
             n, bins = np.histogram(data, bins=n_bins, range=(xmin,xmax))
+            #h = histogram(A,edges,'Normalization','pdf') - PDF normalization gives total=1
             sum_n = sum(n)
             n_norm = n / sum_n
 
@@ -123,15 +124,18 @@ class HistogramLogD():
             print("Saved histogram data to ", outputfile2)
 
             # Create figure
-            self.fig = plt.figure()
+            #self.fig = plt.figure()
+            plt.figure()
             #n, bins, patches = plt.hist(data, bins=hist[1][0:-1], align='mid', normed=1, alpha=0.75)
             #n, bins, patches = plt.hist(data, bins=centrebins, align='mid', normed=1, alpha=0.75)
             # Seaborn fig
             sns.set(color_codes=True)
-            ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
+            #ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
+            ax = sns.barplot(centrebins, n_norm)
+            ax.set_xticks(centrebins[0:len(centrebins):2])
             # plt.grid(which='major')
-            # plt.xlabel('log10D')
-            plt.ylabel('Frequency')
+            plt.xlabel(self.logcolumn)
+            plt.ylabel('Relative frequency')
             #plt.title(self.histofile)
 
             # Save plot to figure
@@ -140,7 +144,13 @@ class HistogramLogD():
             outputfile = join(outputdir, fname)
             plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
             print("Saved histogram to ", outputfile)
-
+            #Also save density plot
+            plt.figure()
+            ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
+            plt.ylabel('Density')
+            outputfile = join(outputdir, "Density_" + fname)
+            plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
+            print("Saved histogram to ", outputfile)
             plt.close()
             # For testing - will stop here until fig closes
             # plt.show()

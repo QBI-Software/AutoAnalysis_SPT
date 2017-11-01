@@ -147,7 +147,7 @@ class HistoStats(BatchStats):
         ax.legend(lines, labels, loc=2, fontsize='xx-small')
         plt.title(self.searchtext.upper() + " " + "Individual cells")
         plt.xlabel('Log10(D)')
-        plt.ylabel(r'Frequency distribution (fractions)')
+        plt.ylabel(r'Relative frequency')
 
     def showAvgPlot(self, ax=None):
         print("Show average plots for treatments")
@@ -155,7 +155,10 @@ class HistoStats(BatchStats):
         width = 0.15
         if ax is None:
             fig, ax = plt.subplots()
-        plt.errorbar(df['bins'], df['MEAN'], yerr=df['SEM'], fmt='--o')
+        plt.errorbar(df['bins'], df['MEAN'], yerr=df['SEM'],
+                     capsize=3,
+                         elinewidth=1,
+                         markeredgewidth=1)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Log10(D)')
         plt.title(self.searchtext.upper() + " " + 'Average with SEM')

@@ -135,12 +135,16 @@ class CompareMSD(BatchStats):
             areas = []
             for ctr in range(0, len(means)):
                 labels.append(means['Cell'].iloc[ctr])
-                plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr])
+                plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr],
+                             capsize=3,
+                             elinewidth=1,
+                             markeredgewidth=1
+                             )
                 areas.append(trapz(means[x].iloc[ctr], dx=self.timeint))
 
             plt.legend(labels)
             plt.xlabel('Time (s)')
-            plt.ylabel(r'MSD ($\mu$m2/s)')
+            plt.ylabel(r'MSD ($\mu$m$^2$)')
             plt.title(self.searchtext.upper() + ' MSDs per cell')
             # plt.show()
             # save areas to new file
@@ -161,10 +165,14 @@ class CompareMSD(BatchStats):
             all = df.groupby('Cell').get_group('ALL')
             allmeans = all.groupby('Stats').get_group('Mean')
             allsems = all.groupby('Stats').get_group('SEM')
-            plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0])
+            plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0],
+                         capsize=3,
+                         elinewidth=1,
+                         markeredgewidth=1
+                         )
             plt.title(self.searchtext.upper() + ' Average MSD')
             plt.xlabel('Time (s)')
-            plt.ylabel(r'MSD ($\mu$m2/s)')
+            plt.ylabel(r'MSD ($\mu$m$^2$)')
             # plt.show()
 
 

@@ -99,9 +99,9 @@ class FilterThread(threading.Thread):
             # Do work
             q = dict()
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
-            logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             files = [f for f in checkedfilenames if self.controller.datafile in f]
             total_files = len(files)
+            logger.info("Checked by type: (%s): \nFILES LOADED:%d\n%s", self.processname, total_files,"\n\t".join(files))
             for i in range(total_files):
                 count = ((i + 1) * 100) / total_files
                 logger.info("FilterThread.run: count= %d", count)
@@ -118,6 +118,7 @@ class FilterThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished FilterThread')
+            #self.terminate()
             lock.release()
             event.clear()
 
@@ -146,8 +147,7 @@ class FilterThread(threading.Thread):
         else:
             q[filename] = None
 
-            # ----------------------------------------------------------------------
-
+    # ----------------------------------------------------------------------
     def terminate(self):
         logger.info("Terminating Filter Thread")
         self.terminate()
@@ -177,6 +177,8 @@ class HistogramThread(threading.Thread):
             hevent.set()
             lock.acquire(True)
             q = dict()
+
+            fds = []
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             total_files = len(checkedfilenames)
@@ -185,11 +187,14 @@ class HistogramThread(threading.Thread):
                 count = (i + 1 / total_files) * 100
                 datafile = checkedfilenames[i]
                 logger.info("Process histogram with file: %s", datafile)
-                outputdir = dirname(datafile)
+                #outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, self.controller.configfile)
-                q[datafile] = fd.generateHistogram(outputdir)
+                fds.append(fd)
+                #q[datafile] = fd.generateHistogram(outputdir)
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
 
+            pool = Pool(processes=4)
+            pool.map(self.runhistograms,fds)
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
         except Exception as e:
             logging.error(e)
@@ -198,8 +203,14 @@ class HistogramThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished HistogramThread')
+            pool.close()
+            pool.join()
             lock.release()
             hevent.clear()
+
+    # ----------------------------------------------------------------------
+    def runhistograms(self,fd):
+        fd.generateHistogram()
 
     # ----------------------------------------------------------------------
     def terminate(self):
@@ -265,6 +276,7 @@ class StatsThread(threading.Thread):
         finally:
             logger.info('Finished StatsThread')
             pool.close()
+            pool.join()
             lock.release()
 
     # ----------------------------------------------------------------------
@@ -328,6 +340,7 @@ class MsdThread(threading.Thread):
         finally:
             logger.info('Finished MsdThread')
             pool.close()
+            pool.join()
             lock.release()
 
     # ----------------------------------------------------------------------
@@ -454,7 +467,9 @@ class MSDController():
         except Exception as e:
             logging.error(e)
         finally:
+            logging.info('Run compare finished')
             pool.close()
+            pool.join()
 
     # ----------------------------------------------------------------------
     def CheckFilenames(self, filenames, configfiles):
@@ -517,9 +532,9 @@ class MSDController():
 
     # ----------------------------------------------------------------------
     def shutdown(self):
-        logger.info('Call to shutdown')
-        t = threading.current_thread()
-        print("Thread counter:", threading._counter)
-        if t.is_alive():
-            logger.info('Shutdown: closing %s', t.getName())
-            t.terminate()
+        logger.info('Call to shutdown - empty')
+        # t = threading.current_thread()
+        # print("Thread counter:", threading._counter)
+        # if t.is_alive():
+        #     logger.info('Shutdown: closing %s', t.getName())
+        #     t.terminate()

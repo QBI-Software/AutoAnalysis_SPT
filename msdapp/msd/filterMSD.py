@@ -140,8 +140,7 @@ class FilterMSD():
             num_data = len(self.data)
             num_msd = len(self.msd)
             (filtered, filtered_msd) = self.filter_datafiles()
-            msg = "Rows filtered: \tData\tMSD\t\t%d\t%d\n\t" \
-                  "\t%d\t%d" % (num_data, num_msd, len(filtered), len(filtered_msd))
+            msg = "Rows filtered: \tData=%d of %d\tMSD=%d of %d\n"% (len(filtered),num_data,len(filtered_msd), num_msd )
             print(msg)
             logging.info(msg)
             # Save files
