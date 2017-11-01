@@ -168,7 +168,7 @@ class MSDStats():
             plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0])
         plt.title('Mean MSD with SEM')
         plt.xlabel('Time (s)')
-        plt.ylabel(r'MSD ($\mu$m2/s)')
+        plt.ylabel(r'MSD ($\mu$m$^2$)')
         plt.legend(self.prefixes)
         # plt.show()
 
@@ -180,7 +180,11 @@ class MSDStats():
         for prefix in self.prefixes:
             meancol = 'MEAN_' + prefix
             semcol = 'SEM_' + prefix
-            plt.errorbar(df['bins'], df[meancol], yerr=df[semcol], fmt='--o')
+            plt.errorbar(df['bins'], df[meancol], yerr=df[semcol],
+                         capsize=3,
+                         elinewidth=1,
+                         markeredgewidth=1
+                         )
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Log (D)')
         plt.ylabel('Frequency')
@@ -193,12 +197,12 @@ class MSDStats():
         df = self.ratiodata
         cols = ['Ratio_' + prefix for prefix in self.prefixes]
         ax = boxplot(data=df[cols],whis=inf)
-        ax = swarmplot(data=df[cols], color="gray")
+        ax = swarmplot(data=df[cols])
         #df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
-        plt.ylabel('Mobile Fraction')
-        plt.title('Mobile/Immobile Ratios')
+        plt.ylabel('Mobile/Immobile Ratio')
+        plt.title('Log10(D) Ratios')
 
     def showAreaPlot(self, ax=None):
         if ax is None:
@@ -206,12 +210,12 @@ class MSDStats():
         df = self.areadata[self.areadata['Cell'] != 'ALL']
         cols = ['MSD Area_' + prefix for prefix in self.prefixes]
         ax = boxplot(data=df[cols], whis=inf)
-        ax = swarmplot(data=df[cols], color="gray")
+        ax = swarmplot(data=df[cols])
         #df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
-        plt.ylabel('Mobile Fraction')
-        plt.title('MSD Areas under curve')
+        plt.ylabel('Area under curve')
+        plt.title('MSD Areas')
 
     def showPlots(self, plottitle):
         """
