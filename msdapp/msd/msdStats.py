@@ -19,12 +19,13 @@ Created on Tue Sep 5 2017
 import argparse
 from os import R_OK, access
 from os.path import join, expanduser
+
 import matplotlib.pyplot as plt
 import pandas as pd
-from seaborn import boxplot,swarmplot
 from configobj import ConfigObj, ConfigObjError
 from numpy import isnan, inf
 from scipy import stats
+from seaborn import boxplot, swarmplot
 
 
 class MSDStats():
@@ -196,9 +197,9 @@ class MSDStats():
             fig, ax = plt.subplots()
         df = self.ratiodata
         cols = ['Ratio_' + prefix for prefix in self.prefixes]
-        ax = boxplot(data=df[cols],whis=inf)
+        ax = boxplot(data=df[cols], whis=inf)
         ax = swarmplot(data=df[cols])
-        #df.boxplot(cols)
+        # df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
         plt.ylabel('Mobile/Immobile Ratio')
@@ -211,7 +212,7 @@ class MSDStats():
         cols = ['MSD Area_' + prefix for prefix in self.prefixes]
         ax = boxplot(data=df[cols], whis=inf)
         ax = swarmplot(data=df[cols])
-        #df.boxplot(cols)
+        # df.boxplot(cols)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Group')
         plt.ylabel('Area under curve')

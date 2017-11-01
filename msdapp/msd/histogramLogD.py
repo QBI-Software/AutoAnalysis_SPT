@@ -16,12 +16,13 @@ Created on Tue Sep 5 2017
 import argparse
 from os import R_OK, access
 from os.path import join, split
+
 import matplotlib.pyplot as plt
 import numpy as np
-#from numpy import nan, isnan, mean, median, var, std, exp, histogram,linspace
+# from numpy import nan, isnan, mean, median, var, std, exp, histogram,linspace
 import pandas
-from configobj import ConfigObj
 import seaborn as sns
+from configobj import ConfigObj
 
 
 class HistogramLogD():
@@ -35,7 +36,7 @@ class HistogramLogD():
         else:
             self.msdpoints = 10
             self.histofile = 'Histogram_log10D.csv'
-            self.logcolumn = 'log10D'  #must be exact label
+            self.logcolumn = 'log10D'  # must be exact label
             # Frequency range limits
             self.fmin = float(minlimit)
             self.fmax = float(maxlimit)
@@ -105,33 +106,33 @@ class HistogramLogD():
             if outputdir is None:
                 outputdir = self.inputdir
             data = self.data[self.logcolumn]
-            #Require centre-bins to match with Graphpad Prism histogram but numpy uses bin-edges
-            #Generate bins around centers
+            # Require centre-bins to match with Graphpad Prism histogram but numpy uses bin-edges
+            # Generate bins around centers
             xmin = self.fmin - (self.binwidth / 2)
             xmax = self.fmax + (self.binwidth / 2)
             n_bins = int(abs((self.fmax - self.fmin) / self.binwidth)) + 1
-            #Generate histogram counts (cannot use density function - integral density rather than relative frequency
-            n, bins = np.histogram(data, bins=n_bins, range=(xmin,xmax))
-            #h = histogram(A,edges,'Normalization','pdf') - PDF normalization gives total=1
+            # Generate histogram counts (cannot use density function - integral density rather than relative frequency
+            n, bins = np.histogram(data, bins=n_bins, range=(xmin, xmax))
+            # h = histogram(A,edges,'Normalization','pdf') - PDF normalization gives total=1
             sum_n = sum(n)
             n_norm = n / sum_n
 
-            #Relabel bins as centres
-            centrebins = np.linspace(self.fmin,self.fmax,n_bins)
-            self.histdata = pandas.DataFrame({'bins':centrebins, self.logcolumn : n_norm})
+            # Relabel bins as centres
+            centrebins = np.linspace(self.fmin, self.fmax, n_bins)
+            self.histdata = pandas.DataFrame({'bins': centrebins, self.logcolumn: n_norm})
             outputfile2 = join(outputdir, self.histofile)
             self.histdata.to_csv(outputfile2, index=False)
             print("Saved histogram data to ", outputfile2)
 
             # Create figure
-            #self.fig = plt.figure()
+            # self.fig = plt.figure()
             plt.figure()
             # Seaborn fig
             sns.set(color_codes=True)
-            ax = sns.barplot(centrebins, n_norm )
+            ax = sns.barplot(centrebins, n_norm)
             plt.xlabel(self.logcolumn)
             plt.ylabel('Relative frequency')
-            #plt.title(self.histofile)
+            # plt.title(self.histofile)
 
             # Save plot to figure
             figtype = 'png'  # png, pdf, ps, eps and svg.

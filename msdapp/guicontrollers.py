@@ -15,8 +15,10 @@ from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
 from msdapp.msd.msdStats import MSDStats
-#Required for dist?
-freeze_support()
+
+
+# Required for dist?
+#freeze_support()
 # Define notification event for thread completion
 EVT_RESULT_ID = wx.NewId()
 EVT_DATA_ID = wx.NewId()
@@ -56,11 +58,11 @@ class DataEvent(wx.PyEvent):
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 homedir = expanduser("~")
-if not access(homedir,R_OK):
+if not access(homedir, R_OK):
     homedir = '.'
-if not access(join(homedir,"logs"), R_OK):
-    mkdir(join(homedir,"logs"))
-logfile = join(homedir,"logs", 'msdanalysis.log')
+if not access(join(homedir, "logs"), R_OK):
+    mkdir(join(homedir, "logs"))
+logfile = join(homedir, "logs", 'msdanalysis.log')
 handler = RotatingFileHandler(filename=logfile, maxBytes=10000000, backupCount=10)
 formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] (%(threadName)-9s) %(message)s')
 handler.setFormatter(formatter)
@@ -101,7 +103,8 @@ class FilterThread(threading.Thread):
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
             files = [f for f in checkedfilenames if self.controller.datafile in f]
             total_files = len(files)
-            logger.info("Checked by type: (%s): \nFILES LOADED:%d\n%s", self.processname, total_files,"\n\t".join(files))
+            logger.info("Checked by type: (%s): \nFILES LOADED:%d\n%s", self.processname, total_files,
+                        "\n\t".join(files))
             for i in range(total_files):
                 count = ((i + 1) * 100) / total_files
                 logger.info("FilterThread.run: count= %d", count)
@@ -118,7 +121,7 @@ class FilterThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished FilterThread')
-            #self.terminate()
+            # self.terminate()
             lock.release()
             event.clear()
 
@@ -182,19 +185,19 @@ class HistogramThread(threading.Thread):
             checkedfilenames = self.controller.CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             total_files = len(checkedfilenames)
-            #wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total_files, self.type)))
+            # wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total_files, self.type)))
             for i in range(total_files):
                 count = (i + 1 / total_files) * 100
                 datafile = checkedfilenames[i]
                 logger.info("Process histogram with file: %s", datafile)
                 outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, self.controller.configfile)
-                #fds.append(fd)
+                # fds.append(fd)
                 q[datafile] = fd.generateHistogram(outputdir)
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
 
-            #pool = Pool(processes=4)
-            #pool.map(self.runhistograms,fds)
+            # pool = Pool(processes=4)
+            # pool.map(self.runhistograms,fds)
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
         except Exception as e:
             logging.error(e)
@@ -203,13 +206,13 @@ class HistogramThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished HistogramThread')
-            #pool.close()
-            #pool.join()
+            # pool.close()
+            # pool.join()
             lock.release()
             hevent.clear()
 
     # ----------------------------------------------------------------------
-    def runhistograms(self,fd):
+    def runhistograms(self, fd):
         fd.generateHistogram()
 
     # ----------------------------------------------------------------------
@@ -251,7 +254,7 @@ class StatsThread(threading.Thread):
             i = 1
             pool = Pool(processes=total)
             fmsds = []
-            #wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
+            # wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
                 fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.controller.configfile)
@@ -318,7 +321,7 @@ class MsdThread(threading.Thread):
             i = 1
             pool = Pool()
             fmsds = []
-            #wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
+            # wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.processname.title(), self.expt, group)
                 fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.controller.configfile)
@@ -420,10 +423,10 @@ class MSDController():
     # ----------------------------------------------------------------------
 
     def msdplot(self, fmsd):
-        fig = plt.figure(figsize=(10, 5))
-        axes1 = plt.subplot(121)
+        fig = plt.figure(figsize=(8, 10))
+        axes1 = plt.subplot(221)
         areasfile = fmsd.showPlotsWithAreas(axes1)
-        axes2 = plt.subplot(122)
+        axes2 = plt.subplot(223)
         fmsd.showAvgPlot(axes2)
 
         figtype = 'png'  # png, pdf, ps, eps and svg.

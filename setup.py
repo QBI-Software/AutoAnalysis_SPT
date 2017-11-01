@@ -1,7 +1,7 @@
 '''
-    QBI Meunier Tracker APP: setup.py (Windows 64bit MSI)
+    QBI MSD Analysis APP: setup.py (Windows 64bit MSI)
     *******************************************************************************
-    Copyright (C) 2015  QBI Software, The University of Queensland
+    Copyright (C) 2017  QBI Software, The University of Queensland
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

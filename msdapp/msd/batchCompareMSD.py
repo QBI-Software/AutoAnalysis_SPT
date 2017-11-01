@@ -135,14 +135,11 @@ class CompareMSD(BatchStats):
             areas = []
             for ctr in range(0, len(means)):
                 labels.append(means['Cell'].iloc[ctr])
-                plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr],
-                             capsize=3,
-                             elinewidth=1,
-                             markeredgewidth=1
+                plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr]
                              )
                 areas.append(trapz(means[x].iloc[ctr], dx=self.timeint))
 
-            plt.legend(labels)
+            plt.legend(labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,fancybox=True)
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m$^2$)')
             plt.title(self.searchtext.upper() + ' MSDs per cell')
@@ -200,11 +197,12 @@ if __name__ == "__main__":
         fmsd.compile()
 
         # Set the figure
-        fig = plt.figure(figsize=(10, 5))
-        axes1 = plt.subplot(121)
+        fig = plt.figure(figsize=(8, 10))
+        #f, (axes1, axes2) = plt.subplots(1, 2, sharey='col')
+        axes1 = plt.subplot(221)
         fmsd.showPlotsWithAreas(axes1)
 
-        axes2 = plt.subplot(122)
+        axes2 = plt.subplot(223)
         fmsd.showAvgPlot(axes2)
 
         figtype = 'png'  # png, pdf, ps, eps and svg.
