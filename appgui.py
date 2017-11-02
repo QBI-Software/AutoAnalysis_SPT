@@ -9,7 +9,8 @@ from os.path import join, expanduser, isdir
 import wx
 import wx.html2
 from configobj import ConfigObj
-
+import matplotlib
+matplotlib.use('TkAgg')
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
 from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel

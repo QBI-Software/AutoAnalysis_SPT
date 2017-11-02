@@ -25,6 +25,7 @@
 # 1. changed cx_Freeze/hooks.py scipy.lib to scipy._lib (line 560)
 #then run setup.py build
 # 2. changed scipy/spatial cKDTree.cp35-win_amd64.pyd to ckdtree.cp35-win_amd64.pyd
+# 3. change Plot.pyc to plot.pyc in multiprocessing
 # test with exe
 # then run bdist_msi
 
