@@ -280,6 +280,7 @@ class StatsThread(threading.Thread):
                 compiledfile = fmsd.runStats()
                 # Split to Mobile/immobile fractions - output
                 ratiofile = fmsd.splitMobile()
+                print('calling histogram plot')
                 self.histplot(fmsd)
                 count = (i / total) * 100
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
@@ -302,6 +303,11 @@ class StatsThread(threading.Thread):
             lock.release()
 
     def histplot(self, fmsd):
+        """
+        Generate and show a histogram plot and save as png file
+        :param fmsd:
+        :return:
+        """
         # Set the figure
         fig = plt.figure(figsize=(10, 5))
         axes1 = plt.subplot(121)
@@ -380,6 +386,9 @@ class MsdThread(threading.Thread):
             lock.release()
 
     def msdplot(self, fmsd):
+        #plotly
+        fmsd.showPlotly()
+        #matplotlib
         fig = plt.figure(figsize=(8, 10))
         axes1 = plt.subplot(221)
         areasfile = fmsd.showPlotsWithAreas(axes1)
@@ -433,11 +442,14 @@ class MSDController():
         """
         rtn = False
         try:
-            if self.configfile is not None and access(self.configfile, R_OK):
+            if access(self.configfile, R_OK):
                 logger.debug("Loading config file:%s", self.configfile)
                 config = ConfigObj(self.configfile, encoding='ISO-8859-1')
-            else:
+            elif config is not None and isinstance(config, ConfigObj):
                 logger.debug("Loading config object:%s", config.filename)
+            else:
+                logger.warning('No config file found')
+                return rtn
 
             self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
             self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt

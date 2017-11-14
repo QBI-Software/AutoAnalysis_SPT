@@ -31,36 +31,27 @@ class BatchStats:
         self.__loadConfig(configfile)
         if self.config is not None and self.datafield is not None:
             self.datafile = self.config[self.datafield]
-        self.searchtext = expt + prefix
-
-        if not isinstance(inputfiles, list) and isdir(inputfiles):
-            self.base = inputfiles #.split(sep)
-            self.inputfiles = self.getSelectedFiles(inputfiles, self.datafile, expt,prefix)
         else:
-            searchtext = prefix+expt
-            files = [f for f in inputfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
-            if len(files)==0:
-                files= [f for f in inputfiles if prefix.upper() in f.upper().split(sep)]
-            self.inputfiles = files
-            self.base = commonpath(self.inputfiles)
+            raise ValueError("Cannot determine which files to compile - check config Datafile option")
+        self.searchtext = expt + prefix
+        (self.base,self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix)
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
-
         self.n = 1  # generating id
+
 
     def __loadConfig(self, configfile=None):
         try:
             if configfile is not None and access(configfile, R_OK):
                 config = ConfigObj(configfile, encoding=self.encoding)
                 self.config = config
-                # self.datafile = ''
-                # self.outputfile = ''
-                print("Config file loaded")
+                logging.info("Batch: Config file loaded")
             else:
                 self.config = None
+                logging.warning("Batch: NO Config file loaded")
 
         except:
-            raise IOError("Cannot load Config file")
+            raise IOError("Batch: Cannot load Config file")
 
     def deduplicate(self, itemlist):
         """
@@ -78,32 +69,52 @@ class BatchStats:
         return itemlist
 
     def getSelectedFiles(self, inputdir, datafile, expt, prefix):
-        # get list of files to compile
-        allfiles = []
+        """
+        Check list or directory matches searchtext(expt) and prefix(group) and contains only datafiles
+        tries several methods for detecting files
+        :param inputdir: list of files or input directory
+        :param datafile: matching datafile name
+        :param expt: searchstring in filename/filepath
+        :param prefix: comparison group - also needs to appear in filepath or filename
+        :return: basename and file list
+        """
+        files = []
+        base=''
         searchtext = expt + prefix
-        if access(inputdir, R_OK):
-            allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
-            print("All Files Found: ", len(allfiles))
-            if len(allfiles) > 0:
-                # Filter on searchtext - single word in directory path
-                files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
-                if len(files) <= 0:
-                    msg = "No matching files found for searchtext: %s" % searchtext
-                    print(msg)
-                    logging.warning(msg)
-                    #try separate expt and prefix - case insensitive on windows but ?mac
-                    allfiles = [y for y in iglob(join(inputdir, '**', prefix, '**', datafile), recursive=True)]
-                    files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]
-                    if len(files) <= 0:
-                        msg= "No matching files found for expt + prefix: %s %s" % (expt,prefix)
-                        logging.info(msg)
+        # get list of files from a directory
+        if not isinstance(inputdir, list) and isdir(inputdir):
+            #base = inputdir
+            if access(inputdir, R_OK):
+                allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
             else:
-                msg = "No files found"
+                raise IOError("Batch: Cannot access directory: %s", inputdir)
+        else:
+            # assume we have a list as input
+            allfiles = inputdir
+        print("All Files Found: ", len(allfiles))
+        if len(allfiles) > 0:
+            base = commonpath(allfiles)
+            # Filter on searchtext - single word in directory path
+            files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+            if len(files) <= 0:
+                msg = "Batch: No matching files found for searchtext: %s" % searchtext
+                print(msg)
+                logging.warning(msg)
+                #try separate expt and prefix - case insensitive on windows but ?mac
+                allfiles = [y for y in iglob(join(base, '**', prefix, '**', datafile), recursive=True)]
+                files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]
+            if len(files) <= 0:
+                #try uppercase directory name
+                files= [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
+            if len(files) <= 0:
+                msg= "Batch: No matching files found for expt + prefix: %s %s" % (expt,prefix)
+                logging.error(msg)
                 raise IOError(msg)
         else:
-            msg = "ERROR: Unable to access inputdir: %s" % inputdir
+            msg = "Batch: No files found in input"
+            logging.error(msg)
             raise IOError(msg)
-        return files
+        return (base,files)
 
     def generateID(self, f):
         # Generate unique cell ID

@@ -21,8 +21,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from numpy import nan, isnan, mean, median, var, std, exp, histogram,linspace
 import pandas
+import plotly
 import seaborn as sns
 from configobj import ConfigObj
+from plotly.graph_objs import Layout, Histogram
 
 
 class HistogramLogD():
@@ -95,10 +97,11 @@ class HistogramLogD():
     def bimodal(self, x, mu1, sigma1, A1, mu2, sigma2, A2):
         return self.gauss(x, mu1, sigma1, A1) + self.gauss(x, mu2, sigma2, A2)
 
-    def generateHistogram(self, outputdir=None):
+    def generateHistogram(self, freq=0,outputdir=None):
         """
         Generate histogram and save to outputdir
-        :param outputdir:
+        :param outputdir: where to save csv and png files to
+        :param freq: 0=relative freq, 1=density, 2=cumulative
         :return:
         """
         if not self.data.empty:
@@ -111,54 +114,74 @@ class HistogramLogD():
             xmin = self.fmin - (self.binwidth / 2)
             xmax = self.fmax + (self.binwidth / 2)
             n_bins = int(abs((self.fmax - self.fmin) / self.binwidth)) + 1
-            # Generate histogram counts (cannot use density function - integral density rather than relative frequency
+            # Generate histogram counts
             n, bins = np.histogram(data, bins=n_bins, range=(xmin, xmax))
             # h = histogram(A,edges,'Normalization','pdf') - PDF normalization gives total=1
             sum_n = sum(n)
-            n_norm = n / sum_n
-
+            area_n = sum(n*self.binwidth)
             # Relabel bins as centres
             centrebins = np.linspace(self.fmin, self.fmax, n_bins)
-            self.histdata = pandas.DataFrame({'bins': centrebins, self.logcolumn: n_norm})
-            outputfile2 = join(outputdir, self.histofile)
-            self.histdata.to_csv(outputfile2, index=False)
-            print("Saved histogram data to ", outputfile2)
-
             # Create figure
             # self.fig = plt.figure()
             plt.figure()
             # Seaborn fig
             sns.set(color_codes=True)
-            ax = sns.barplot(centrebins, n_norm)
+            if freq == 0:
+                n_norm = n / sum_n
+                outputfile = join(outputdir, self.histofile)
+                ylabel = 'Relative frequency'
+                ax = sns.barplot(centrebins, n_norm)
+            elif freq == 1:
+                n_norm = n * self.binwidth/ area_n
+                outputfile = join(outputdir, "Density_" + self.histofile)
+                ylabel = 'Density'
+                ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
+            else:
+                #cumulative
+                n_norm = np.cumsum(n/sum_n)
+                outputfile = join(outputdir, "Cumulativefreq_" + self.histofile)
+                ylabel = 'Cumulative frequency'
+                #seaborn - requires statsmodels which won't install : ax = sns.distplot(data, hist_kws=dict(cumulative=True),kde_kws=dict(cumulative=True))
+                ax = plt.hist(data, bins=bins, histtype='step', cumulative=1, label=ylabel)
+
+
+            self.histdata = pandas.DataFrame({'bins': centrebins, self.logcolumn: n_norm})
+            self.histdata.to_csv(outputfile, index=False)
+            print("Saved histogram data to ", outputfile)
+
             plt.xlabel(self.logcolumn)
-            plt.ylabel('Relative frequency')
+            plt.ylabel(ylabel)
             # plt.title(self.histofile)
 
             # Save plot to figure
             figtype = 'png'  # png, pdf, ps, eps and svg.
-            fname = self.histofile.replace('csv', figtype)
-            outputfile = join(outputdir, fname)
-            plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
+            figfile = outputfile.replace('csv', figtype)
+            plt.savefig(figfile, facecolor='w', edgecolor='w', format=figtype)
             print("Saved histogram to ", outputfile)
-
-            ######Also save density plot
-            plt.figure()
-            ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
-            plt.ylabel('Density')
-            outputfile = join(outputdir, "Density_" + fname)
-            plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
-            print("Saved histogram to ", outputfile)
-            plt.close()
-            # For testing - will stop here until fig closes
+            #
+            # ######Also save density plot
+            # plt.figure()
+            # ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
+            # plt.ylabel('Density')
+            # outputfile = join(outputdir, "Density_" + fname)
+            # plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
+            # print("Saved histogram to ", outputfile)
+            # plt.close()
+            # # For testing - will stop here until fig closes
             # plt.show()
-            return (outputfile, outputfile2)
+            return (outputfile, figfile)
 
+    def showPlotlyhistogram(self):
+        # Plotly Offline
+        data = fd.data[fd.logcolumn]
+        plotly.offline.plot({
+            "data": [Histogram(x=data, xbins=dict(start=int(fd.fmin), end=int(fd.fmax), size=fd.binwidth))],
+            "layout": Layout(title="Log10D histogram")
+        })
 
 ############### MAIN ############################
 if __name__ == "__main__":
     import sys
-    import plotly
-    from plotly.graph_objs import Layout, Histogram
 
     parser = argparse.ArgumentParser(prog=sys.argv[0],
                                      description='''\
@@ -180,13 +203,12 @@ if __name__ == "__main__":
 
     try:
         fd = HistogramLogD(datafile, args.config, float(args.minlimit), float(args.maxlimit), args.binwidth)
-        fd.generateHistogram(outputdir)
-        # Plotly Offline
-        data = fd.data[fd.logcolumn]
-        plotly.offline.plot({
-            "data": [Histogram(x=data, xbins=dict(start=int(fd.fmin), end=int(fd.fmax), size=fd.binwidth))],
-            "layout": Layout(title="Log10D histogram")
-        })
+        fd.generateHistogram(freq=0,outputdir=outputdir)
+        #density
+        fd.generateHistogram(freq=1,outputdir=outputdir)
+        #cumulative
+        fd.generateHistogram(freq=2,outputdir=outputdir)
+        fd.showPlotlyhistogram()
 
     except ValueError as e:
         print("Error:", e)

@@ -25,7 +25,9 @@ Created on Tue Sep 5 2017
 import argparse
 from collections import OrderedDict
 from os.path import join
-
+import logging
+import plotly
+from plotly.graph_objs import Layout, Scatter
 #import numpy as np
 from numpy import sqrt,trapz
 import pandas as pd
@@ -43,13 +45,13 @@ class CompareMSD(BatchStats):
             self.outputfile = self.config['AVGMSD_FILENAME']
             self.msdpoints = int(self.config['MSD_POINTS'])
             self.timeint = float(self.config['TIME_INTERVAL'])
-            print("MSD: Config file loaded")
+            logging.debug("MSD: Config file loaded")
         else:  # defaults
             self.outputfile = 'Avg_MSD.csv'
             self.datafile = 'Filtered_MSD.csv'
             self.msdpoints = 10
             self.timeint = 0.02
-            print("MSD: Using config defaults")
+            logging.debug("MSD: Using config defaults")
 
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
         self.compiled = pd.DataFrame()
@@ -96,7 +98,7 @@ class CompareMSD(BatchStats):
                                  'medians': [cell, 'Median']})
             for i in timepoints:
                 d = data.groupby(['Stats'])[i].mean()
-                print(d)
+                logging.debug(d)
                 stats['avgs'].append(d['Mean'])
                 stats['counts'].append(d['Count'])
                 stats['stds'].append(d['Std'])
@@ -111,7 +113,7 @@ class CompareMSD(BatchStats):
             self.compiled = df1
             # Write to CSV
             df1.to_csv(self.compiledfile, index=False)
-            print("Data compiled to " + self.compiledfile)
+            logging.info("Data compiled to " + self.compiledfile)
 
         except IOError as e:
             raise e
@@ -123,6 +125,7 @@ class CompareMSD(BatchStats):
         :param ax:
         :return: areas
         """
+        logging.info('Show Overlay of MSDs')
         if self.compiled is not None:
             df = self.compiled
             if ax is None:
@@ -148,10 +151,18 @@ class CompareMSD(BatchStats):
             df_area = pd.DataFrame({'Cell': labels, 'MSD Area': areas}, columns=['Cell', 'MSD Area'])
             areasfile = join(self.outputdir, self.searchtext + "_areas.csv")
             df_area.to_csv(areasfile, index=False)
-            print('Areas output to', areasfile)
+            logging.info('Areas output to %s', areasfile)
             return areasfile
+        else:
+            logging.error("No MSD data to show")
 
     def showAvgPlot(self, ax=None):
+        """
+        Plot of avg MSD
+        :param ax:
+        :return:
+        """
+        logging.info('Show Avg MSD')
         if self.compiled is not None:
             df = self.compiled
             width = 0.15
@@ -171,7 +182,28 @@ class CompareMSD(BatchStats):
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m$^2$)')
             # plt.show()
+        else:
+            logging.error("No MSD data to show")
 
+    def showPlotly(self):
+        # Plotly Offline
+        if self.compiled is not None:
+            x = [str(x) for x in range(1, self.msdpoints + 1)]
+            xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
+            all = self.compiled.groupby('Cell').get_group('ALL')
+            allmeans = all.groupby('Stats').get_group('Mean')
+            allsems = all.groupby('Stats').get_group('SEM')
+            means = self.compiled.groupby('Stats').get_group('Mean')
+            sems = self.compiled.groupby('Stats').get_group('SEM')
+            data=[Scatter(x=allmeans[x].iloc[0], y=xi)]
+            for i in range(len(means)):
+                data.append(Scatter(x=means[x].iloc[i],y=xi))
+            plotly.offline.plot({
+                    "data": data,
+                    "layout": Layout(title="MSD avg")
+                })
+        else:
+            logging.error("No MSD data to show - plotly")
 
 #################################################################################################
 if __name__ == "__main__":
@@ -209,6 +241,9 @@ if __name__ == "__main__":
         figname = fmsd.compiledfile.replace('csv', figtype)
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
         plt.show()
+
+        fmsd.showPlotly()
+
 
     except IOError as e:
         print("IOError: ", e)

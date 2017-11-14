@@ -39,7 +39,7 @@ class HistoStats(BatchStats):
         self.datafield = 'HISTOGRAM_FILENAME'
         super().__init__(*args)
         if self.config is not None:
-            self.datafile = self.config['HISTOGRAM_FILENAME']
+            #self.datafile = self.config['HISTOGRAM_FILENAME']
             self.threshold = float(self.config['THRESHOLD'])
             self.outputfile = self.config['ALLSTATS_FILENAME']
             print("HIST: Config file loaded")
@@ -48,6 +48,7 @@ class HistoStats(BatchStats):
             self.datafile = 'Histogram_log10D.csv'
             self.threshold = -1.6
             print("HIST:Using config defaults")
+
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
         self.compiled = pd.DataFrame()
 
@@ -58,9 +59,6 @@ class HistoStats(BatchStats):
             c = pd.DataFrame()
             # base = self.base.split(sep)
             suffixes = ['bins']
-            # TODO: Test with dummy file
-            # f0 = 'D:\\Data\\msddata\\170801\\170801ProteinCelltype\\NOSTIM\\CELL1\\data\\processed\\Histogram_log10D.csv'
-            # D:\data\msddata\NOSTIM\CELL1\data
             for f in self.inputfiles:
                 df = pd.read_csv(f)
                 cell = self.generateID(f)
@@ -133,6 +131,11 @@ class HistoStats(BatchStats):
         return ratiofile
 
     def showPlots(self, ax=None):
+        """
+        Show overlay of all histograms avg + sem
+        :param ax:
+        :return:
+        """
         df = self.compiled
         if ax is None:
             fig, ax = plt.subplots()

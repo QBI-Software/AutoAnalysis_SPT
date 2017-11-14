@@ -415,6 +415,9 @@ class AppMain(wx.Listbook):
         #                     datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
         self.configfile = join(expanduser('~'), '.msdcfg')
+        if not access(self.configfile,R_OK):
+            #use local file in resources
+            self.configfile = join('resources', 'msd.cfg')
         self.controller = MSDController(self.configfile)
         if self.controller.loaded:
             self.prefixes = [self.controller.group1, self.controller.group2]
