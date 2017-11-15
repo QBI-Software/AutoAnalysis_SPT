@@ -190,18 +190,28 @@ class CompareMSD(BatchStats):
         if self.compiled is not None:
             x = [str(x) for x in range(1, self.msdpoints + 1)]
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
-            all = self.compiled.groupby('Cell').get_group('ALL')
-            allmeans = all.groupby('Stats').get_group('Mean')
-            allsems = all.groupby('Stats').get_group('SEM')
             means = self.compiled.groupby('Stats').get_group('Mean')
             sems = self.compiled.groupby('Stats').get_group('SEM')
-            data=[Scatter(x=allmeans[x].iloc[0], y=xi)]
+            data=[]
+            title = self.expt + ' [' + self.prefix.upper() + '] MSD n=' + str(len(means))
             for i in range(len(means)):
-                data.append(Scatter(x=means[x].iloc[i],y=xi))
-            plotly.offline.plot({
-                    "data": data,
-                    "layout": Layout(title="MSD avg")
-                })
+                if means['Cell'].iloc[i] =='ALL':
+                    data.append(Scatter(y=means[x].iloc[i], x=xi,
+                                error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True),
+                                name=means['Cell'].iloc[i], mode='lines+markers',
+                                marker=dict(size=10,color='rgba(152, 0, 0, .8)',
+                                            line=dict(width=2,color='rgb(0, 0, 0)'))
+                                ))
+                else:
+                    data.append(Scatter(y=means[x].iloc[i],x=xi,name=means['Cell'].iloc[i],mode='lines+markers', error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True)))
+            #Create plotly plot
+            plotly.offline.plot({"data":data,
+                                 "layout": Layout(title=title,
+                                                  xaxis={'title': 'Time (s)'},
+                                                  yaxis={'title':'MSD (&mu;m<sup>2</sup>)'})},
+                    filename=join(self.outputdir,self.searchtext.upper() + '_MSD.html')
+
+                )
         else:
             logging.error("No MSD data to show - plotly")
 

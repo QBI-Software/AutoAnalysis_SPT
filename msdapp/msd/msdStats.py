@@ -26,7 +26,10 @@ from configobj import ConfigObj, ConfigObjError
 from numpy import isnan, inf
 from scipy import stats
 from seaborn import boxplot, swarmplot
-
+from plotly import tools
+import plotly
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 class MSDStats():
     def __init__(self, inputdirs, outputdir, prefixes=None, configfile=None):
@@ -244,6 +247,97 @@ class MSDStats():
 
         plt.show()
 
+    def showPlotly(self):
+        """
+
+        :return:
+        """
+        title = " vs ".join(self.prefixes)
+        imagefile = join(self.outputdir,"_".join(self.prefixes) + '.html')
+
+        # HistoAvg
+        trace1=[]
+        df = self.histodata
+        for prefix in self.prefixes:
+            meancol = 'MEAN_' + prefix
+            semcol = 'SEM_' + prefix
+            trace1.append(go.Scatter(x=df['bins'], y=df[meancol], name=prefix, line=dict(width=0.5),error_y=dict(array=df[semcol], type='data', symmetric=True)))
+
+        # plt.xlabel('Log (D)')
+        # plt.ylabel('Frequency')
+        # plt.title('Mean D with SEM')
+
+        # MSDAvg
+        trace2=[]
+        x = [str(x) for x in range(1, self.msdpoints + 1)]
+        xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]  # convert to times
+
+        i=0
+        for file in self.msddatafiles:
+            df = pd.read_csv(file)
+            all = df.groupby('Cell').get_group('ALL')
+            allmeans = all.groupby('Stats').get_group('Mean')
+            allsems = all.groupby('Stats').get_group('SEM')
+            trace2.append(go.Scatter(y=allmeans[x].iloc[0], x=xi,
+                                    name=self.prefixes[i], mode='lines+markers',line=dict(width=0.5),
+                                error_y=dict(array=allsems[x].iloc[0], type='data', symmetric=True)))
+            i+=1
+            #plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0])
+        #plt.title('Mean MSD with SEM')
+        #plt.xlabel('Time (s)')
+        #plt.ylabel(r'MSD ($\mu$m$^2$)')
+        #plt.legend(self.prefixes)
+
+        #Ratios
+        trace3=[]
+        df = self.ratiodata
+        #cols = ['Ratio_' + prefix for prefix in self.prefixes]
+        for prefix in self.prefixes:
+            cols='Ratio_' + prefix
+            trace3.append(go.Box(y=df[cols], boxpoints='all',name=prefix))
+        #ax = swarmplot(data=df[cols])
+        # df.boxplot(cols)
+        # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
+        # plt.xlabel('Group')
+        # plt.ylabel('Mobile/Immobile Ratio')
+        # plt.title('Log10(D) Ratios')
+        # trace3 = go.Scatter(
+        #     x=[20, 30, 40],
+        #     y=[50, 60, 70],
+        # )
+        #Areas
+        trace4=[]
+        df = self.areadata[self.areadata['Cell'] != 'ALL']
+        #cols = ['MSD Area_' + prefix for prefix in self.prefixes]
+        for prefix in self.prefixes:
+            cols='MSD Area_' + prefix
+            trace4.append(go.Box(y=df[cols], boxpoints='all', name=prefix))
+        #ax = swarmplot(data=df[cols])
+        # df.boxplot(cols)
+        # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
+        # plt.xlabel('Group')
+        # plt.ylabel('Area under curve')
+        # plt.title('MSD Areas')
+
+        # trace4 = go.Scatter(
+        #     x=[20, 30, 40],
+        #     y=[50, 60, 70],
+        # )
+
+        fig = tools.make_subplots(rows=2, cols=2, subplot_titles=('Mean D with SEM','Mean MSD with SEM','Log10(D) Ratios','MSD Areas'))
+
+        fig.append_trace(trace1[0], 1, 1)
+        fig.append_trace(trace1[1], 1, 1)
+        fig.append_trace(trace2[0], 1, 2)
+        fig.append_trace(trace2[1], 1, 2)
+        fig.append_trace(trace3[0], 2, 1)
+        fig.append_trace(trace3[1], 2, 1)
+        fig.append_trace(trace4[0], 2, 2)
+        fig.append_trace(trace4[1], 2, 2)
+
+        fig['layout'].update(height=800, width=800, title=title)
+        #py.plot(fig, filename=imagefile)
+        plotly.offline.plot(fig, filename=imagefile)
 
 ############################################################################################
 if __name__ == "__main__":
@@ -259,14 +353,18 @@ if __name__ == "__main__":
     parser.add_argument('--prefix1', action='store', help='Group1', default="NOSTIM")
     parser.add_argument('--prefix2', action='store', help='Group2', default="STIM")
     parser.add_argument('--outputdir', action='store', help='Output directory (must exist)', default="output")
-    parser.add_argument('--configfile', action='store', help='Configfile', default="~\.msdcfg")
+    parser.add_argument('--config', action='store', help='Configfile', default="~\.msdcfg")
     args = parser.parse_args()
-    configfile = join(expanduser('~'), '.msdcfg')
+    if args.config is None:
+        configfile = join(expanduser('~'), '.msdcfg')
+    else:
+        configfile = args.config
     try:
-        rs = MSDStats(args.dir1, args.dir2, args.outputdir, args.prefix1, args.prefix2, configfile)
+        rs = MSDStats([args.dir1, args.dir2], args.outputdir, [args.prefix1, args.prefix2], configfile)
         results_df = rs.runTtests()
         print(results_df)
-        rs.showPlots("Test cells")
+        #rs.showPlots("Test cells")
+        rs.showPlotly()
 
     except ValueError as e:
         print("Error: ", e)

@@ -34,6 +34,8 @@ class BatchStats:
         else:
             raise ValueError("Cannot determine which files to compile - check config Datafile option")
         self.searchtext = expt + prefix
+        self.expt = expt
+        self.prefix = prefix
         (self.base,self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix)
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir

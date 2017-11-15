@@ -25,11 +25,15 @@ Created on Sep 8 2017
 """
 
 import argparse
+import logging
 from os.path import join
+
 import matplotlib.pyplot as plt
-#import numpy as np
-from numpy import sqrt
 import pandas as pd
+import plotly
+# import numpy as np
+from numpy import sqrt,round
+from plotly.graph_objs import Layout, Scatter
 
 from msdapp.msd.batchStats import BatchStats
 
@@ -39,7 +43,7 @@ class HistoStats(BatchStats):
         self.datafield = 'HISTOGRAM_FILENAME'
         super().__init__(*args)
         if self.config is not None:
-            #self.datafile = self.config['HISTOGRAM_FILENAME']
+            # self.datafile = self.config['HISTOGRAM_FILENAME']
             self.threshold = float(self.config['THRESHOLD'])
             self.outputfile = self.config['ALLSTATS_FILENAME']
             print("HIST: Config file loaded")
@@ -160,11 +164,43 @@ class HistoStats(BatchStats):
             fig, ax = plt.subplots()
         plt.errorbar(df['bins'], df['MEAN'], yerr=df['SEM'],
                      capsize=3,
-                         elinewidth=1,
-                         markeredgewidth=1)
+                     elinewidth=1,
+                     markeredgewidth=1)
         # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
         plt.xlabel('Log10(D)')
         plt.title(self.searchtext.upper() + " " + 'Average with SEM')
+
+    def showPlotly(self):
+        # Plotly Offline
+        title = self.searchtext.upper() + " " + " Log10(D) Histogram"
+        if self.compiled is not None:
+            data = []
+            max_y=round(max(list(self.compiled[self.compiled.columns[1:self.numcells+1]].max(skipna=True,numeric_only=True))),2)
+
+            for i in range(1, self.numcells + 1):
+                data.append(Scatter(x=self.compiled['bins'], y=self.compiled[self.compiled.columns[i]], name=self.compiled.columns[i], line=dict(shape='spline', smoothing=0.5)))
+
+            # plot threshold line
+            if self.threshold:
+                shapes = [dict({
+                    'type': 'line',
+                    'x0': self.threshold,
+                    'y0': 0,
+                    'x1': self.threshold,
+                    'y1': max_y,
+                    'line': {
+                        'color': '#FF00FF',
+                        'width': 0.5
+                    }})]
+            else:
+                shapes=None
+
+            # Create plotly plot
+            plotly.offline.plot({"data": data,
+                                 "layout": Layout(title=title,xaxis={'title': 'Log10(D)'},yaxis={'title': 'Relative frequency'}, shapes=shapes)},filename=join(self.outputdir, self.searchtext.upper() + '_Histogram.html'))
+
+        else:
+            logging.error("No MSD data to show - plotly")
 
 
 #################################################################################################
@@ -204,6 +240,8 @@ if __name__ == "__main__":
         figname = fmsd.compiledfile.replace('csv', figtype)
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
         plt.show()
+
+        fmsd.showPlotly()
 
     except ValueError as e:
         print("Error: ", e)

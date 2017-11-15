@@ -1,0 +1,189 @@
+Missing modules:
+? Carbon.Appearance imported from wx.lib.colourutils
+? Cookie imported from requests.compat
+? IPython imported from matplotlib.pyplot, pandas.io.formats.format, pandas.io.formats.printing, pandas.util.testing
+? IPython.core.debugger imported from pandas.util.testing
+? IPython.core.formatters imported from pandas.io.formats.printing
+? IPython.core.pylabtools imported from matplotlib.pyplot
+? IPython.display imported from plotly.plotly.plotly
+? IPython.html.widgets imported from seaborn.widgets
+? IPython.utils.signatures imported from matplotlib
+? OpenSSL.SSL imported from urllib3.contrib.pyopenssl
+? OpenSSL.crypto imported from urllib3.contrib.pyopenssl
+? PIL imported from matplotlib.backend_bases, matplotlib.backends.backend_agg, matplotlib.image
+? PyQt4 imported from pandas.io.clipboard
+? PyQt4.QtGui imported from matplotlib.pyplot, pandas.io.clipboard.clipboards
+? PyQt5.QtWidgets imported from matplotlib.pyplot
+? StringIO imported from numpy.lib.format, numpy.lib.utils, numpy.testing.utils, pandas.compat, requests.compat, seaborn.external.six, six, urllib3.packages.six
+? UserDict imported from pytz.lazy
+? __builtin__ imported from numpy, numpy.core.numeric, numpy.core.numerictypes, numpy.distutils.misc_util, numpy.lib._iotools, numpy.lib.function_base, numpy.ma.core, pandas.compat, pyparsing
+? __main__ imported from bdb, pandas.core.common, pdb, pkg_resources, rlcompleter
+? _abcoll imported from urllib3.packages.ordered_dict
+? _curses imported from curses, curses.has_key
+? _dummy_threading imported from dummy_threading
+? _frozen_importlib imported from importlib, importlib.abc
+? _frozen_importlib_external imported from importlib, importlib._bootstrap, importlib.abc
+? _posixsubprocess imported from multiprocessing.util, subprocess
+? _scproxy imported from urllib.request
+? _sysconfigdata imported from sysconfig
+? _winreg imported from numpy.distutils.cpuinfo, platform, requests.utils
+? backports imported from pandas.compat
+? backports.functools_lru_cache imported from matplotlib.font_manager, matplotlib.fontconfig_pattern
+? backports.ssl_match_hostname imported from setuptools.ssl_support, urllib3.packages.ssl_match_hostname
+? blosc imported from pandas.io.packers
+? botocore.exceptions imported from pandas.io.s3
+? bottleneck imported from pandas.core.nanops, pandas.util.testing
+? bs4 imported from pandas.io.html, seaborn.tests.test_utils, seaborn.utils
+? cPickle imported from numpy.core.numeric, numpy.lib.format, numpy.lib.npyio, numpy.ma.core, pandas.compat
+? cStringIO imported from pandas.compat, pytz.tzfile, xlrd.timemachine
+? ce imported from os
+? commands imported from numpy.distutils.cpuinfo
+? compiler imported from configobj
+? cookielib imported from requests.compat
+? copy_reg imported from numpy.core
+? cryptography imported from urllib3.contrib.pyopenssl
+? cryptography.hazmat.backends.openssl imported from urllib3.contrib.pyopenssl
+? cryptography.hazmat.backends.openssl.x509 imported from urllib3.contrib.pyopenssl
+? cryptography.x509.extensions imported from urllib3.contrib.pyopenssl
+? cssselect imported from lxml.cssselect
+? dummy_thread imported from numpy.core.arrayprint, urllib3.packages.ordered_dict
+? elementtree.ElementTree imported from xlrd.xlsx
+? fastcluster imported from seaborn.matrix, seaborn.tests.test_matrix
+? fcntl imported from pandas.io.formats.terminal
+? feather imported from pandas.io.feather_format
+? future_builtins imported from numpy.lib.npyio
+? gi.repository imported from matplotlib.pyplot
+? gobject imported from matplotlib.pyplot
+? grp imported from distutils.archive_util, pathlib, shutil, tarfile
+? gtk imported from pandas.io.clipboard, pandas.io.clipboard.clipboards
+? html5lib imported from pandas.io.html
+? httplib imported from pandas.compat, pandas.io.common
+? ipywidgets imported from seaborn.widgets
+? java imported from unittest.mock
+? java.lang imported from platform, xml.sax._exceptions
+? jinja2 imported from pandas.io.formats.style
+? mock imported from matplotlib, pandas.util.testing
+? mpl_toolkits.natgrid imported from matplotlib.mlab
+? multiprocessing.AuthenticationError imported from multiprocessing.connection
+? multiprocessing.BufferTooShort imported from multiprocessing.connection
+? multiprocessing.SimpleQueue imported from concurrent.futures.process
+? multiprocessing.TimeoutError imported from multiprocessing.Pool, multiprocessing.pool
+? multiprocessing.freeze_support imported from msdapp.guicontrollers
+? multiprocessing.get_context imported from multiprocessing.Pool, multiprocessing.managers, multiprocessing.pool, multiprocessing.sharedctypes
+? multiprocessing.get_start_method imported from multiprocessing.spawn
+? multiprocessing.set_start_method imported from multiprocessing.spawn
+? netbios imported from uuid
+? nose imported from numpy.testing.decorators, numpy.testing.noseclasses, numpy.testing.utils, pandas.util.testing, seaborn.tests.test_rcmod, seaborn.tests.test_regression, seaborn.tests.test_utils, seaborn.utils
+? nose.plugins imported from numpy.testing.noseclasses
+? nose.plugins.base imported from numpy.testing.noseclasses
+? nose.plugins.builtin imported from numpy.testing.nosetester
+? nose.plugins.errorclass imported from numpy.testing.noseclasses
+? nose.tools imported from seaborn.tests.test_algorithms, seaborn.tests.test_axisgrid, seaborn.tests.test_categorical, seaborn.tests.test_distributions, seaborn.tests.test_matrix, seaborn.tests.test_miscplot, seaborn.tests.test_palettes, seaborn.tests.test_rcmod, seaborn.tests.test_regression, seaborn.tests.test_utils
+? nose.util imported from numpy.testing.noseclasses
+? numarray imported from numpy.distutils.system_info
+? numexpr imported from pandas.core.computation, pandas.core.computation.engines, pandas.core.computation.expressions
+? numpy.core.float32 imported from numpy.testing.utils
+? numpy.core.geterrobj imported from numpy.linalg.linalg
+? numpy.core.integer imported from numpy.fft.helper
+? numpy.core.intp imported from numpy.linalg.linalg
+? numpy.core.isnat imported from numpy.testing.utils
+? numpy.core.longdouble imported from numpy.linalg.linalg
+? numpy.core.object_ imported from numpy.linalg.linalg
+? numpy.core.signbit imported from numpy.testing.utils
+? numpy_distutils imported from numpy.f2py.diagnose
+? numpy_distutils.command.build_flib imported from numpy.f2py.diagnose
+? numpy_distutils.command.cpuinfo imported from numpy.f2py.diagnose
+? numpy_distutils.cpuinfo imported from numpy.f2py.diagnose
+? numpy_distutils.fcompiler imported from numpy.f2py.diagnose
+? openpyxl imported from pandas.compat.openpyxl_compat, pandas.io.excel
+? openpyxl.cell imported from pandas.io.excel
+? openpyxl.style imported from pandas.io.excel
+? openpyxl.styles imported from pandas.io.excel
+? openpyxl.workbook imported from pandas.io.excel
+? ordereddict imported from pyparsing
+? org.python.core imported from copy, pickle, xml.sax
+? org.python.modules.posix.PosixModule imported from setuptools.sandbox
+? os.path imported from distutils.file_util, matplotlib.backends.backend_tkagg, matplotlib.cbook, msdanalysis__main__, msdapp.guicontrollers, msdapp.msd.batchCompareMSD, msdapp.msd.batchHistogramStats, msdapp.msd.batchStats, msdapp.msd.filterMSD, msdapp.msd.histogramLogD, msdapp.msd.msdStats, numpy.core.memmap, os, pkg_resources, pkgutil, plotly.utils, py_compile, pytz, pytz.tzfile, requests.adapters, sysconfig, tracemalloc, unittest, unittest.util, xlrd.xlsx
+? pandas_gbq imported from pandas.io.gbq
+? pkg_resources.extern.appdirs imported from pkg_resources
+? pkg_resources.extern.packaging imported from pkg_resources, setuptools.command.egg_info, setuptools.dist
+? pkg_resources.extern.six imported from pkg_resources
+? pkg_resources.extern.six.moves imported from pkg_resources
+? pkg_resources.iter_entry_points imported from setuptools.command.egg_info
+? pkg_resources.resource_stream imported from pytz
+? pkg_resources.resource_string imported from plotly.graph_reference, plotly.offline.offline, setuptools.command.easy_install
+? posix imported from os
+? pudb imported from pandas.util.testing
+? pwd imported from distutils.archive_util, distutils.util, getpass, http.server, netrc, pathlib, posixpath, shutil, tarfile, webbrowser
+? py.path imported from pandas.io.common, pandas.util.testing
+? pytest imported from matplotlib, pandas.util._tester, pandas.util.testing
+? resource imported from test.support
+? s3fs imported from pandas.io.common, pandas.io.s3
+? scipy imported from msdapp.msd.msdStats, numpy.testing.nosetester, pandas.core.missing, pandas.plotting._core, seaborn.algorithms, seaborn.axisgrid, seaborn.categorical, seaborn.distributions, seaborn.tests.test_algorithms, seaborn.tests.test_axisgrid, seaborn.tests.test_categorical, seaborn.timeseries, seaborn.utils
+? scipy.cluster imported from seaborn.matrix, seaborn.tests.test_matrix
+? scipy.interpolate imported from pandas.core.missing, pandas.util.testing
+? scipy.signal imported from pandas.core.window
+? scipy.sparse imported from pandas.core.dtypes.common, pandas.core.sparse.frame, pandas.core.sparse.scipy_sparse, pandas.util.testing
+? scipy.spatial imported from seaborn.matrix, seaborn.regression, seaborn.tests.test_matrix
+? scipy.stats imported from pandas.core.nanops, pandas.plotting._core, pandas.plotting._misc, pandas.util.testing
+? seaborn.external.six.moves imported from seaborn.algorithms, seaborn.categorical, seaborn.palettes, seaborn.regression, seaborn.tests.test_algorithms, seaborn.tests.test_matrix
+? seaborn.external.six.moves.http_client imported from seaborn.utils
+? seaborn.external.six.moves.urllib.request imported from seaborn.utils
+? sets imported from numpy.distutils.command.build_ext, numpy.distutils.fcompiler, numpy.distutils.misc_util, pytz.tzinfo
+? setuptools.extern.six imported from setuptools.command.bdist_egg, setuptools.command.develop, setuptools.command.easy_install, setuptools.command.egg_info, setuptools.command.sdist, setuptools.config, setuptools.dist, setuptools.glob, setuptools.monkey, setuptools.package_index, setuptools.py27compat, setuptools.py33compat, setuptools.sandbox, setuptools.unicode_utils
+? setuptools.extern.six.moves imported from setuptools, setuptools.command.easy_install, setuptools.command.egg_info, setuptools.command.py36compat, setuptools.command.setopt, setuptools.dist, setuptools.extension, setuptools.namespaces, setuptools.package_index, setuptools.sandbox, setuptools.ssl_support
+? simplejson imported from pandas.util._print_versions, requests.compat
+? six.moves imported from cycler, dateutil.rrule, dateutil.tz.win, matplotlib, matplotlib.afm, matplotlib.axes._axes, matplotlib.axes._base, matplotlib.axes._subplots, matplotlib.backend_bases, matplotlib.backends.backend_svg, matplotlib.backends.backend_tkagg, matplotlib.backends.tkagg, matplotlib.cbook, matplotlib.collections, matplotlib.colorbar, matplotlib.colors, matplotlib.contour, matplotlib.dates, matplotlib.dviread, matplotlib.finance, matplotlib.font_manager, matplotlib.gridspec, matplotlib.hatch, matplotlib.legend, matplotlib.legend_handler, matplotlib.markers, matplotlib.mlab, matplotlib.offsetbox, matplotlib.patches, matplotlib.stackplot, matplotlib.streamplot, matplotlib.table, matplotlib.text, matplotlib.textpath, matplotlib.tri.triinterpolate, matplotlib.widgets, plotly.plotly.chunked_requests.chunked_request, plotly.plotly.plotly
+? six.moves.urllib.parse imported from matplotlib.image, matplotlib.textpath, plotly.plotly.chunked_requests.chunked_request
+? six.moves.urllib.request imported from matplotlib, matplotlib.finance, matplotlib.image
+? socks imported from urllib3.contrib.socks
+? sqlalchemy imported from pandas.io.sql
+? sqlalchemy.ext.compiler imported from pandas.io.sql
+? sqlalchemy.schema imported from pandas.io.sql
+? sqlalchemy.types imported from pandas.io.sql
+? statsmodels imported from seaborn.regression
+? statsmodels.formula.api imported from seaborn.regression
+? statsmodels.genmod.families imported from seaborn.regression
+? statsmodels.genmod.generalized_linear_model imported from seaborn.regression
+? statsmodels.nonparametric.api imported from seaborn.distributions, seaborn.tests.test_distributions
+? statsmodels.nonparametric.smoothers_lowess imported from seaborn.regression
+? statsmodels.regression.linear_model imported from seaborn.regression, seaborn.tests.test_regression
+? statsmodels.robust.robust_linear_model imported from seaborn.regression
+? subprocess32 imported from matplotlib.compat.subprocess
+? tables imported from pandas.io.pytables
+? termios imported from getpass, pandas.io.formats.terminal, tty
+? thread imported from numpy.core.arrayprint, pandas.compat.chainmap_impl, urllib3.packages.ordered_dict
+? tornado imported from matplotlib.backends.backend_webagg, matplotlib.backends.backend_webagg_core
+? tornado.ioloop imported from matplotlib.backends.backend_webagg
+? tornado.template imported from matplotlib.backends.backend_webagg
+? tornado.web imported from matplotlib.backends.backend_webagg
+? tornado.websocket imported from matplotlib.backends.backend_webagg
+? urllib.getproxies imported from requests.compat
+? urllib.getproxies_environment imported from requests.compat
+? urllib.pathname2url imported from pandas.io.common
+? urllib.proxy_bypass imported from requests.compat
+? urllib.proxy_bypass_environment imported from requests.compat
+? urllib.quote imported from requests.compat
+? urllib.quote_plus imported from requests.compat
+? urllib.splittag imported from setuptools.py26compat
+? urllib.unquote imported from requests.compat
+? urllib.unquote_plus imported from requests.compat
+? urllib.urlencode imported from lxml.html, pandas.io.common, requests.compat
+? urllib.urlopen imported from lxml.html
+? urllib2 imported from numpy.lib._datasource, pandas.io.common, requests.compat, setuptools.package_index
+? urllib3.packages.six.moves imported from urllib3.connectionpool, urllib3.response, urllib3.util.response
+? urllib3.packages.six.moves.http_client imported from urllib3.connection, urllib3.exceptions
+? urllib3.packages.six.moves.urllib.parse imported from urllib3.poolmanager, urllib3.request
+? urlparse imported from lxml.html, numpy.lib._datasource, pandas.io.common, pandas.io.s3, requests.compat
+? vms_lib imported from platform
+? win32api imported from distutils.msvccompiler
+? win32con imported from distutils.msvccompiler
+? win32evtlog imported from logging.handlers
+? win32evtlogutil imported from logging.handlers
+? win32pdh imported from numpy.testing.utils
+? win32wnet imported from uuid
+? wincertstore imported from setuptools.ssl_support
+? xarray imported from pandas.core.generic, pandas.util.testing
+? xlsxwriter imported from pandas.core.config_init, pandas.io.excel
+? xlwt imported from pandas.io.excel
+This is not necessarily a problem - the modules may not be needed on this platform.
