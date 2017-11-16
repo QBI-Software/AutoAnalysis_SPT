@@ -313,30 +313,31 @@ class ProcessRunPanel(ProcessPanel):
         filenames = []
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         print('All Files:', num_files)
-        if len(selections) > 0 and num_files > 0:
-            for i in range(0, num_files):
-                if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                    filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i, 1))
-            print('Selected Files:', len(filenames))
-            outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
-            expt = filepanel.m_tcSearch.GetValue()
-            print("Expt:", expt)
-            row = 0
-            # For each process
-            for p in selections:
-                print("Running:", p)
-                i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][
-                    0]
-                self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
-                row = row + 1
-                print('Next process: row=', row)
+        try:
+            if len(selections) > 0 and num_files > 0:
+                for i in range(0, num_files):
+                    if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
+                        filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i, 1))
+                print('Selected Files:', len(filenames))
+                outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
+                expt = filepanel.m_tcSearch.GetValue()
+                print("Expt:", expt)
+                row = 0
+                # For each process
+                for p in selections:
+                    print("Running:", p)
+                    i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
+                    self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
+                    row = row + 1
+                    print('Next process: row=', row)
 
-            print("Completed processes")
-        else:
-            if len(selections) <= 0:
-                msg = "No processes selected"
+                print("Completed processes")
             else:
-                msg = "No files selected - please go to Files Panel and add to list"
+                if len(selections) <= 0:
+                    raise ValueError("No processes selected")
+                else:
+                    raise ValueError("No files selected - please go to Files Panel and add to list")
+        except ValueError as msg:
             self.Parent.Warn(msg)
             # Enable Run button
             self.m_btnRunProcess.Enable()

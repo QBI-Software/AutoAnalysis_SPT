@@ -21,9 +21,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from numpy import nan, isnan, mean, median, var, std, exp, histogram,linspace
 import pandas
-import plotly
 import seaborn as sns
 from configobj import ConfigObj
+from plotly import offline
 from plotly.graph_objs import Layout, Histogram
 
 
@@ -141,7 +141,6 @@ class HistogramLogD():
                 n_norm = np.cumsum(n/sum_n)
                 outputfile = join(outputdir, "Cumulativefreq_" + self.histofile)
                 ylabel = 'Cumulative frequency'
-                #seaborn - requires statsmodels which won't install : ax = sns.distplot(data, hist_kws=dict(cumulative=True),kde_kws=dict(cumulative=True))
                 ax = plt.hist(data, bins=bins, histtype='step', cumulative=1, label=ylabel)
 
 
@@ -157,24 +156,16 @@ class HistogramLogD():
             figtype = 'png'  # png, pdf, ps, eps and svg.
             figfile = outputfile.replace('csv', figtype)
             plt.savefig(figfile, facecolor='w', edgecolor='w', format=figtype)
-            print("Saved histogram to ", outputfile)
-            #
-            # ######Also save density plot
-            # plt.figure()
-            # ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
-            # plt.ylabel('Density')
-            # outputfile = join(outputdir, "Density_" + fname)
-            # plt.savefig(outputfile, facecolor='w', edgecolor='w', format=figtype)
-            # print("Saved histogram to ", outputfile)
-            # plt.close()
+            print("Saved histogram to ", figfile)
+
             # # For testing - will stop here until fig closes
-            # plt.show()
+            plt.show()
             return (outputfile, figfile)
 
     def showPlotlyhistogram(self):
         # Plotly Offline
         data = fd.data[fd.logcolumn]
-        plotly.offline.plot({
+        offline.plot({
             "data": [Histogram(x=data, xbins=dict(start=int(fd.fmin), end=int(fd.fmax), size=fd.binwidth))],
             "layout": Layout(title="Log10D histogram")
         })

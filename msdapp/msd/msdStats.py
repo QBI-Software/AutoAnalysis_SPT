@@ -19,17 +19,16 @@ Created on Tue Sep 5 2017
 import argparse
 from os import R_OK, access
 from os.path import join, expanduser
-
 import matplotlib.pyplot as plt
 import pandas as pd
+#import plotly.graph_objs as go
+from plotly.graph_objs import Layout, Scatter, Box
 from configobj import ConfigObj, ConfigObjError
 from numpy import isnan, inf
+from plotly import offline, tools
 from scipy import stats
 from seaborn import boxplot, swarmplot
-from plotly import tools
-import plotly
-import plotly.plotly as py
-import plotly.graph_objs as go
+
 
 class MSDStats():
     def __init__(self, inputdirs, outputdir, prefixes=None, configfile=None):
@@ -253,78 +252,60 @@ class MSDStats():
         :return:
         """
         title = " vs ".join(self.prefixes)
-        imagefile = join(self.outputdir,"_".join(self.prefixes) + '.html')
-
+        imagefile = join(self.outputdir, "_".join(self.prefixes) + '.html')
+        linewidth = 1.5
+        markerdiam = 4
+        errbarw = 3
+        colors = {self.prefixes[0]: 'rgb(255,140,0)', self.prefixes[1]: 'rgb(70,130,180)'}
         # HistoAvg
-        trace1=[]
+        trace1 = []
         df = self.histodata
         for prefix in self.prefixes:
             meancol = 'MEAN_' + prefix
             semcol = 'SEM_' + prefix
-            trace1.append(go.Scatter(x=df['bins'], y=df[meancol], name=prefix, line=dict(width=0.5),error_y=dict(array=df[semcol], type='data', symmetric=True)))
-
-        # plt.xlabel('Log (D)')
-        # plt.ylabel('Frequency')
-        # plt.title('Mean D with SEM')
+            trace1.append(Scatter(x=df['bins'], y=df[meancol], name=prefix, showlegend=False,
+                                     line=dict(width=linewidth, color=colors[prefix]),
+                                     marker=dict(color=colors[prefix], size=markerdiam),
+                                     error_y=dict(array=df[semcol], type='data', symmetric=True, color=colors[prefix],
+                                                  thickness=linewidth, width=errbarw)))
 
         # MSDAvg
-        trace2=[]
+        trace2 = []
         x = [str(x) for x in range(1, self.msdpoints + 1)]
         xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]  # convert to times
 
-        i=0
+        i = 0
         for file in self.msddatafiles:
             df = pd.read_csv(file)
             all = df.groupby('Cell').get_group('ALL')
             allmeans = all.groupby('Stats').get_group('Mean')
             allsems = all.groupby('Stats').get_group('SEM')
-            trace2.append(go.Scatter(y=allmeans[x].iloc[0], x=xi,
-                                    name=self.prefixes[i], mode='lines+markers',line=dict(width=0.5),
-                                error_y=dict(array=allsems[x].iloc[0], type='data', symmetric=True)))
-            i+=1
-            #plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0])
-        #plt.title('Mean MSD with SEM')
-        #plt.xlabel('Time (s)')
-        #plt.ylabel(r'MSD ($\mu$m$^2$)')
-        #plt.legend(self.prefixes)
+            trace2.append(Scatter(y=allmeans[x].iloc[0], x=xi,
+                                     name=self.prefixes[i], mode='lines+markers', showlegend=False,
+                                     line=dict(color=colors[self.prefixes[i]], width=linewidth),
+                                     marker=dict(color=colors[self.prefixes[i]], size=markerdiam),
+                                     error_y=dict(array=allsems[x].iloc[0], type='data', symmetric=True,
+                                                  color=colors[self.prefixes[i]], thickness=linewidth, width=errbarw)))
+            i += 1
 
-        #Ratios
-        trace3=[]
+        # Ratios
+        trace3 = []
         df = self.ratiodata
-        #cols = ['Ratio_' + prefix for prefix in self.prefixes]
         for prefix in self.prefixes:
-            cols='Ratio_' + prefix
-            trace3.append(go.Box(y=df[cols], boxpoints='all',name=prefix))
-        #ax = swarmplot(data=df[cols])
-        # df.boxplot(cols)
-        # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
-        # plt.xlabel('Group')
-        # plt.ylabel('Mobile/Immobile Ratio')
-        # plt.title('Log10(D) Ratios')
-        # trace3 = go.Scatter(
-        #     x=[20, 30, 40],
-        #     y=[50, 60, 70],
-        # )
-        #Areas
-        trace4=[]
+            cols = 'Ratio_' + prefix
+            trace3.append(Box(y=df[cols], boxpoints='all', showlegend=False,
+                                 jitter=0.3, pointpos=-1.8, name=prefix, marker=dict(color=colors[prefix])))
+
+        # Areas
+        trace4 = []
         df = self.areadata[self.areadata['Cell'] != 'ALL']
-        #cols = ['MSD Area_' + prefix for prefix in self.prefixes]
         for prefix in self.prefixes:
-            cols='MSD Area_' + prefix
-            trace4.append(go.Box(y=df[cols], boxpoints='all', name=prefix))
-        #ax = swarmplot(data=df[cols])
-        # df.boxplot(cols)
-        # df['Total_mean'].plot.bar(yerr=df['Total_sem'])
-        # plt.xlabel('Group')
-        # plt.ylabel('Area under curve')
-        # plt.title('MSD Areas')
+            cols = 'MSD Area_' + prefix
+            trace4.append(Box(y=df[cols], boxpoints='all', jitter=0.3, pointpos=-1.8, name=prefix,
+                                 marker=dict(color=colors[prefix])))
 
-        # trace4 = go.Scatter(
-        #     x=[20, 30, 40],
-        #     y=[50, 60, 70],
-        # )
-
-        fig = tools.make_subplots(rows=2, cols=2, subplot_titles=('Mean D with SEM','Mean MSD with SEM','Log10(D) Ratios','MSD Areas'))
+        fig = tools.make_subplots(rows=2, cols=2, subplot_titles=(
+        'Mean D with SEM', 'Mean MSD with SEM', 'Log10(D) Ratios', 'MSD Areas'))
 
         fig.append_trace(trace1[0], 1, 1)
         fig.append_trace(trace1[1], 1, 1)
@@ -336,8 +317,17 @@ class MSDStats():
         fig.append_trace(trace4[1], 2, 2)
 
         fig['layout'].update(height=800, width=800, title=title)
-        #py.plot(fig, filename=imagefile)
-        plotly.offline.plot(fig, filename=imagefile)
+        fig['layout']['xaxis1'].update(title='Log<sub>10</sub>(D)')
+        fig['layout']['yaxis1'].update(title='Relative Frequency')
+        fig['layout']['xaxis2'].update(title='Time (s)')
+        fig['layout']['yaxis2'].update(title='MSD (&mu;m<sup>2</sup>)')
+        # fig['layout']['xaxis3'].update(title='Group')
+        fig['layout']['yaxis3'].update(title='Mobile/Immobile Ratio')
+        # fig['layout']['xaxis4'].update(title='Group')
+        fig['layout']['yaxis4'].update(title='Area under curve (&mu;m<sup>2</sup>)')
+        # py.plot(fig, filename=imagefile)
+        offline.plot(fig, filename=imagefile)
+
 
 ############################################################################################
 if __name__ == "__main__":
@@ -363,7 +353,7 @@ if __name__ == "__main__":
         rs = MSDStats([args.dir1, args.dir2], args.outputdir, [args.prefix1, args.prefix2], configfile)
         results_df = rs.runTtests()
         print(results_df)
-        #rs.showPlots("Test cells")
+        # rs.showPlots("Test cells")
         rs.showPlotly()
 
     except ValueError as e:

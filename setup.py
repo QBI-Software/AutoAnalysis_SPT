@@ -34,6 +34,7 @@ main_python_file = 'appgui.py'
 
 import os
 import sys
+import shutil
 from os.path import join
 
 from cx_Freeze import setup, Executable
@@ -52,9 +53,9 @@ if sys.platform == 'win32':
     base = 'Win32GUI'
 
 build_exe_options = {
-    'includes': [],
+    'includes': ['idna.idnadata', "numpy", "plotly", "pkg_resources","packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
-    'packages': ['scipy','tkinter', 'seaborn', 'numpy.core._methods', 'numpy.lib.format', 'matplotlib.backends.backend_tkagg'],
+    'packages': ['scipy','tkinter', 'seaborn', 'numpy.core._methods', 'numpy.lib.format', 'matplotlib.backends.backend_tkagg','plotly'],
     'include_files': ['noname.py', 'resources/',
                       #join(venvpython, 'seaborn', 'external'),
                       join(mainpython, 'DLLs', 'tcl86t.dll'),
@@ -78,3 +79,7 @@ setup(
     executables=[Executable(main_python_file, base=base, targetName='msdanalysis.exe', icon='resources/chart128.ico',
                             shortcutName=application_title, shortcutDir='DesktopFolder')]
 )
+
+#Rename ckdtree
+shutil.move('build\\exe.win-amd64-3.5\\scipy\\spatial\\cKDTree.cp35-win_amd64.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.tmp')
+shutil.copyfile('build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.tmp', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.cp35-win_amd64.pyd')

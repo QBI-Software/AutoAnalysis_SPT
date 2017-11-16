@@ -30,9 +30,9 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import plotly
 # import numpy as np
-from numpy import sqrt,round
+from numpy import sqrt, round
+from plotly import offline
 from plotly.graph_objs import Layout, Scatter
 
 from msdapp.msd.batchStats import BatchStats
@@ -178,7 +178,8 @@ class HistoStats(BatchStats):
             max_y=round(max(list(self.compiled[self.compiled.columns[1:self.numcells+1]].max(skipna=True,numeric_only=True))),2)
 
             for i in range(1, self.numcells + 1):
-                data.append(Scatter(x=self.compiled['bins'], y=self.compiled[self.compiled.columns[i]], name=self.compiled.columns[i], line=dict(shape='spline', smoothing=0.5)))
+                data.append(Scatter(x=self.compiled['bins'], y=self.compiled[self.compiled.columns[i]], name=self.compiled.columns[i],
+                                    line=dict(shape='spline', smoothing=0.5)))
 
             # plot threshold line
             if self.threshold:
@@ -196,7 +197,7 @@ class HistoStats(BatchStats):
                 shapes=None
 
             # Create plotly plot
-            plotly.offline.plot({"data": data,
+            offline.plot({"data": data,
                                  "layout": Layout(title=title,xaxis={'title': 'Log10(D)'},yaxis={'title': 'Relative frequency'}, shapes=shapes)},filename=join(self.outputdir, self.searchtext.upper() + '_Histogram.html'))
 
         else:

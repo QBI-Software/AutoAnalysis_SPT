@@ -23,22 +23,22 @@ Created on Tue Sep 5 2017
 """
 
 import argparse
+import logging
 from collections import OrderedDict
 from os.path import join
-import logging
-import plotly
-from plotly.graph_objs import Layout, Scatter
-#import numpy as np
-from numpy import sqrt,trapz
-import pandas as pd
 
 import matplotlib.pyplot as plt
+import pandas as pd
+from numpy import sqrt, trapz
+from plotly import offline
+from plotly.graph_objs import Layout, Scatter
+
 from msdapp.msd.batchStats import BatchStats
 
 
 class CompareMSD(BatchStats):
     def __init__(self, *args):
-        self.datafield='FILTERED_MSD'
+        self.datafield = 'FILTERED_MSD'
         super().__init__(*args)
         if self.config is not None:
             self.datafile = self.config['FILTERED_MSD']
@@ -142,7 +142,7 @@ class CompareMSD(BatchStats):
                              )
                 areas.append(trapz(means[x].iloc[ctr], dx=self.timeint))
 
-            plt.legend(labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.,fancybox=True)
+            plt.legend(labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True)
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m$^2$)')
             plt.title(self.searchtext.upper() + ' MSDs per cell')
@@ -192,28 +192,30 @@ class CompareMSD(BatchStats):
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
             means = self.compiled.groupby('Stats').get_group('Mean')
             sems = self.compiled.groupby('Stats').get_group('SEM')
-            data=[]
+            data = []
             title = self.expt + ' [' + self.prefix.upper() + '] MSD n=' + str(len(means))
             for i in range(len(means)):
-                if means['Cell'].iloc[i] =='ALL':
+                if means['Cell'].iloc[i] == 'ALL':
                     data.append(Scatter(y=means[x].iloc[i], x=xi,
-                                error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True),
-                                name=means['Cell'].iloc[i], mode='lines+markers',
-                                marker=dict(size=10,color='rgba(152, 0, 0, .8)',
-                                            line=dict(width=2,color='rgb(0, 0, 0)'))
-                                ))
+                                        error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True),
+                                        name=means['Cell'].iloc[i], mode='lines+markers',
+                                        marker=dict(size=10, color='rgba(152, 0, 0, .8)',
+                                                    line=dict(width=2, color='rgb(0, 0, 0)'))
+                                        ))
                 else:
-                    data.append(Scatter(y=means[x].iloc[i],x=xi,name=means['Cell'].iloc[i],mode='lines+markers', error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True)))
-            #Create plotly plot
-            plotly.offline.plot({"data":data,
+                    data.append(Scatter(y=means[x].iloc[i], x=xi, name=means['Cell'].iloc[i], mode='lines+markers',
+                                        error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True)))
+            # Create plotly plot
+            offline.plot({"data": data,
                                  "layout": Layout(title=title,
                                                   xaxis={'title': 'Time (s)'},
-                                                  yaxis={'title':'MSD (&mu;m<sup>2</sup>)'})},
-                    filename=join(self.outputdir,self.searchtext.upper() + '_MSD.html')
+                                                  yaxis={'title': 'MSD (&mu;m<sup>2</sup>)'})},
+                                filename=join(self.outputdir, self.searchtext.upper() + '_MSD.html')
 
-                )
+                                )
         else:
             logging.error("No MSD data to show - plotly")
+
 
 #################################################################################################
 if __name__ == "__main__":
@@ -229,7 +231,8 @@ if __name__ == "__main__":
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
     parser.add_argument('--expt', action='store', help='ProteinCelltype as shown on directory names',
                         default="ProteinCelltype")
-    parser.add_argument('--config', action='store', help='Config file for parameters', default="..\\..\\resources\\msd.cfg")
+    parser.add_argument('--config', action='store', help='Config file for parameters',
+                        default="..\\..\\resources\\msd.cfg")
     args = parser.parse_args()
 
     print("Loading Input from :", args.filedir)
@@ -240,7 +243,7 @@ if __name__ == "__main__":
 
         # Set the figure
         fig = plt.figure(figsize=(8, 10))
-        #f, (axes1, axes2) = plt.subplots(1, 2, sharey='col')
+        # f, (axes1, axes2) = plt.subplots(1, 2, sharey='col')
         axes1 = plt.subplot(221)
         fmsd.showPlotsWithAreas(axes1)
 

@@ -15,14 +15,14 @@ Created on Sep 8 2017
 @author: Liz Cooper-Williams, QBI
 """
 
+import logging
 import re
 from glob import iglob
 from os import R_OK, access
 from os.path import join, isdir, commonpath, sep
-import logging
-#import numpy as np
-from numpy import unique
+
 from configobj import ConfigObj
+from numpy import unique
 
 
 class BatchStats:
@@ -36,11 +36,10 @@ class BatchStats:
         self.searchtext = expt + prefix
         self.expt = expt
         self.prefix = prefix
-        (self.base,self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix)
+        (self.base, self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix)
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
         self.n = 1  # generating id
-
 
     def __loadConfig(self, configfile=None):
         try:
@@ -81,11 +80,11 @@ class BatchStats:
         :return: basename and file list
         """
         files = []
-        base=''
+        base = ''
         searchtext = expt + prefix
         # get list of files from a directory
         if not isinstance(inputdir, list) and isdir(inputdir):
-            #base = inputdir
+            # base = inputdir
             if access(inputdir, R_OK):
                 allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
             else:
@@ -102,21 +101,21 @@ class BatchStats:
                 msg = "Batch: No matching files found for searchtext: %s" % searchtext
                 print(msg)
                 logging.warning(msg)
-                #try separate expt and prefix - case insensitive on windows but ?mac
+                # try separate expt and prefix - case insensitive on windows but ?mac
                 allfiles = [y for y in iglob(join(base, '**', prefix, '**', datafile), recursive=True)]
                 files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]
             if len(files) <= 0:
-                #try uppercase directory name
-                files= [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
+                # try uppercase directory name
+                files = [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
             if len(files) <= 0:
-                msg= "Batch: No matching files found for expt + prefix: %s %s" % (expt,prefix)
+                msg = "Batch: No matching files found for expt + prefix: %s %s" % (expt, prefix)
                 logging.error(msg)
                 raise IOError(msg)
         else:
             msg = "Batch: No files found in input"
             logging.error(msg)
             raise IOError(msg)
-        return (base,files)
+        return (base, files)
 
     def generateID(self, f):
         # Generate unique cell ID

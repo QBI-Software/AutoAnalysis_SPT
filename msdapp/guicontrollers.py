@@ -7,7 +7,6 @@ from os import access, R_OK, mkdir
 from os.path import join, dirname, exists, split, splitext, expanduser
 
 import matplotlib.pyplot as plt
-
 import wx
 from configobj import ConfigObj
 
@@ -16,7 +15,6 @@ from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
 from msdapp.msd.histogramLogD import HistogramLogD
 from msdapp.msd.msdStats import MSDStats
-
 
 # Required for dist?
 freeze_support()
@@ -54,6 +52,7 @@ class DataEvent(wx.PyEvent):
         self.SetEventType(EVT_DATA_ID)
         self.data = data
 
+
 def CheckFilenames(filenames, configfiles):
     """
     Check that filenames are appropriate for the script required
@@ -72,9 +71,10 @@ def CheckFilenames(filenames, configfiles):
                 newfiles = newfiles + [y for y in iglob(join(parts[0], '**', conf), recursive=True)]
     return newfiles
 
+
 #### LoggingConfig
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 homedir = expanduser("~")
 if not access(homedir, R_OK):
     homedir = '.'
@@ -211,14 +211,14 @@ class HistogramThread(threading.Thread):
                 outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, self.controller.configfile)
                 # fds.append(fd)
-                q[datafile] = fd.generateHistogram(outputdir)
+                q[datafile] = fd.generateHistogram(freq=0,outputdir=outputdir)
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
 
             # pool = Pool(processes=4)
             # pool.map(self.runhistograms,fds)
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
         except KeyboardInterrupt:
             logger.warning("Keyboard interrupt in HistogramThread")
             self.terminate()
@@ -228,10 +228,11 @@ class HistogramThread(threading.Thread):
             # pool.join()
             lock.release()
             hevent.clear()
+            #self.terminate()
 
     # ----------------------------------------------------------------------
     def runhistograms(self, fd):
-        fd.generateHistogram()
+        fd.generateHistogram(freq=0,outputdir=None)
 
     # ----------------------------------------------------------------------
     def terminate(self):
@@ -270,9 +271,8 @@ class StatsThread(threading.Thread):
             checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             i = 1
-            #pool = Pool(processes=total)
+            pool = Pool(processes=total)
             fmsds = []
-            # wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
                 fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
@@ -280,16 +280,16 @@ class StatsThread(threading.Thread):
                 compiledfile = fmsd.runStats()
                 # Split to Mobile/immobile fractions - output
                 ratiofile = fmsd.splitMobile()
-                print('calling histogram plot')
-                self.histplot(fmsd)
+                logging.debug('calling histogram plot')
+                # self.histplot(fmsd)
+                fmsds.append(fmsd)
                 count = (i / total) * 100
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
                 logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile,
                             ratiofile)
-                #fmsds.append(fmsd)
                 i += 1
             # Set the figures
-            #pool.map(self.histplot, fmsds)
+            pool.map(self.histplot, fmsds)
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
         except Exception as e:
             logging.error(e)
@@ -298,8 +298,8 @@ class StatsThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished StatsThread')
-            #pool.close()
-            #pool.join()
+            pool.close()
+            pool.join()
             lock.release()
 
     def histplot(self, fmsd):
@@ -308,6 +308,7 @@ class StatsThread(threading.Thread):
         :param fmsd:
         :return:
         """
+        logging.debug('StatsThread: called histplot')
         # Set the figure
         fig = plt.figure(figsize=(10, 5))
         axes1 = plt.subplot(121)
@@ -319,7 +320,11 @@ class StatsThread(threading.Thread):
         figtype = 'png'  # png, pdf, ps, eps and svg.
         figname = fmsd.compiledfile.replace('csv', figtype)
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-        plt.show()
+        #plt.show()
+        #Plotly
+        fmsd.showPlotly()
+        logging.debug('StatsThread: saved histplot: %s', figname)
+
     # ----------------------------------------------------------------------
     def terminate(self):
         logger.info("Terminating Stats Thread")
@@ -352,12 +357,12 @@ class MsdThread(threading.Thread):
     def run(self):
         try:
             lock.acquire(True)
-            #q = dict()
+            # q = dict()
             checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             total = len(self.groups)
             i = 1
-            #pool = Pool()
+            # pool = Pool()
             fmsds = []
             # wx.PostEvent(self.wxObject, ResultEvent((0, self.row, 0, total, self.type)))
             for group in self.groups:
@@ -372,7 +377,7 @@ class MsdThread(threading.Thread):
                 fmsds.append(fmsd)
 
             # Set the figure
-            #pool.map(self.msdplot, fmsds)
+            # pool.map(self.msdplot, fmsds)
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
         except Exception as e:
             logging.error(e)
@@ -381,14 +386,14 @@ class MsdThread(threading.Thread):
             self.terminate()
         finally:
             logger.info('Finished MsdThread')
-            #pool.close()
-            #pool.join()
+            # pool.close()
+            # pool.join()
             lock.release()
 
     def msdplot(self, fmsd):
-        #plotly
+        # plotly
         fmsd.showPlotly()
-        #matplotlib
+        # matplotlib
         fig = plt.figure(figsize=(8, 10))
         axes1 = plt.subplot(221)
         areasfile = fmsd.showPlotsWithAreas(axes1)
@@ -398,7 +403,8 @@ class MsdThread(threading.Thread):
         figtype = 'png'  # png, pdf, ps, eps and svg.
         figname = fmsd.compiledfile.replace('csv', figtype)
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-        plt.show()
+        #plt.show()
+
     # ----------------------------------------------------------------------
     def terminate(self):
         logger.info("Terminating MSD Thread")
@@ -478,36 +484,11 @@ class MSDController():
 
     # ----------------------------------------------------------------------
 
-    # def msdplot(self, fmsd):
-    #     fig = plt.figure(figsize=(8, 10))
-    #     axes1 = plt.subplot(221)
-    #     areasfile = fmsd.showPlotsWithAreas(axes1)
-    #     axes2 = plt.subplot(223)
-    #     fmsd.showAvgPlot(axes2)
-    #
-    #     figtype = 'png'  # png, pdf, ps, eps and svg.
-    #     figname = fmsd.compiledfile.replace('csv', figtype)
-    #     plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-    #     plt.show()
-
-    # def histplot(self, fmsd):
-    #     # Set the figure
-    #     fig = plt.figure(figsize=(10, 5))
-    #     axes1 = plt.subplot(121)
-    #     fmsd.showPlots(axes1)
-    #
-    #     axes2 = plt.subplot(122)
-    #     fmsd.showAvgPlot(axes2)
-    #
-    #     figtype = 'png'  # png, pdf, ps, eps and svg.
-    #     figname = fmsd.compiledfile.replace('csv', figtype)
-    #     plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-    #     plt.show()
-
     def compareplot(self, data):
         # Show plots
         (rs, searchtext) = data
-        rs.showPlots(searchtext + " comparison")
+        rs.showPlots(searchtext)
+        rs.showPlotly()
 
     # ----------------------------------------------------------------------
     def RunCompare(self, wxGui, indirs, outputdir, prefixes, searchtext):
@@ -519,11 +500,11 @@ class MSDController():
             logger.info("RunCompare results: %d files", len(results_df))
             wx.PostEvent(wxGui, DataEvent(results_df))
             # Show plots
-            #pool = Pool()
+            # pool = Pool()
             if len(searchtext) <= 0:
-                searchtext = " ".join(prefixes)
-            self.compareplot((rs,searchtext))
-            #pool.map(self.compareplot, [(rs, searchtext)])
+                searchtext = " vs ".join(prefixes)
+            self.compareplot((rs, searchtext))
+            # pool.map(self.compareplot, [(rs, searchtext)])
         except Exception as e:
             logging.error(e)
         finally:
@@ -579,14 +560,13 @@ class MSDController():
                 event.wait()
             if row > 1:
                 hevent.wait()
-            t = StatsThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row,
-                            processname)
+            t = StatsThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
+                            type, row, processname)
             t.start()
         elif type == 'msd':
             if row > 1:
                 event.wait()
-            t = MsdThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row,
-                          processname)
+            t = MsdThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row, processname)
             t.start()
 
         logger.info("Running Thread - loaded: %s", type)
