@@ -256,11 +256,12 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlRunning.AppendItem([process, count, "Pending"])
             self.start[process] = time.time()
         elif count < 0:
-            self.m_dataViewListCtrlRunning.SetValue("ERROR in " + status, row=row, col=2)
+            self.m_dataViewListCtrlRunning.SetValue("ERROR in process - see log file", row=row, col=2)
             self.m_btnRunProcess.Enable()
         elif count < 100:
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Running " + status, row=row, col=2)
+            self.m_stOutputlog.SetLabelText("Running: %s ...please wait" % process)
         else:
             if process in self.start:
                 endtime = time.time() - self.start[process]
@@ -269,6 +270,7 @@ class ProcessRunPanel(ProcessPanel):
             self.m_dataViewListCtrlRunning.SetValue(count, row=row, col=1)
             self.m_dataViewListCtrlRunning.SetValue("Done " + status, row=row, col=2)
             self.m_btnRunProcess.Enable()
+            self.m_stOutputlog.SetLabelText("Completed process %s" % process)
 
     def getFilePanel(self):
         """
@@ -326,13 +328,11 @@ class ProcessRunPanel(ProcessPanel):
                 row = 0
                 # For each process
                 for p in selections:
-                    print("Running:", p)
                     i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
                     self.controller.RunProcess(self, filenames, i, outputdir, expt, row,showplots)
                     row = row + 1
                     print('Next process: row=', row)
 
-                print("Completed processes")
             else:
                 if len(selections) <= 0:
                     raise ValueError("No processes selected")

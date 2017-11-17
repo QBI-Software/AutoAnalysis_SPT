@@ -74,7 +74,7 @@ def CheckFilenames(filenames, configfiles):
 
 #### LoggingConfig
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 homedir = expanduser("~")
 if not access(homedir, R_OK):
     homedir = '.'
