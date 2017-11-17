@@ -45,18 +45,19 @@ class CompareMSD(BatchStats):
             self.outputfile = self.config['AVGMSD_FILENAME']
             self.msdpoints = int(self.config['MSD_POINTS'])
             self.timeint = float(self.config['TIME_INTERVAL'])
-            logging.debug("MSD: Config file loaded")
+            print("MSD: Config file loaded")
         else:  # defaults
             self.outputfile = 'Avg_MSD.csv'
             self.datafile = 'Filtered_MSD.csv'
             self.msdpoints = 10
             self.timeint = 0.02
-            logging.debug("MSD: Using config defaults")
+            print("MSD: Using config defaults")
 
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
-        self.compiled = pd.DataFrame()
+        self.compiled = self.__compile()
+        self.saveCompiled()
 
-    def compile(self):
+    def __compile(self):
         try:
             # Compile all selected files
             timepoints = [str(x) for x in range(1, self.msdpoints + 1)]
@@ -86,11 +87,6 @@ class CompareMSD(BatchStats):
 
             # Calculate avgs of avg
             cell = 'ALL'
-            # stats = OrderedDict({'avgs': [cell, 'Avg_Mean'],
-            #                      'counts': [cell, 'Avg_Count'],
-            #                      'stds': [cell, 'Avg_Std'],
-            #                      'sems': [cell, 'Avg_SEM'],
-            #                      'medians': [cell, 'Avg_Median']})
             stats = OrderedDict({'avgs': [cell, 'Mean'],
                                  'counts': [cell, 'Count'],
                                  'stds': [cell, 'Std'],
@@ -110,22 +106,42 @@ class CompareMSD(BatchStats):
 
             # Sort by Stats
             df1 = data.sort_values(by=['Stats', 'Cell'])
-            self.compiled = df1
-            # Write to CSV
-            df1.to_csv(self.compiledfile, index=False)
-            logging.info("Data compiled to " + self.compiledfile)
-
-        except IOError as e:
+            return df1
+        except Exception as e:
             raise e
-        return self.compiledfile
 
-    def showPlotsWithAreas(self, ax=None):
+    def saveCompiled(self):
+        if not self.compiled.empty:
+            self.compiled.to_csv(self.compiledfile, index=False)
+            logging.info("BatchMSD: Data saved to " + self.compiledfile)
+
+    def calculateAreas(self):
+        print('Calculating Area under curve of MSDs')
+        areasfile = join(self.outputdir, self.searchtext + "_areas.csv")
+        if self.compiled is not None:
+            df = self.compiled
+            means = df.groupby('Stats').get_group('Mean')
+            sems = df.groupby('Stats').get_group('SEM')
+            x = [str(x) for x in range(1, self.msdpoints + 1)]
+            xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
+            labels = []
+            areas = []
+            for ctr in range(0, len(means)):
+                labels.append(means['Cell'].iloc[ctr])
+                areas.append(trapz(means[x].iloc[ctr], dx=self.timeint))
+            # save areas to new file
+            df_area = pd.DataFrame({'Cell': labels, 'MSD Area': areas}, columns=['Cell', 'MSD Area'])
+            df_area.to_csv(areasfile, index=False)
+            print('Areas under curve calculated: %s', areasfile)
+        return areasfile
+
+    def showPlotoverlays(self, ax=None):
         """
         Plots each cells MSD, calculates areas and saves to areas file
         :param ax:
         :return: areas
         """
-        logging.info('Show Overlay of MSDs')
+        print('Show Overlay of MSDs')
         if self.compiled is not None:
             df = self.compiled
             if ax is None:
@@ -135,26 +151,18 @@ class CompareMSD(BatchStats):
             x = [str(x) for x in range(1, self.msdpoints + 1)]
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
             labels = []
-            areas = []
             for ctr in range(0, len(means)):
                 labels.append(means['Cell'].iloc[ctr])
-                plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr]
-                             )
-                areas.append(trapz(means[x].iloc[ctr], dx=self.timeint))
+                plt.errorbar(xi, means[x].iloc[ctr], yerr=sems[x].iloc[ctr] )
 
             plt.legend(labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fancybox=True)
             plt.xlabel('Time (s)')
             plt.ylabel(r'MSD ($\mu$m$^2$)')
             plt.title(self.searchtext.upper() + ' MSDs per cell')
             # plt.show()
-            # save areas to new file
-            df_area = pd.DataFrame({'Cell': labels, 'MSD Area': areas}, columns=['Cell', 'MSD Area'])
-            areasfile = join(self.outputdir, self.searchtext + "_areas.csv")
-            df_area.to_csv(areasfile, index=False)
-            logging.info('Areas output to %s', areasfile)
-            return areasfile
+
         else:
-            logging.error("No MSD data to show")
+            raise ValueError("No MSD data to show")
 
     def showAvgPlot(self, ax=None):
         """
@@ -206,15 +214,37 @@ class CompareMSD(BatchStats):
                     data.append(Scatter(y=means[x].iloc[i], x=xi, name=means['Cell'].iloc[i], mode='lines+markers',
                                         error_y=dict(array=sems[x].iloc[i], type='data', symmetric=True)))
             # Create plotly plot
+            pfilename = join(self.outputdir, self.searchtext.upper() + '_MSD.html')
             offline.plot({"data": data,
                                  "layout": Layout(title=title,
                                                   xaxis={'title': 'Time (s)'},
                                                   yaxis={'title': 'MSD (&mu;m<sup>2</sup>)'})},
-                                filename=join(self.outputdir, self.searchtext.upper() + '_MSD.html')
-
-                                )
+                                filename=pfilename)
+            return pfilename
         else:
             logging.error("No MSD data to show - plotly")
+
+    def msdplot(self, showplots):
+        """
+        Run plot functions which also output figs and areas.csv with option to display
+        :param fmsd:
+        :return:
+        """
+        # matplotlib
+        plt.figure(figsize=(8, 10))
+        axes1 = plt.subplot(221)
+        self.showPlotoverlays(axes1)
+        axes2 = plt.subplot(223)
+        self.showAvgPlot(axes2)
+
+        figtype = 'png'  # png, pdf, ps, eps and svg.
+        figname = self.compiledfile.replace('csv', figtype)
+        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+        if showplots:
+            plt.show()
+            # plotly
+            fname = self.showPlotly()
+            print('View plotly file: ', fname)
 
 
 #################################################################################################
@@ -239,23 +269,9 @@ if __name__ == "__main__":
 
     try:
         fmsd = CompareMSD(args.filedir, args.outputdir, args.prefix, args.expt, args.config)
-        fmsd.compile()
-
-        # Set the figure
-        fig = plt.figure(figsize=(8, 10))
-        # f, (axes1, axes2) = plt.subplots(1, 2, sharey='col')
-        axes1 = plt.subplot(221)
-        fmsd.showPlotsWithAreas(axes1)
-
-        axes2 = plt.subplot(223)
-        fmsd.showAvgPlot(axes2)
-
-        figtype = 'png'  # png, pdf, ps, eps and svg.
-        figname = fmsd.compiledfile.replace('csv', figtype)
-        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-        plt.show()
-
-        fmsd.showPlotly()
+        areasfile =fmsd.calculateAreas()
+        fmsd.msdplot(showplots=True)
+        #fmsd.showPlotly()
 
 
     except IOError as e:

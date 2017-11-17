@@ -84,23 +84,28 @@ class BatchStats:
         searchtext = expt + prefix
         # get list of files from a directory
         if not isinstance(inputdir, list) and isdir(inputdir):
-            # base = inputdir
+            base = inputdir
             if access(inputdir, R_OK):
                 allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
             else:
                 raise IOError("Batch: Cannot access directory: %s", inputdir)
         else:
-            # assume we have a list as input
-            allfiles = inputdir
+            # assume we have a list as input - exclude duplicates
+            if isinstance(inputdir, list):
+                allfiles = unique(inputdir).tolist()
+            else:
+                allfiles = unique(inputdir.tolist()).tolist()
         print("All Files Found: ", len(allfiles))
         if len(allfiles) > 0:
-            base = commonpath(allfiles)
+            if len(base) <=0:
+                base = commonpath(allfiles)
+                #default to upper level
             # Filter on searchtext - single word in directory path
             files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
             if len(files) <= 0:
                 msg = "Batch: No matching files found for searchtext: %s" % searchtext
                 print(msg)
-                logging.warning(msg)
+                logging.debug(msg)
                 # try separate expt and prefix - case insensitive on windows but ?mac
                 allfiles = [y for y in iglob(join(base, '**', prefix, '**', datafile), recursive=True)]
                 files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]

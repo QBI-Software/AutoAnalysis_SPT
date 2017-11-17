@@ -525,19 +525,17 @@ class ProcessPanel ( wx.Panel ):
 		self.m_stFilesout.Wrap( -1 )
 		bSizer15.Add( self.m_stFilesout, 0, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 5 )
 		
-		bSizer16 = wx.BoxSizer( wx.HORIZONTAL )
+		bSizer16 = wx.BoxSizer( wx.VERTICAL )
+		
+		self.m_cbShowplots = wx.CheckBox( self, wx.ID_ANY, u"Display Plots", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_cbShowplots.SetValue(True) 
+		bSizer16.Add( self.m_cbShowplots, 0, wx.ALL, 5 )
 		
 		self.m_btnRunProcess = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_btnRunProcess.SetForegroundColour( wx.Colour( 255, 255, 0 ) )
 		self.m_btnRunProcess.SetBackgroundColour( wx.Colour( 0, 128, 0 ) )
 		
 		bSizer16.Add( self.m_btnRunProcess, 0, wx.ALL, 5 )
-		
-		self.m_btnStopProcess = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_btnStopProcess.SetForegroundColour( wx.Colour( 255, 0, 0 ) )
-		self.m_btnStopProcess.Enable( False )
-		
-		bSizer16.Add( self.m_btnStopProcess, 0, wx.ALL, 5 )
 		
 		
 		bSizer15.Add( bSizer16, 1, wx.ALIGN_BOTTOM, 5 )
@@ -573,7 +571,6 @@ class ProcessPanel ( wx.Panel ):
 		# Connect Events
 		self.m_checkListProcess.Bind( wx.EVT_CHECKLISTBOX, self.OnShowDescription )
 		self.m_btnRunProcess.Bind( wx.EVT_BUTTON, self.OnRunScripts )
-		self.m_btnStopProcess.Bind( wx.EVT_BUTTON, self.OnCancelScripts )
 	
 	def __del__( self ):
 		pass
@@ -584,9 +581,6 @@ class ProcessPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnRunScripts( self, event ):
-		event.Skip()
-	
-	def OnCancelScripts( self, event ):
 		event.Skip()
 	
 

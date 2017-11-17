@@ -308,6 +308,7 @@ class ProcessRunPanel(ProcessPanel):
         # Get selected processes
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
+        showplots = self.m_cbShowplots.GetValue()
         # Get data from other panels
         filepanel = self.getFilePanel()
         filenames = []
@@ -327,7 +328,7 @@ class ProcessRunPanel(ProcessPanel):
                 for p in selections:
                     print("Running:", p)
                     i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
-                    self.controller.RunProcess(self, filenames, i, outputdir, expt, row)
+                    self.controller.RunProcess(self, filenames, i, outputdir, expt, row,showplots)
                     row = row + 1
                     print('Next process: row=', row)
 

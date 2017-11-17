@@ -15,7 +15,7 @@ Created on Tue Sep 5 2017
 
 import argparse
 from os import R_OK, access
-from os.path import join, split
+from os.path import join, split,sep
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,11 +28,13 @@ from plotly.graph_objs import Layout, Histogram
 
 
 class HistogramLogD():
-    def __init__(self, datafile, configfile=None, minlimit=-5, maxlimit=1, binwidth=0.2):
+    def __init__(self, datafile, configfile=None, showplots=False):
         self.encoding = 'ISO-8859-1'
+        self.showplots = showplots
         parts = split(datafile)
         self.datafile = parts[1]
         self.inputdir = parts[0]
+        self.cellid = datafile #.replace(sep,"_")
         if configfile is not None:
             self.__loadConfig(configfile)
         else:
@@ -40,9 +42,9 @@ class HistogramLogD():
             self.histofile = 'Histogram_log10D.csv'
             self.logcolumn = 'log10D'  # must be exact label
             # Frequency range limits
-            self.fmin = float(minlimit)
-            self.fmax = float(maxlimit)
-            self.binwidth = float(binwidth)
+            self.fmin = -5.0
+            self.fmax = 1.0
+            self.binwidth = 0.2
 
         # holds raw or filtered data
         self.data = None
@@ -150,7 +152,7 @@ class HistogramLogD():
 
             plt.xlabel(self.logcolumn)
             plt.ylabel(ylabel)
-            # plt.title(self.histofile)
+            plt.title(self.cellid)
 
             # Save plot to figure
             figtype = 'png'  # png, pdf, ps, eps and svg.
@@ -158,8 +160,9 @@ class HistogramLogD():
             plt.savefig(figfile, facecolor='w', edgecolor='w', format=figtype)
             print("Saved histogram to ", figfile)
 
-            # # For testing - will stop here until fig closes
-            plt.show()
+            # will stop here until fig is manually closed
+            if self.showplots:
+                plt.show()
             return (outputfile, figfile)
 
     def showPlotlyhistogram(self):
@@ -167,7 +170,7 @@ class HistogramLogD():
         data = fd.data[fd.logcolumn]
         offline.plot({
             "data": [Histogram(x=data, xbins=dict(start=int(fd.fmin), end=int(fd.fmax), size=fd.binwidth))],
-            "layout": Layout(title="Log10D histogram")
+            "layout": Layout(title="Log10(D) histogram for " + self.cellid)
         })
 
 ############### MAIN ############################
@@ -182,10 +185,8 @@ if __name__ == "__main__":
     parser.add_argument('--filedir', action='store', help='Directory containing files', default="..\\..\\data")
     parser.add_argument('--datafile', action='store', help='Initial data file', default="Filtered_log10D.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory (must exist)', default="..\\..\\data")
-    parser.add_argument('--minlimit', action='store', help='Min filter', default="-5")
-    parser.add_argument('--maxlimit', action='store', help='Max filter', default="1")
-    parser.add_argument('--binwidth', action='store', help='Bin width', default="0.2")
     parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
+    parser.add_argument('--showplots', action='store_true',help='Display popup plots')
     args = parser.parse_args()
 
     datafile = join(args.filedir, args.datafile)
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     print("Input:", datafile)
 
     try:
-        fd = HistogramLogD(datafile, args.config, float(args.minlimit), float(args.maxlimit), args.binwidth)
+        fd = HistogramLogD(datafile, args.config, args.showplots)
         fd.generateHistogram(freq=0,outputdir=outputdir)
         #density
         fd.generateHistogram(freq=1,outputdir=outputdir)

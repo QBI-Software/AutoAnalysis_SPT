@@ -229,10 +229,10 @@ class MSDStats():
         fig = plt.figure(figsize=(10, 10))
         fig.suptitle(plottitle)
         axes1 = plt.subplot(221)
-        self.showMSDAvgPlot(axes1)
+        self.showHistoAvgPlot(axes1)
 
         axes2 = plt.subplot(222)
-        self.showHistoAvgPlot(axes2)
+        self.showMSDAvgPlot(axes2)
 
         axes3 = plt.subplot(223)
         self.showRatioPlot(axes3)

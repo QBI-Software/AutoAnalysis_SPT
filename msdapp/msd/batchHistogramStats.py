@@ -46,20 +46,24 @@ class HistoStats(BatchStats):
             # self.datafile = self.config['HISTOGRAM_FILENAME']
             self.threshold = float(self.config['THRESHOLD'])
             self.outputfile = self.config['ALLSTATS_FILENAME']
-            print("HIST: Config file loaded")
+            print("BatchHisto: Config file loaded")
         else:  # defaults
             self.outputfile = 'AllHistogram_log10D.csv'
             self.datafile = 'Histogram_log10D.csv'
             self.threshold = -1.6
-            print("HIST:Using config defaults")
+            print("BatchHisto: Using config defaults")
 
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
-        self.compiled = pd.DataFrame()
+        self.compiled = self.__compile()
 
-    def compile(self):
+    def __compile(self):
+        """
+        Reads all inputfiles from inputdir, appends data into single dataframe
+        :return: dataframe
+        """
         try:
             # Compile all selected files
-            print("Compiling %d files" % self.numcells)
+            logging.info("BatchHisto: Compiling %d files" % self.numcells)
             c = pd.DataFrame()
             # base = self.base.split(sep)
             suffixes = ['bins']
@@ -71,26 +75,31 @@ class HistoStats(BatchStats):
                     c = df
                 else:
                     try:
-                        # c = c.merge(df, how='outer', left_on='bins', right_on='bins', suffixes=suffixes)
                         c = pd.concat([c, df.iloc[:, 1:]], axis=1)
                     except ValueError as e:
                         print(e)
                         raise Exception(e)
             if not c.empty:
                 suffixes = self.deduplicate(suffixes)
-                # newcols = [c.replace('log10D','') for c in c.columns.tolist()]
-                c.columns = suffixes  # newcols
-                c.to_csv(self.compiledfile, index=False)
-                print("Data compiled to " + self.compiledfile)
-                self.compiled = c
-                return self.compiledfile
+                c.columns = suffixes
+                logging.info("BatchHisto: Compiled %d files" % self.numcells)
             else:
-                return None
+                logging.error("BatchHisto: Unable to compile files to: %s" % self.compiledfile)
+            return c
         except Exception as e:
             msg = "Error: in BatchHisto compile process - %s" % e
             raise IOError(msg)
 
+    def saveCompiled(self):
+        if not self.compiled.empty:
+            self.compiled.to_csv(self.compiledfile, index=False)
+            logging.info("BatchHisto: Data saved to " + self.compiledfile)
+
     def runStats(self):
+        """
+        Generates statistics for compiled data and appends columns for mean, count, std,sem and sum.  Outputs file to compiledfilename (will overwrite compile function)
+        :return: compiledfilename
+        """
         print("Running stats")
         df = self.compiled
         # Calculate stats
@@ -103,11 +112,15 @@ class HistoStats(BatchStats):
         # reorder ORDER: mean,sem,count,std,sum
         cols = df.columns[0:n].tolist() + ['MEAN', 'SEM', 'COUNT', 'STD', 'SUM']
         df = df.reindex_axis(cols, axis=1)
-        df.to_csv(self.compiledfile, index=False)
         self.compiled = df
+        self.saveCompiled()
         return self.compiledfile
 
     def splitMobile(self):
+        """
+        Calculates total number * bins below and above (incl) threshold.  Outputs to new file _ratios.csv
+        :return: ratiofilename
+        """
         print("Split mobile and immobile fractions")
         df = self.compiled
         n = len(df.columns)
@@ -178,8 +191,7 @@ class HistoStats(BatchStats):
             max_y=round(max(list(self.compiled[self.compiled.columns[1:self.numcells+1]].max(skipna=True,numeric_only=True))),2)
 
             for i in range(1, self.numcells + 1):
-                data.append(Scatter(x=self.compiled['bins'], y=self.compiled[self.compiled.columns[i]], name=self.compiled.columns[i],
-                                    line=dict(shape='spline', smoothing=0.5)))
+                data.append(Scatter(x=self.compiled['bins'], y=self.compiled[self.compiled.columns[i]], name=self.compiled.columns[i],line=dict(shape='spline', smoothing=0.2)))
 
             # plot threshold line
             if self.threshold:
@@ -197,11 +209,36 @@ class HistoStats(BatchStats):
                 shapes=None
 
             # Create plotly plot
+            plotlyfilename = join(self.outputdir, self.searchtext.upper() + '_Histogram.html')
             offline.plot({"data": data,
-                                 "layout": Layout(title=title,xaxis={'title': 'Log10(D)'},yaxis={'title': 'Relative frequency'}, shapes=shapes)},filename=join(self.outputdir, self.searchtext.upper() + '_Histogram.html'))
-
+                                 "layout": Layout(title=title,xaxis={'title': 'Log10(D)'},yaxis={'title': 'Relative frequency'}, shapes=shapes)},filename=plotlyfilename)
+            return plotlyfilename
         else:
-            logging.error("No MSD data to show - plotly")
+            raise ValueError("No MSD data to show - plotly")
+
+    def allplots(self, showplots):
+        """
+        Generate and show a histogram plot and save as png file
+        :param fmsd:
+        :return:
+        """
+        print('BatchHisto: called histplot')
+        # Set the figure
+        plt.figure(figsize=(10, 5))
+        axes1 = plt.subplot(121)
+        self.showPlots(axes1)
+
+        axes2 = plt.subplot(122)
+        self.showAvgPlot(axes2)
+
+        figtype = 'png'  # png, pdf, ps, eps and svg.
+        figname = self.compiledfile.replace('csv', figtype)
+        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+        if showplots:
+            plt.show()
+            # Plotly
+            self.showPlotly()
+        logging.debug('BatchHisto: saved histplot: %s', figname)
 
 
 #################################################################################################
