@@ -315,6 +315,12 @@ class ProcessRunPanel(ProcessPanel):
         filepanel = self.getFilePanel()
         filenames = []
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
+        outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
+        expt = filepanel.m_tcSearch.GetValue()
+        if len(expt)<=0:
+            msg='No prefix for batch files. If required, enter in Files panel - prefix and re-run.'
+            self.Parent.Warn(msg)
+
         print('All Files:', num_files)
         try:
             if len(selections) > 0 and num_files > 0:
@@ -322,9 +328,7 @@ class ProcessRunPanel(ProcessPanel):
                     if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
                         filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i, 1))
                 print('Selected Files:', len(filenames))
-                outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
-                expt = filepanel.m_tcSearch.GetValue()
-                print("Expt:", expt)
+
                 row = 0
                 # For each process
                 for p in selections:

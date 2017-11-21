@@ -66,7 +66,7 @@ build_exe_options = {
 # [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
 setup(
     name=application_title,
-    version='1.0',
+    version='1.1',
     description='MSD Analysis scripts with GUI',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',
@@ -81,5 +81,5 @@ setup(
 )
 
 #Rename ckdtree
-shutil.move('build\\exe.win-amd64-3.5\\scipy\\spatial\\cKDTree.cp35-win_amd64.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.tmp')
+shutil.move('build\\exe.win-amd64-3.5\\scipy\\spatial\\cKDTree.cp35-win_amd64.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.pyd')
 shutil.copyfile('build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.tmp', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.cp35-win_amd64.pyd')

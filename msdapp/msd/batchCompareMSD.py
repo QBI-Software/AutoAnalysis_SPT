@@ -201,7 +201,7 @@ class CompareMSD(BatchStats):
             means = self.compiled.groupby('Stats').get_group('Mean')
             sems = self.compiled.groupby('Stats').get_group('SEM')
             data = []
-            title = self.expt + ' [' + self.prefix.upper() + '] MSD n=' + str(len(means))
+            title = self.expt + ' : ' + self.prefix.upper() + ' : MSD [n=' + str(self.numcells) +']'
             for i in range(len(means)):
                 if means['Cell'].iloc[i] == 'ALL':
                     data.append(Scatter(y=means[x].iloc[i], x=xi,

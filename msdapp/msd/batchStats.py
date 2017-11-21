@@ -87,6 +87,25 @@ class BatchStats:
             base = inputdir
             if access(inputdir, R_OK):
                 allfiles = [y for y in iglob(join(inputdir, '**', datafile), recursive=True)]
+                if len(allfiles) > 0:
+                    # Filter on searchtext - single word in directory path
+                    files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+                    if len(files) <= 0:
+                        # try separate expt and prefix - case insensitive on windows but ?mac
+                        allfiles = [y for y in iglob(join(base, '**', prefix, '**', datafile), recursive=True)]
+                        files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]
+                    if len(files) <= 0:
+                        # try uppercase directory name
+                        files = [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
+                    if len(files) <= 0:
+                        msg = "Batch: No match in path for both expt + prefix: %s %s" % (expt, prefix)
+                        logging.error(msg)
+                        raise ValueError(msg)
+                else:
+                    msg = "Batch: No files found in input"
+                    logging.error(msg)
+                    raise IOError(msg)
+
             else:
                 raise IOError("Batch: Cannot access directory: %s", inputdir)
         else:
@@ -95,31 +114,12 @@ class BatchStats:
                 allfiles = unique(inputdir).tolist()
             else:
                 allfiles = unique(inputdir.tolist()).tolist()
-        print("All Files Found: ", len(allfiles))
-        if len(allfiles) > 0:
-            if len(base) <=0:
-                base = commonpath(allfiles)
-                #default to upper level
-            # Filter on searchtext - single word in directory path
             files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
             if len(files) <= 0:
-                msg = "Batch: No matching files found for searchtext: %s" % searchtext
-                print(msg)
-                logging.debug(msg)
-                # try separate expt and prefix - case insensitive on windows but ?mac
-                allfiles = [y for y in iglob(join(base, '**', prefix, '**', datafile), recursive=True)]
-                files = [f for f in allfiles if re.search(expt, f, flags=re.IGNORECASE)]
-            if len(files) <= 0:
-                # try uppercase directory name
                 files = [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
-            if len(files) <= 0:
-                msg = "Batch: No matching files found for expt + prefix: %s %s" % (expt, prefix)
-                logging.error(msg)
-                raise IOError(msg)
-        else:
-            msg = "Batch: No files found in input"
-            logging.error(msg)
-            raise IOError(msg)
+            base = commonpath(files)
+        print("Total Files Found: ", len(files))
+
         return (base, files)
 
     def generateID(self, f):

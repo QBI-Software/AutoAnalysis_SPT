@@ -774,8 +774,10 @@ class FilesPanel ( wx.Panel ):
 		self.m_button19 = wx.Button( self, wx.ID_ANY, u"Browse", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer4.Add( self.m_button19, 0, wx.ALL, 5 )
 		
-		self.m_staticText27 = wx.StaticText( self, wx.ID_ANY, u"Search Files By", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText27 = wx.StaticText( self, wx.ID_ANY, u"Files prefix (search text)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText27.Wrap( -1 )
+		self.m_staticText27.SetToolTipString( u"Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files." )
+		
 		fgSizer4.Add( self.m_staticText27, 0, wx.ALL, 5 )
 		
 		self.m_tcSearch = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 300,-1 ), 0 )

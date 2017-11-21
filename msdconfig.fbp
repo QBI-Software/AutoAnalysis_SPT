@@ -11988,7 +11988,7 @@
                                 <property name="gripper">0</property>
                                 <property name="hidden">0</property>
                                 <property name="id">wxID_ANY</property>
-                                <property name="label">Search Files By</property>
+                                <property name="label">Files prefix (search text)</property>
                                 <property name="max_size"></property>
                                 <property name="maximize_button">0</property>
                                 <property name="maximum_size"></property>
@@ -12009,7 +12009,7 @@
                                 <property name="style"></property>
                                 <property name="subclass"></property>
                                 <property name="toolbar_pane">0</property>
-                                <property name="tooltip"></property>
+                                <property name="tooltip">Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files.</property>
                                 <property name="window_extra_style"></property>
                                 <property name="window_name"></property>
                                 <property name="window_style"></property>

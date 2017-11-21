@@ -185,7 +185,7 @@ class HistoStats(BatchStats):
 
     def showPlotly(self):
         # Plotly Offline
-        title = self.searchtext.upper() + " " + " Log10(D) Histogram"
+        title = self.expt.upper() + " " + self.prefix.upper() + " " + " Log10(D) Histogram [n=" + str(self.numcells) + "]"
         if self.compiled is not None:
             data = []
             max_y=round(max(list(self.compiled[self.compiled.columns[1:self.numcells+1]].max(skipna=True,numeric_only=True))),2)
