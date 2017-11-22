@@ -76,10 +76,10 @@ setup(
     url='http://github.com/QBI-Software/MSDAnalysis',
     license='GNU General Public License (GPL)',
     options={'build_exe': build_exe_options, },
-    executables=[Executable(main_python_file, base=base, targetName='msdanalysis.exe', icon='resources/chart128.ico',
+    executables=[Executable(main_python_file, base=base, targetName='msdanalysis.exe', icon='resources/measure.ico',
                             shortcutName=application_title, shortcutDir='DesktopFolder')]
 )
 
 #Rename ckdtree
 shutil.move('build\\exe.win-amd64-3.5\\scipy\\spatial\\cKDTree.cp35-win_amd64.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.pyd')
-shutil.copyfile('build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.tmp', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.cp35-win_amd64.pyd')
+shutil.copyfile('build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.cp35-win_amd64.pyd')

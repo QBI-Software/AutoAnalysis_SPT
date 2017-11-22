@@ -326,8 +326,12 @@ class ProcessRunPanel(ProcessPanel):
             if len(selections) > 0 and num_files > 0:
                 for i in range(0, num_files):
                     if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                        filenames.append(filepanel.m_dataViewListCtrl1.GetValue(i, 1))
+                        fname = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
+                        if not isdir(fname):
+                            filenames.append(fname)
                 print('Selected Files:', len(filenames))
+                if len(filenames)<=0:
+                    raise ValueError("No files selected - please go to Files Panel and add files (not directories) to list")
 
                 row = 0
                 # For each process
@@ -342,8 +346,8 @@ class ProcessRunPanel(ProcessPanel):
                     raise ValueError("No processes selected")
                 else:
                     raise ValueError("No files selected - please go to Files Panel and add to list")
-        except ValueError as msg:
-            self.Parent.Warn(msg)
+        except ValueError as e:
+            self.Parent.Warn(e.args[0])
             # Enable Run button
             self.m_btnRunProcess.Enable()
 
