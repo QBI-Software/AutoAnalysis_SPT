@@ -8,6 +8,7 @@ from os.path import join, expanduser, isdir
 
 import wx
 import wx.html2
+
 from configobj import ConfigObj
 import matplotlib
 matplotlib.use('TkAgg')
@@ -25,38 +26,60 @@ class HomePanel(WelcomePanel):
     # ----------------------------------------------------------------------
     def __init__(self, parent):
         super(HomePanel, self).__init__(parent)
-        # hbox = wx.BoxSizer(wx.HORIZONTAL)
-        # text = wx.TextCtrl(self, style=wx.TE_MULTILINE,value=self.__loadContent())
-        # hbox.Add(text, proportion=1, flag=wx.EXPAND)
-        # self.SetSizer(hbox)
-        self.m_richText1.AddParagraph(r'''***Welcome to the MSD Automated Analysis App***''')
-        self.m_richText1.AddParagraph(r''' To process your files: ''')
-        # self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
-        self.m_richText1.AddParagraph(
-            r'1. Check the Configuration options, particularly the column names and filenames used for matching')
-        self.m_richText1.AddParagraph(
-            r"2. Select Files to process either with AutoFind from a top level directory and/or Drag and Drop")
-        self.m_richText1.AddParagraph(r"3. Select which processes to run and monitor their progress")
-        self.m_richText1.AddParagraph(
-            r"4. Choose Compare Groups to run a statistical comparison of two groups after processing files have been generated")
-        self.m_richText1.AddParagraph(r"Any queries, contact Liz Cooper-Williams e.cooperwilliams@uq.edu.au")
-        self.m_richText1.AddParagraph(
-            r"Copyright (2017) Apache license v2 (https://github.com/QBI-Software/MSDAnalysis)")
+        img = wx.EmptyBitmap(1,1)
+        img.LoadFile(join('resources','MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
-    def __loadContent(self):
-        """
-        Welcome text
-        :return:
-        """
-        content = '''***Welcome to the MSD Automated Analysis App***
-        To process your files: 
-            1. Check the Configuration options, particularly the column names and filenames used for matching
-            2. Select Files to process either with AutoFind from a top level directory and/or Drag and Drop
-            3. Select which processes to run and monitor their progress
-            4. Choose Compare Groups to run a statistical comparison of two groups after processing files have been generated
-       
-        '''
-        return content
+        self.m_richText1.BeginFontSize(14)
+        self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App")
+        self.m_richText1.EndFontSize()
+        self.m_richText1.Newline()
+        #self.m_richText1.BeginLeftIndent(20)
+        self.m_richText1.BeginItalic()
+        self.m_richText1.WriteText("developed by Liz Cooper-Williams, QBI Software, The University of Queensland")
+        self.m_richText1.EndItalic()
+        #self.m_richText1.EndLeftIndent()
+        self.m_richText1.Newline()
+        self.m_richText1.WriteImage(img)
+        self.m_richText1.Newline()
+        self.m_richText1.WriteText(r'''This is a multi-threaded application designed to automate analysis of single particle tracking data.''')
+        self.m_richText1.Newline()
+        # self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
+        self.m_richText1.BeginBold()
+        self.m_richText1.WriteText("Configure")
+        self.m_richText1.EndBold()
+        self.m_richText1.Newline()
+        #self.m_richText1.BeginLeftIndent(20)
+        self.m_richText1.WriteText('All filenames, column names, groups, threshold and binwidth options can be specifically configured and multiple configurations saved and reloaded.')
+        self.m_richText1.Newline()
+        self.m_richText1.BeginBold()
+        self.m_richText1.WriteText("Select Files")
+        self.m_richText1.EndBold()
+        #self.m_richText1.BeginLeftIndent(20)
+        self.m_richText1.Newline()
+        self.m_richText1.WriteText("Select a top level directory containing the required data files and/or use the Drag'n'Drop for individual files. Only files checked in the file list will be included in the analysis. Compiled output will be put in the output directory whereas individually processed files will be put in a subfolder in the input directory structure. It is recommended to provide a prefix (which should be a known search text) to group experiments for later comparison.")
+        self.m_richText1.Newline()
+        self.m_richText1.BeginBold()
+        self.m_richText1.WriteText("Run Processes")
+        self.m_richText1.EndBold()
+        #self.m_richText1.BeginLeftIndent(20)
+        self.m_richText1.Newline()
+        self.m_richText1.WriteText(r"Each process is described with the required input files (which need to be available in the input directory structure) and the output files which it produces. These are multi-threaded processes which will run in sequence as listed and once running their progress can be monitored. A log file is produced in the user's home directory. Interactive plots can also be produced during processing.")
+        #self.m_richText1.EndLeftIndent()
+        self.m_richText1.Newline()
+        self.m_richText1.BeginBold()
+        self.m_richText1.WriteText("Compare Groups")
+        self.m_richText1.EndBold()
+        #self.m_richText1.BeginLeftIndent(20)
+        self.m_richText1.Newline()
+        self.m_richText1.WriteText("Run a statistical comparison of two groups as specified in the configuration with an interactive plot after processing files have been generated.")
+        #self.m_richText1.EndLeftIndent()
+        self.m_richText1.Newline()
+        self.m_richText1.AddParagraph("The requirements of this application have been provided by Ravi Kasula, Meunier Lab, QBI. The modular design of this application allows for additional processes with minimal effort.  The interactive plots can be saved and shared online via plot.ly if required.  Any issues can be logged via the github repository.")
+        self.m_richText1.BeginItalic()
+        self.m_richText1.AddParagraph(
+            r"Copyright (2017) https://github.com/QBI-Software/MSDAnalysis")
+        self.m_richText1.EndItalic()
+
 
 
 ########################################################################
@@ -520,7 +543,7 @@ class MSDFrame(wx.Frame):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "MSD Autoanalysis",
-                          size=(900, 900)
+                          size=(900, 1000)
                           )
 
         # self.timer = wx.Timer(self)

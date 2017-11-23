@@ -327,7 +327,8 @@ class MsdThread(threading.Thread):
                 logger.info("Running %s script: %s (%s)", self.processname.title(), self.expt, group)
                 fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
                 areasfile = fmsd.calculateAreas()
-                fmsd.showPlotly()
+                if self.showplots:
+                    fmsd.showPlotly()
                 count = (i / total) * 100
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
                 logger.info("MSD BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, fmsd.compiledfile, areasfile)
