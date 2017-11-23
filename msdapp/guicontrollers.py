@@ -384,19 +384,19 @@ class MSDController():
 
         self.processes = [
             {'caption': '1. Filter Data', 'href': 'filter',
-             'description': 'Filter log10 diffusion coefficient (log10D) and corresponding MSD data between min and max range',
+             'description': 'For each cell, generate log10 of diffusion coefficient, then filters between min and max range. MSD data is also filtered with corresponding rows.',
              'files': 'DATA_FILENAME, MSD_FILENAME',
              'filesout': 'FILTERED_FILENAME, FILTERED_MSD'},
             {'caption': '2. Generate Histograms', 'href': 'histogram',
-             'description': 'Generate relative frequency histograms of Log10 D data for individual cells and all cells',
+             'description': 'For each cell, generate relative frequency histograms of log10(D) data',
              'files': 'FILTERED_FILENAME',
              'filesout': 'HISTOGRAM_FILENAME'},
             {'caption': '3. Histogram Stats', 'href': 'stats',
-             'description': 'Compiles histogram data from all cell directories (batch) into one file in output directory with statistics',
+             'description': 'Compiles histogram data with descriptive statistics from all cells (batch) into one file per group in output directory',
              'files': 'HISTOGRAM_FILENAME',
              'filesout': 'ALLSTATS_FILENAME'},
             {'caption': '4. Compile MSD', 'href': 'msd',
-             'description': 'Compiles MSD data from all cell directories (batch) into one file in output directory with statistics',
+             'description': 'Compiles MSD data with descriptive statistics from all cells (batch) into one file per group in output directory',
              'files': 'FILTERED_MSD',
              'filesout': 'AVGMSD_FILENAME'}
         ]
