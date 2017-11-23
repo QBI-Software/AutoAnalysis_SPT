@@ -428,6 +428,8 @@ class ConfigPanel ( wx.Panel ):
 		
 		self.m_staticText61 = wx.StaticText( self, wx.ID_ANY, u"Cell ID (number of subfolders)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText61.Wrap( -1 )
+		self.m_staticText61.SetToolTipString( u"Generates a unique ID for each cell from specified number of foldernames" )
+		
 		fgSizer1.Add( self.m_staticText61, 0, wx.ALL, 5 )
 		
 		self.m_tcCellid = wx.TextCtrl( self, wx.ID_ANY, u"3", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -604,9 +606,13 @@ class ComparePanel ( wx.Panel ):
 		self.m_staticline1 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
 		bSizer1.Add( self.m_staticline1, 0, wx.EXPAND, 5 )
 		
-		self.m_staticText58 = wx.StaticText( self, wx.ID_ANY, u"Select directory containing compiled ratios, areas, avg MSD and avg Log10D for each group and provide matching prefix as group name", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self.m_staticText62 = wx.StaticText( self, wx.ID_ANY, u"Statistical comparison as independent t-tests for mobile/immobile ratios and areas. ", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText62.Wrap( -1 )
+		bSizer1.Add( self.m_staticText62, 0, wx.ALL, 5 )
+		
+		self.m_staticText58 = wx.StaticText( self, wx.ID_ANY, u"Select directories containing compiled ratios, areas, avg MSD and avg Log10D for each group and provide matching prefix as group name (defaults have been provided). A four panel plot will be generated.", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self.m_staticText58.Wrap( 650 )
-		self.m_staticText58.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 71, 93, 90, False, wx.EmptyString ) )
+		self.m_staticText58.SetFont( wx.Font( 9, 70, 93, 90, False, wx.EmptyString ) )
 		
 		bSizer1.Add( self.m_staticText58, 0, wx.ALL|wx.EXPAND, 5 )
 		
@@ -656,10 +662,15 @@ class ComparePanel ( wx.Panel ):
 		
 		bSizer3.Add( self.m_btnCompareStop, 0, wx.ALL, 5 )
 		
+		self.m_btnDefaults = wx.Button( self, wx.ID_ANY, u"Defaults", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_btnDefaults.SetToolTipString( u"Load fields with defaults from configuration and files panel" )
+		
+		bSizer3.Add( self.m_btnDefaults, 0, wx.ALL, 5 )
+		
 		
 		bSizer1.Add( bSizer3, 1, wx.ALIGN_RIGHT|wx.RIGHT, 5 )
 		
-		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,400 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER|wx.VSCROLL )
+		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,350 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER|wx.VSCROLL )
 		bSizer1.Add( self.m_tcResults, 0, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5 )
 		
 		
@@ -671,6 +682,7 @@ class ComparePanel ( wx.Panel ):
 		self.m_btnGp2.Bind( wx.EVT_BUTTON, self.OnBrowseGp2 )
 		self.m_btnCompareRun.Bind( wx.EVT_BUTTON, self.OnCompareRun )
 		self.m_btnCompareStop.Bind( wx.EVT_BUTTON, self.OnCompareStop )
+		self.m_btnDefaults.Bind( wx.EVT_BUTTON, self.OnLoadDefaults )
 	
 	def __del__( self ):
 		pass
@@ -687,6 +699,9 @@ class ComparePanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnCompareStop( self, event ):
+		event.Skip()
+	
+	def OnLoadDefaults( self, event ):
 		event.Skip()
 	
 

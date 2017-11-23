@@ -71,7 +71,7 @@ class HomePanel(WelcomePanel):
         self.m_richText1.EndBold()
         #self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.Newline()
-        self.m_richText1.WriteText("Run a statistical comparison of two groups as specified in the configuration with an interactive plot after processing files have been generated.")
+        self.m_richText1.WriteText("Once the appropriate files have been generated in the output folder, a statistical comparison of two groups can be run and an interactive plot generated.")
         #self.m_richText1.EndLeftIndent()
         self.m_richText1.Newline()
         self.m_richText1.AddParagraph("The requirements of this application have been provided by Ravi Kasula, Meunier Lab, QBI. The modular design of this application allows for additional processes with minimal effort.  The interactive plots can be saved and shared online via plot.ly if required.  Any issues can be logged via the github repository.")
@@ -187,7 +187,6 @@ class FileSelectPanel(FilesPanel):
         dlg = wx.DirDialog(self, "Choose a directory containing input files")
         if dlg.ShowModal() == wx.ID_OK:
             self.inputdir = str(dlg.GetPath())
-            # self.statusbar.SetStatusText("Loaded: %s" % self.inputdir)
             self.txtInputdir.SetValue(self.inputdir)
         dlg.Destroy()
 
@@ -196,8 +195,12 @@ class FileSelectPanel(FilesPanel):
         dlg = wx.DirDialog(self, "Choose a directory for output files")
         if dlg.ShowModal() == wx.ID_OK:
             self.outputdir = str(dlg.GetPath())
-            # self.statusbar.SetStatusText("Loaded: %s\n" % self.outputdir)
             self.txtOutputdir.SetValue(self.outputdir)
+            # initialize Compare Panel with outputdir
+            cpanel = self.getComparePanel()
+            if cpanel is not None:
+                cpanel.m_tcGp1Files.SetValue(self.outputdir)
+                cpanel.m_tcGp2Files.SetValue(self.outputdir)
         dlg.Destroy()
 
     def OnAutofind(self, event):
@@ -232,6 +235,17 @@ class FileSelectPanel(FilesPanel):
         print("Clear items in list")
         self.m_dataViewListCtrl1.DeleteAllItems()
 
+    def getComparePanel(self):
+        """
+        Get access to panel
+        :return:
+        """
+        panel = None
+        for fp in self.Parent.Children:
+            if isinstance(fp, CompareRunPanel):
+                panel = fp
+                break
+        return panel
 
 ########################################################################
 class ProcessRunPanel(ProcessPanel):
@@ -379,8 +393,34 @@ class ProcessRunPanel(ProcessPanel):
 class CompareRunPanel(ComparePanel):
     def __init__(self, parent):
         super().__init__(parent)
+        self.loadDefaults()
         self.controller = parent.controller
         EVT_DATA(self, self.updateResults)
+
+    def OnLoadDefaults(self,event):
+        """
+        callback
+        :param event:
+        :return:
+        """
+        self.loadDefaults()
+
+    def loadDefaults(self):
+        """
+        Initialise group fields from config and file panels
+        :return:
+        """
+        fpanel = self.getFilePanel()
+        if fpanel is not None:
+            prefix = fpanel.m_tcSearch.GetValue()
+            self.m_tcGp1Files.SetValue(fpanel.txtOutputdir.GetValue())
+            self.m_tcGp2Files.SetValue(fpanel.txtOutputdir.GetValue())
+        else:
+            prefix =''
+        cpanel = self.getConfigPanel()
+        if cpanel is not None:
+            self.m_tcGp1.SetValue(prefix + cpanel.m_tcGroup1.GetValue())
+            self.m_tcGp2.SetValue(prefix + cpanel.m_tcGroup2.GetValue())
 
     def updateResults(self, msg):
         (df) = msg.data
@@ -399,27 +439,35 @@ class CompareRunPanel(ComparePanel):
         """ Open a file"""
         dlg = wx.DirDialog(self, "Choose a directory containing data files")
         if dlg.ShowModal() == wx.ID_OK:
-            self.inputdir1 = str(dlg.GetPath())
-            self.m_tcGp1Files.SetValue(self.inputdir1)
+            #self.inputdir1 = str(dlg.GetPath())
+            self.m_tcGp1Files.SetValue(str(dlg.GetPath()))
         dlg.Destroy()
 
     def OnBrowseGp2(self, event):
         """ Open a file"""
         dlg = wx.DirDialog(self, "Choose a directory containing data files")
         if dlg.ShowModal() == wx.ID_OK:
-            self.inputdir2 = str(dlg.GetPath())
-            self.m_tcGp2Files.SetValue(self.inputdir2)
+            #self.inputdir2 = str(dlg.GetPath())
+            self.m_tcGp2Files.SetValue(str(dlg.GetPath()))
         dlg.Destroy()
 
     def OnCompareRun(self, event):
-        inputdirs = [self.inputdir1, self.inputdir2]
-        for d in inputdirs:
-            if not isdir(d) or not access(d, R_OK):
-                self.Parent.Warn("Please check input directories are entered")
-        outputdir = self.getFilePanel().txtOutputdir.GetValue()
-        searchtext = self.getFilePanel().m_tcSearch.GetValue()
+        inputdirs = [self.m_tcGp1Files.GetValue(),self.m_tcGp2Files.GetValue()]
         prefixes = [self.m_tcGp1.GetValue(), self.m_tcGp2.GetValue()]
-        self.controller.RunCompare(self, inputdirs, outputdir, prefixes, searchtext)
+        try:
+            for d in inputdirs:
+                if not isdir(d) or not access(d, R_OK):
+                    raise ValueError("Please select directories containing files for comparison")
+            if prefixes[0] == prefixes[1]:
+                raise ValueError("Groups are the same")
+            if len(prefixes[0])<=0 or len(prefixes[1])<=0:
+                raise ValueError("Two groups are required - matching the prefixes of compiled files")
+            outputdir = self.getFilePanel().txtOutputdir.GetValue()
+            searchtext = self.getFilePanel().m_tcSearch.GetValue()
+
+            self.controller.RunCompare(self, inputdirs, outputdir, prefixes, searchtext)
+        except ValueError as e:
+            self.Parent.Warn(e.args[0])
 
     def OnCompareStop(self, event):
         print('Stopping process')
@@ -436,6 +484,20 @@ class CompareRunPanel(ComparePanel):
                 filepanel = fp
                 break
         return filepanel
+
+    def getConfigPanel(self):
+        """
+        Get access to filepanel
+        :return:
+        """
+        filepanel = None
+
+        for fp in self.Parent.Children:
+            if isinstance(fp, MSDConfig):
+                filepanel = fp
+                break
+        return filepanel
+
 
 
 ########################################################################
