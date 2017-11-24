@@ -128,7 +128,7 @@ class MSDStats():
             (dstats, p) = stats.ttest_ind(cond1, cond2)
             # Output as CSV
             if not isnan(p):
-                signif = (p >= 0.05)
+                signif = (p < 0.05)
             else:
                 signif = 'unknown'
             data = ['Ratios', " vs ".join(self.prefixes), dstats, p, signif]
@@ -144,7 +144,7 @@ class MSDStats():
             (dstats, p) = stats.ttest_ind(cond1, cond2)
             # Output as CSV
             if not isnan(p):
-                signif = (p >= 0.05)
+                signif = (p < 0.05)
             else:
                 signif = 'unknown'
             data = ['MSD Area', " vs ".join(self.prefixes), dstats, p, signif]

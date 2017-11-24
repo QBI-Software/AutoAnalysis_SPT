@@ -428,7 +428,7 @@ class ConfigPanel ( wx.Panel ):
 		
 		self.m_staticText61 = wx.StaticText( self, wx.ID_ANY, u"Cell ID (number of subfolders)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText61.Wrap( -1 )
-		self.m_staticText61.SetToolTipString( u"Generates a unique ID for each cell from specified number of foldernames" )
+		self.m_staticText61.SetToolTip( u"Generates a unique ID for each cell from specified number of foldernames" )
 		
 		fgSizer1.Add( self.m_staticText61, 0, wx.ALL, 5 )
 		
@@ -663,7 +663,7 @@ class ComparePanel ( wx.Panel ):
 		bSizer3.Add( self.m_btnCompareStop, 0, wx.ALL, 5 )
 		
 		self.m_btnDefaults = wx.Button( self, wx.ID_ANY, u"Defaults", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_btnDefaults.SetToolTipString( u"Load fields with defaults from configuration and files panel" )
+		self.m_btnDefaults.SetToolTip( u"Load fields with defaults from configuration and files panel" )
 		
 		bSizer3.Add( self.m_btnDefaults, 0, wx.ALL, 5 )
 		
@@ -791,7 +791,7 @@ class FilesPanel ( wx.Panel ):
 		
 		self.m_staticText27 = wx.StaticText( self, wx.ID_ANY, u"Files prefix (search text)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText27.Wrap( -1 )
-		self.m_staticText27.SetToolTipString( u"Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files." )
+		self.m_staticText27.SetToolTip( u"Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files." )
 		
 		fgSizer4.Add( self.m_staticText27, 0, wx.ALL, 5 )
 		
