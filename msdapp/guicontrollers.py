@@ -268,15 +268,17 @@ class StatsThread(threading.Thread):
                     fmsds.append(fmsd.showPlotly())
 
                 count = (i / total) * 100
-                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
+                if total > 1:
+                    wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
                 logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile,ratiofile)
                 i += 1
 
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
+            if total > 1:
+                wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
             if self.showplots:
-                logger.info("HISTOGRAM BATCH: %s: %s\nPLOTS CREATED:\n\t%s\n\t%s\n", self.expt, group, fmsds[0],fmsds[1])
+                logger.info("HISTOGRAM BATCH: %s: %s\nPLOTS CREATED:\n\t%s\n", self.expt, group, ("\n\t").join(fmsds))
         except Exception as e:
-            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i - 1, total, self.processname)))
+            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, 2,2, self.processname)))
             logging.error(e)
         except KeyboardInterrupt:
             logger.warning("Keyboard interrupt in StatsThread")
@@ -337,7 +339,11 @@ class MsdThread(threading.Thread):
             # Set the figure
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
         except Exception as e:
-            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i - 1, total, self.processname)))
+            if i is None:
+                i= 0
+            if total is None:
+                total = 2
+            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i, total, self.processname)))
             logging.error(e)
         except KeyboardInterrupt:
             logger.warning("Keyboard interrupt in MsdThread")
@@ -384,20 +390,20 @@ class MSDController():
 
         self.processes = [
             {'caption': '1. Filter Data', 'href': 'filter',
-             'description': 'For each cell, generate log10 of diffusion coefficient, then filters between min and max range. MSD data is also filtered with corresponding rows.',
+             'description': 'For each cell, generate log10 of diffusion coefficient, then filters between min and max range. MSD data is also filtered with corresponding rows.','ptype':'indiv',
              'files': 'DATA_FILENAME, MSD_FILENAME',
              'filesout': 'FILTERED_FILENAME, FILTERED_MSD'},
             {'caption': '2. Generate Histograms', 'href': 'histogram',
              'description': 'For each cell, generate relative frequency histograms of log10(D) data',
-             'files': 'FILTERED_FILENAME',
+             'files': 'FILTERED_FILENAME','ptype':'indiv',
              'filesout': 'HISTOGRAM_FILENAME'},
             {'caption': '3. Histogram Stats', 'href': 'stats',
              'description': 'Compiles histogram data with descriptive statistics from all cells (batch) into one file per group in output directory',
-             'files': 'HISTOGRAM_FILENAME',
+             'files': 'HISTOGRAM_FILENAME','ptype':'batch',
              'filesout': 'ALLSTATS_FILENAME'},
             {'caption': '4. Compile MSD', 'href': 'msd',
              'description': 'Compiles MSD data with descriptive statistics from all cells (batch) into one file per group in output directory',
-             'files': 'FILTERED_MSD',
+             'files': 'FILTERED_MSD','ptype':'batch',
              'filesout': 'AVGMSD_FILENAME'}
         ]
 
@@ -496,13 +502,46 @@ class MSDController():
                 event.wait()
             if row > 1:
                 hevent.wait()
-            t = StatsThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row, processname,showplots)
-            t.start()
+            #Allow for filenames already grouped
+            groupflag = 0
+            total=len(filenames.keys())-1
+            for k in filenames.keys():
+                if k == 'all':
+                    continue
+                if len(filenames[k]) > 0:
+                    groupflag += 1
+                    t = StatsThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row, processname,showplots)
+                    t.start()
+                    wx.PostEvent(wxGui, ResultEvent((100*groupflag/total, row, groupflag, total, processname)))
+            #If no groups provided - use all
+            if not groupflag:
+                total = len([self.group1,self.group2])
+                t = StatsThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1,self.group2], type, row, processname,showplots)
+                t.start()
+            wx.PostEvent(wxGui, ResultEvent((100, row, total, total, processname)))
         elif type == 'msd':
             if row > 1:
                 event.wait()
-            t = MsdThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2], type, row, processname,showplots)
-            t.start()
+            # Allow for filenames already grouped
+            groupflag = 0
+            total = len(filenames.keys()) - 1
+            for k in filenames.keys():
+                if k == 'all':
+                    continue
+                if len(filenames[k]) > 0:
+                    groupflag += 1
+                    t = MsdThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt,
+                                  [k], type, row, processname, showplots)
+                    t.start()
+                    wx.PostEvent(wxGui, ResultEvent((100 * groupflag / total, row, groupflag, total, processname)))
+            # If no groups provided - use all
+            if not groupflag:
+                total = len([self.group1, self.group2])
+                t = MsdThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
+                              type, row, processname, showplots)
+                t.start()
+            wx.PostEvent(wxGui, ResultEvent((100, row, total, total, processname)))
+
 
         logger.info("Running Thread - loaded: %s", type)
 

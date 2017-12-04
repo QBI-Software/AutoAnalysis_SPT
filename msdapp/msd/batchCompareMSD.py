@@ -29,7 +29,7 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from numpy import sqrt, trapz
+from numpy import sqrt, trapz, nan
 from plotly import offline
 from plotly.graph_objs import Layout, Scatter
 
@@ -69,9 +69,9 @@ class CompareMSD(BatchStats):
                 df = pd.read_csv(f)
                 cell = self.generateID(f)
                 stats = OrderedDict({'avgs': [cell, 'Mean'],
-                                     'counts': [cell, 'Count'],
                                      'stds': [cell, 'Std'],
                                      'sems': [cell, 'SEM'],
+                                     'counts': [cell, 'Count'],
                                      'medians': [cell, 'Median']})
 
                 for i in timepoints:
@@ -85,7 +85,10 @@ class CompareMSD(BatchStats):
                     data.loc[ctr] = stats[key]
                     ctr += 1
 
-            # Calculate avgs of avg
+            #blank line
+            ctr += 1
+            data.loc[ctr] =['' for i in range(0, len(cols))]
+            # Calculate mean,std,sem,count,median of Cell Means
             cell = 'ALL'
             stats = OrderedDict({'avgs': [cell, 'Mean'],
                                  'counts': [cell, 'Count'],
@@ -93,16 +96,24 @@ class CompareMSD(BatchStats):
                                  'sems': [cell, 'SEM'],
                                  'medians': [cell, 'Median']})
             for i in timepoints:
-                d = data.groupby(['Stats'])[i].mean()
-                logging.debug(d)
-                stats['avgs'].append(d['Mean'])
-                stats['counts'].append(d['Count'])
-                stats['stds'].append(d['Std'])
-                stats['sems'].append(d['SEM'])
-                stats['medians'].append(d['Median'])
-            for key in stats.keys():
+                coldata = data[data['Stats']=='Mean'][i]
+                dmean = coldata.mean()
+                dcount =coldata.count()
+                std = coldata.std()
+                sem = std/sqrt(dcount)
+                median = coldata.median()
+
+                stats['avgs'].append(dmean)
+                stats['counts'].append(dcount)
+                stats['stds'].append(std)
+                stats['sems'].append(sem)
+                stats['medians'].append(median)
+
+            for key in ['avgs', 'counts', 'stds', 'sems', 'medians']:
                 data.loc[ctr] = stats[key]
                 ctr += 1
+            #data.replace(nan,'', inplace=True)
+            return data
 
             # Sort by Stats
             df1 = data.sort_values(by=['Stats', 'Cell'])
@@ -121,7 +132,7 @@ class CompareMSD(BatchStats):
         if self.compiled is not None:
             df = self.compiled
             means = df.groupby('Stats').get_group('Mean')
-            sems = df.groupby('Stats').get_group('SEM')
+            #sems = df.groupby('Stats').get_group('SEM')
             x = [str(x) for x in range(1, self.msdpoints + 1)]
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]
             labels = []
@@ -179,8 +190,8 @@ class CompareMSD(BatchStats):
             x = [str(x) for x in range(1, self.msdpoints + 1)]
             xi = [x * self.timeint for x in range(1, self.msdpoints + 1)]  # convert to times
             all = df.groupby('Cell').get_group('ALL')
-            allmeans = all.groupby('Stats').get_group('Mean')
-            allsems = all.groupby('Stats').get_group('SEM')
+            allmeans = all[all['Stats']=='Mean']
+            allsems = all[all['Stats']=='SEM']
             plt.errorbar(xi, allmeans[x].iloc[0], yerr=allsems[x].iloc[0],
                          capsize=3,
                          elinewidth=1,

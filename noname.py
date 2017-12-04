@@ -321,12 +321,11 @@ class ConfigPanel ( wx.Panel ):
 		self.m_textCtrl16 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
 		fgSizer1.Add( self.m_textCtrl16, 0, wx.ALL, 5 )
 		
-		self.m_staticText3 = wx.StaticText( self, wx.ID_ANY, u"Histogram Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_staticText3.Wrap( -1 )
-		fgSizer1.Add( self.m_staticText3, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+		self.m_staticline81 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		fgSizer1.Add( self.m_staticline81, 0, wx.EXPAND |wx.ALL, 5 )
 		
-		self.m_textCtrl1 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
-		fgSizer1.Add( self.m_textCtrl1, 0, wx.ALL, 5 )
+		self.m_staticline91 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		fgSizer1.Add( self.m_staticline91, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_staticText4 = wx.StaticText( self, wx.ID_ANY, u"Filtered Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText4.Wrap( -1 )
@@ -342,19 +341,32 @@ class ConfigPanel ( wx.Panel ):
 		self.m_textCtrl3 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
 		fgSizer1.Add( self.m_textCtrl3, 0, wx.ALL, 5 )
 		
-		self.m_staticText181 = wx.StaticText( self, wx.ID_ANY, u"All Statistics Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText3 = wx.StaticText( self, wx.ID_ANY, u"Histogram Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText3.Wrap( -1 )
+		fgSizer1.Add( self.m_staticText3, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+		
+		self.m_textCtrl1 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
+		fgSizer1.Add( self.m_textCtrl1, 0, wx.ALL, 5 )
+		
+		self.m_staticText181 = wx.StaticText( self, wx.ID_ANY, u"All Histogram Statistics Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText181.Wrap( -1 )
 		fgSizer1.Add( self.m_staticText181, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 		
 		self.m_textCtrl161 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
 		fgSizer1.Add( self.m_textCtrl161, 0, wx.ALL, 5 )
 		
-		self.m_staticText20 = wx.StaticText( self, wx.ID_ANY, u"Avg MSD Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText20 = wx.StaticText( self, wx.ID_ANY, u"All Avg MSD Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText20.Wrap( -1 )
 		fgSizer1.Add( self.m_staticText20, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
 		
 		self.m_textCtrl18 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
 		fgSizer1.Add( self.m_textCtrl18, 0, wx.ALL, 5 )
+		
+		self.m_staticline10 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		fgSizer1.Add( self.m_staticline10, 0, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticline11 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		fgSizer1.Add( self.m_staticline11, 0, wx.EXPAND |wx.ALL, 5 )
 		
 		self.m_staticText7 = wx.StaticText( self, wx.ID_ANY, u"MSD points", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText7.Wrap( -1 )
@@ -412,6 +424,12 @@ class ConfigPanel ( wx.Panel ):
 		self.m_textCtrl13 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer1.Add( self.m_textCtrl13, 0, wx.ALL, 5 )
 		
+		self.m_staticline12 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		fgSizer1.Add( self.m_staticline12, 0, wx.EXPAND |wx.ALL, 5 )
+		
+		self.m_staticline13 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_HORIZONTAL )
+		fgSizer1.Add( self.m_staticline13, 0, wx.EXPAND |wx.ALL, 5 )
+		
 		self.m_staticText21 = wx.StaticText( self, wx.ID_ANY, u"Group 1", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText21.Wrap( -1 )
 		fgSizer1.Add( self.m_staticText21, 0, wx.ALL, 5 )
@@ -426,9 +444,9 @@ class ConfigPanel ( wx.Panel ):
 		self.m_tcGroup2 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer1.Add( self.m_tcGroup2, 0, wx.ALL, 5 )
 		
-		self.m_staticText61 = wx.StaticText( self, wx.ID_ANY, u"Cell ID (number of subfolders)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText61 = wx.StaticText( self, wx.ID_ANY, u"Cell ID (from this number of subfolders)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText61.Wrap( -1 )
-		self.m_staticText61.SetToolTip( u"Generates a unique ID for each cell from specified number of foldernames" )
+		self.m_staticText61.SetToolTipString( u"Generates a unique ID for each cell from specified number of foldernames" )
 		
 		fgSizer1.Add( self.m_staticText61, 0, wx.ALL, 5 )
 		
@@ -440,7 +458,14 @@ class ConfigPanel ( wx.Panel ):
 		self.btnLoadConfig = wx.Button( self, wx.ID_ANY, u"Load From File", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer22.Add( self.btnLoadConfig, 0, wx.ALL, 5 )
 		
+		self.btnSaveNew = wx.Button( self, wx.ID_ANY, u"Save As", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer22.Add( self.btnSaveNew, 0, wx.ALL, 5 )
+		
 		self.btnSave = wx.Button( self, wx.ID_ANY, u"Save Changes", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.btnSave.SetDefault() 
+		self.btnSave.SetForegroundColour( wx.Colour( 255, 255, 0 ) )
+		self.btnSave.SetBackgroundColour( wx.Colour( 0, 128, 0 ) )
+		
 		bSizer22.Add( self.btnSave, 0, wx.ALL, 5 )
 		
 		
@@ -453,6 +478,7 @@ class ConfigPanel ( wx.Panel ):
 		
 		# Connect Events
 		self.btnLoadConfig.Bind( wx.EVT_BUTTON, self.OnLoadConfig )
+		self.btnSaveNew.Bind( wx.EVT_BUTTON, self.OnSaveNew )
 		self.btnSave.Bind( wx.EVT_BUTTON, self.OnSaveConfig )
 	
 	def __del__( self ):
@@ -461,6 +487,9 @@ class ConfigPanel ( wx.Panel ):
 	
 	# Virtual event handlers, overide them in your derived class
 	def OnLoadConfig( self, event ):
+		event.Skip()
+	
+	def OnSaveNew( self, event ):
 		event.Skip()
 	
 	def OnSaveConfig( self, event ):
@@ -529,8 +558,15 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer16 = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_cbShowplots = wx.CheckBox( self, wx.ID_ANY, u"Display Plots", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_cbIndivplots = wx.CheckBox( self, wx.ID_ANY, u"Display Individual popup plots", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_cbIndivplots.SetToolTipString( u"Individual plots can be displayed for each file - this pauses the process until the plot is closed. On some systems, security settings may prevent these being displayed but they are also generated as PNG." )
+		
+		bSizer16.Add( self.m_cbIndivplots, 0, wx.ALL, 5 )
+		
+		self.m_cbShowplots = wx.CheckBox( self, wx.ID_ANY, u"Display Interactive Plots", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_cbShowplots.SetValue(True) 
+		self.m_cbShowplots.SetToolTipString( u"Interactive plots are generated as HTML so may require an open browser or accept security warning to display" )
+		
 		bSizer16.Add( self.m_cbShowplots, 0, wx.ALL, 5 )
 		
 		self.m_btnRunProcess = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -540,7 +576,7 @@ class ProcessPanel ( wx.Panel ):
 		bSizer16.Add( self.m_btnRunProcess, 0, wx.ALL, 5 )
 		
 		
-		bSizer15.Add( bSizer16, 1, wx.ALIGN_BOTTOM, 5 )
+		bSizer15.Add( bSizer16, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		bSizer20.Add( bSizer15, 1, wx.EXPAND, 5 )
@@ -571,6 +607,7 @@ class ProcessPanel ( wx.Panel ):
 		bSizer19.Fit( self )
 		
 		# Connect Events
+		self.m_checkListProcess.Bind( wx.EVT_LISTBOX, self.OnShowDescription )
 		self.m_checkListProcess.Bind( wx.EVT_CHECKLISTBOX, self.OnShowDescription )
 		self.m_btnRunProcess.Bind( wx.EVT_BUTTON, self.OnRunScripts )
 	
@@ -581,6 +618,7 @@ class ProcessPanel ( wx.Panel ):
 	# Virtual event handlers, overide them in your derived class
 	def OnShowDescription( self, event ):
 		event.Skip()
+	
 	
 	def OnRunScripts( self, event ):
 		event.Skip()
@@ -610,7 +648,7 @@ class ComparePanel ( wx.Panel ):
 		self.m_staticText62.Wrap( -1 )
 		bSizer1.Add( self.m_staticText62, 0, wx.ALL, 5 )
 		
-		self.m_staticText58 = wx.StaticText( self, wx.ID_ANY, u"Select directories containing compiled ratios, areas, avg MSD and avg Log10D for each group and provide matching prefix as group name (defaults have been provided). A four panel plot will be generated.", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+		self.m_staticText58 = wx.StaticText( self, wx.ID_ANY, u"Data is compared from generated files for ratios, areas, avg MSD and avg Log10D for each group. Provide matching prefix as group name or use Load Group Prefixes button. A four panel plot will be generated.", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self.m_staticText58.Wrap( 650 )
 		self.m_staticText58.SetFont( wx.Font( 9, 70, 93, 90, False, wx.EmptyString ) )
 		
@@ -651,6 +689,11 @@ class ComparePanel ( wx.Panel ):
 		
 		bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
 		
+		self.m_btnDefaults = wx.Button( self, wx.ID_ANY, u"Load Group Prefixes", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_btnDefaults.SetToolTipString( u"Load fields with defaults from configuration and files panel" )
+		
+		bSizer3.Add( self.m_btnDefaults, 0, wx.ALL, 5 )
+		
 		self.m_btnCompareRun = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		self.m_btnCompareRun.SetForegroundColour( wx.Colour( 255, 255, 0 ) )
 		self.m_btnCompareRun.SetBackgroundColour( wx.Colour( 0, 128, 64 ) )
@@ -661,11 +704,6 @@ class ComparePanel ( wx.Panel ):
 		self.m_btnCompareStop.Enable( False )
 		
 		bSizer3.Add( self.m_btnCompareStop, 0, wx.ALL, 5 )
-		
-		self.m_btnDefaults = wx.Button( self, wx.ID_ANY, u"Defaults", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_btnDefaults.SetToolTip( u"Load fields with defaults from configuration and files panel" )
-		
-		bSizer3.Add( self.m_btnDefaults, 0, wx.ALL, 5 )
 		
 		
 		bSizer1.Add( bSizer3, 1, wx.ALIGN_RIGHT|wx.RIGHT, 5 )
@@ -680,9 +718,9 @@ class ComparePanel ( wx.Panel ):
 		# Connect Events
 		self.m_btnGp1.Bind( wx.EVT_BUTTON, self.OnBrowseGp1 )
 		self.m_btnGp2.Bind( wx.EVT_BUTTON, self.OnBrowseGp2 )
+		self.m_btnDefaults.Bind( wx.EVT_BUTTON, self.OnLoadDefaults )
 		self.m_btnCompareRun.Bind( wx.EVT_BUTTON, self.OnCompareRun )
 		self.m_btnCompareStop.Bind( wx.EVT_BUTTON, self.OnCompareStop )
-		self.m_btnDefaults.Bind( wx.EVT_BUTTON, self.OnLoadDefaults )
 	
 	def __del__( self ):
 		pass
@@ -695,13 +733,13 @@ class ComparePanel ( wx.Panel ):
 	def OnBrowseGp2( self, event ):
 		event.Skip()
 	
+	def OnLoadDefaults( self, event ):
+		event.Skip()
+	
 	def OnCompareRun( self, event ):
 		event.Skip()
 	
 	def OnCompareStop( self, event ):
-		event.Skip()
-	
-	def OnLoadDefaults( self, event ):
 		event.Skip()
 	
 
@@ -791,7 +829,7 @@ class FilesPanel ( wx.Panel ):
 		
 		self.m_staticText27 = wx.StaticText( self, wx.ID_ANY, u"Files prefix (search text)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText27.Wrap( -1 )
-		self.m_staticText27.SetToolTip( u"Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files." )
+		self.m_staticText27.SetToolTipString( u"Select files with this search text (eg experiment code).  This is used as the prefix for batch compiled files." )
 		
 		fgSizer4.Add( self.m_staticText27, 0, wx.ALL, 5 )
 		
@@ -816,6 +854,18 @@ class FilesPanel ( wx.Panel ):
 		self.btnClearlist = wx.Button( self, wx.ID_ANY, u"Clear List", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer4.Add( self.btnClearlist, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 		
+		self.m_staticText63 = wx.StaticText( self, wx.ID_ANY, u"Assign Group to selected files", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText63.Wrap( -1 )
+		fgSizer4.Add( self.m_staticText63, 0, wx.ALL, 5 )
+		
+		m_cbGroupsChoices = []
+		self.m_cbGroups = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_cbGroupsChoices, 0 )
+		self.m_cbGroups.SetSelection( 0 )
+		fgSizer4.Add( self.m_cbGroups, 0, wx.ALL, 5 )
+		
+		self.m_button181 = wx.Button( self, wx.ID_ANY, u"Assign", wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer4.Add( self.m_button181, 0, wx.ALL, 5 )
+		
 		
 		bSizer5.Add( fgSizer4, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
 		
@@ -825,6 +875,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_dataViewListCtrl1.SetMinSize( wx.Size( -1,300 ) )
 		
 		self.col_selected = self.m_dataViewListCtrl1.AppendToggleColumn( u"Select" )
+		self.col_group = self.m_dataViewListCtrl1.AppendTextColumn( u"Group" )
 		self.col_file = self.m_dataViewListCtrl1.AppendTextColumn( u"File" )
 		bSizer18.Add( self.m_dataViewListCtrl1, 0, wx.ALIGN_TOP|wx.ALL|wx.EXPAND, 5 )
 		
@@ -845,6 +896,7 @@ class FilesPanel ( wx.Panel ):
 		self.btnAutoFind.Bind( wx.EVT_BUTTON, self.OnAutofind )
 		self.m_cbSelectall.Bind( wx.EVT_CHECKBOX, self.OnSelectall )
 		self.btnClearlist.Bind( wx.EVT_BUTTON, self.OnClearlist )
+		self.m_button181.Bind( wx.EVT_BUTTON, self.OnAssignGroup )
 	
 	def __del__( self ):
 		pass
@@ -864,6 +916,9 @@ class FilesPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnClearlist( self, event ):
+		event.Skip()
+	
+	def OnAssignGroup( self, event ):
 		event.Skip()
 	
 

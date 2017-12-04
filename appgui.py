@@ -4,7 +4,7 @@ import re
 import time
 from glob import iglob
 from os import access, R_OK
-from os.path import join, expanduser, isdir
+from os.path import join, expanduser, isdir, sep
 
 import wx
 import wx.html2
@@ -80,7 +80,8 @@ class HomePanel(WelcomePanel):
             r"Copyright (2017) https://github.com/QBI-Software/MSDAnalysis")
         self.m_richText1.EndItalic()
 
-
+    def loadController(self):
+        pass
 
 ########################################################################
 class MSDConfig(ConfigPanel):
@@ -89,6 +90,9 @@ class MSDConfig(ConfigPanel):
         self.encoding = 'ISO-8859-1'
         if parent.controller.loaded:
             self.__loadValues(parent.controller)
+
+    def loadController(self):
+        pass
 
     def __loadValues(self, parent):
         print("Config loaded")
@@ -111,9 +115,12 @@ class MSDConfig(ConfigPanel):
         self.m_tcGroup2.SetValue(parent.group2)
         self.m_tcCellid.SetValue(parent.cellid)
 
-    def OnSaveConfig(self, event):
+    def OnSaveConfig(self, event, configfile=None):
         config = ConfigObj()
-        config.filename = join(expanduser('~'), '.msdcfg')
+        if configfile is not None:
+            config.filename = configfile
+        else:
+            config.filename = join(expanduser('~'), '.msdcfg')
         config.encoding = self.encoding
         config['DATA_FILENAME'] = self.m_textCtrl15.GetValue()
         config['MSD_FILENAME'] = self.m_textCtrl16.GetValue()
@@ -136,10 +143,25 @@ class MSDConfig(ConfigPanel):
         config.write()
         # Reload to parent
         try:
-            self.Parent.controller.loadConfig(config)
+            self.Parent.controller = MSDController(self.Parent.configfile)
+            if self.Parent.controller.loaded:
+                self.prefixes = [self.Parent.controller.group1, self.Parent.controller.group2]
+                for fp in self.Parent.Children:
+                    if isinstance(fp, wx.Panel):
+                        fp.controller = self.Parent.controller
+                        fp.loadController()
             self.m_status.SetLabel("Config updated")
         except IOError as e:
-            self.Parent.Warn("Config error:", e.message)
+            self.Parent.Warn("Config error:", e.args[0])
+
+    def OnSaveNew( self, event ):
+        openFileDialog = wx.FileDialog(self, "Save config file", "", "", "Config files (*.cfg)|*",
+                                       wx.FD_SAVE | wx.FD_CHANGE_DIR)
+        openFileDialog.SetDirectory(expanduser('~'))
+        if openFileDialog.ShowModal() == wx.ID_OK:
+            configfile = str(openFileDialog.GetPath())
+            self.OnSaveConfig(event,configfile)
+
 
     def OnLoadConfig(self, event):
         print("Load From Config dialog")
@@ -156,7 +178,7 @@ class MSDConfig(ConfigPanel):
                 self.__loadValues(self.Parent.controller)
                 self.m_status.SetLabel("Config Loaded: %s" % configfile)
             except IOError as e:
-                self.Parent.Warn("Config error:", e.message)
+                self.Parent.Warn("Config error:", e.args[0])
         openFileDialog.Destroy()
 
 
@@ -167,8 +189,12 @@ class MyFileDropTarget(wx.FileDropTarget):
         self.target = target
 
     def OnDropFiles(self, x, y, filenames):
+        group=''
         for fname in filenames:
-            self.target.AppendItem([True, fname])
+            self.target.AppendItem([True, group,fname])
+        #Update status bar
+        status = 'Total files loaded: %s' % self.target.Parent.m_dataViewListCtrl1.GetItemCount()
+        self.target.Parent.m_status.SetLabelText(status)
         return len(filenames)
 
 
@@ -178,9 +204,15 @@ class FileSelectPanel(FilesPanel):
         super(FileSelectPanel, self).__init__(parent)
         self.col_file.SetMinWidth(200)
 
+        self.m_cbGroups.SetItems([self.Parent.prefixes[0],self.Parent.prefixes[1]])
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
         self.datafile = parent.controller.datafile
+
+    def loadController(self):
+        self.controller = self.Parent.controller
+        self.m_cbGroups.SetItems([self.Parent.prefixes[0], self.Parent.prefixes[1]])
+        self.datafile = self.controller.datafile
 
     def OnInputdir(self, e):
         """ Open a file"""
@@ -203,6 +235,20 @@ class FileSelectPanel(FilesPanel):
                 cpanel.m_tcGp2Files.SetValue(self.outputdir)
         dlg.Destroy()
 
+    def OnAssignGroup( self, event ):
+        """
+        Allow user to assign groups to selected files
+        :param event:
+        :return:
+        """
+        num_files = self.m_dataViewListCtrl1.GetItemCount()
+        group = self.m_cbGroups.GetStringSelection()
+        for i in range(0, num_files):
+            if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
+                self.m_dataViewListCtrl1.SetValue(group,i, 1)
+                print('Setting %s with group %s', self.m_dataViewListCtrl1.GetValue(i, 2), group)
+
+
     def OnAutofind(self, event):
         """
         Find all matching files in top level directory
@@ -219,7 +265,18 @@ class FileSelectPanel(FilesPanel):
             filenames = allfiles
 
         for fname in filenames:
-            self.m_dataViewListCtrl1.AppendItem([True, fname])
+            group =''
+            #group as directory name ONLY
+            for pfix in self.Parent.prefixes:
+                group=''
+                if pfix.upper() in fname.upper().split(sep):
+                    group = pfix
+                    break
+                elif len(searchtext) > 0 and re.search(searchtext+pfix, fname, flags=re.IGNORECASE):
+                    group = pfix
+                    break
+
+            self.m_dataViewListCtrl1.AppendItem([True, group,fname])
 
         self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
         msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
@@ -247,20 +304,28 @@ class FileSelectPanel(FilesPanel):
                 break
         return panel
 
+
 ########################################################################
 class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
-        self.controller = parent.controller
+        self.loadController()
+        #self.controller = parent.controller
         # Bind timer event
         # self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
-        processes = [p['caption'] for p in self.controller.processes]
-        self.m_checkListProcess.AppendItems(processes)
+        #processes = [p['caption'] for p in self.controller.processes]
+        #self.m_checkListProcess.AppendItems(processes)
         # Set up event handler for any worker thread results
         EVT_RESULT(self, self.progressfunc)
         # EVT_CANCEL(self, self.stopfunc)
         # Set timer handler
         self.start = {}
+
+    def loadController(self):
+        self.controller = self.Parent.controller
+        processes = [p['caption'] for p in self.controller.processes]
+        self.m_checkListProcess.Clear()
+        self.m_checkListProcess.AppendItems(processes)
 
     def OnShowDescription(self, event):
         print(event.String)
@@ -348,9 +413,10 @@ class ProcessRunPanel(ProcessPanel):
         selections = self.m_checkListProcess.GetCheckedStrings()
         print("Processes selected: ", len(selections))
         showplots = self.m_cbShowplots.GetValue()
+        indivplots = self.m_cbIndivplots.GetValue()
         # Get data from other panels
         filepanel = self.getFilePanel()
-        filenames = []
+        filenames = {'all':[],self.Parent.prefixes[0]:[],self.Parent.prefixes[1]:[]}
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
         expt = filepanel.m_tcSearch.GetValue()
@@ -363,9 +429,13 @@ class ProcessRunPanel(ProcessPanel):
             if len(selections) > 0 and num_files > 0:
                 for i in range(0, num_files):
                     if filepanel.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                        fname = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
+                        fname = filepanel.m_dataViewListCtrl1.GetValue(i, 2)
+                        group = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
                         if not isdir(fname):
-                            filenames.append(fname)
+                            filenames['all'].append(fname)
+                            if len(group) > 0 :
+                                filenames[group].append(fname)
+
                 print('Selected Files:', len(filenames))
                 if len(filenames)<=0:
                     raise ValueError("No files selected - please go to Files Panel and add files (not directories) to list")
@@ -374,7 +444,10 @@ class ProcessRunPanel(ProcessPanel):
                 # For each process
                 for p in selections:
                     i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
-                    self.controller.RunProcess(self, filenames, i, outputdir, expt, row,showplots)
+                    if self.controller.processes[i]['ptype'] =='indiv':
+                        self.controller.RunProcess(self, filenames['all'], i, outputdir, expt, row, indivplots)
+                    else:
+                        self.controller.RunProcess(self, filenames, i, outputdir, expt, row,showplots)
                     row = row + 1
                     print('Next process: row=', row)
 
@@ -394,8 +467,12 @@ class CompareRunPanel(ComparePanel):
     def __init__(self, parent):
         super().__init__(parent)
         self.loadDefaults()
+        self.loadController()
         self.controller = parent.controller
         EVT_DATA(self, self.updateResults)
+
+    def loadController(self):
+        self.controller = self.Parent.controller
 
     def OnLoadDefaults(self,event):
         """
