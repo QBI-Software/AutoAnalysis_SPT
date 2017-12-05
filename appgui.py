@@ -741,7 +741,7 @@ class MSDFrame(wx.Frame):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
                           "MSD Autoanalysis",
-                          size=(900, 1000)
+                          size=(900, 700)
                           )
 
         # self.timer = wx.Timer(self)
