@@ -244,7 +244,7 @@ class MSDStats():
         figname = join(self.outputdir, self.outputfilename).replace('csv', figtype)
         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
 
-        plt.show()
+        #plt.show()
 
     def showPlotly(self):
         """

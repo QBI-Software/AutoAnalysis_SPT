@@ -1,16 +1,17 @@
 # import images
-#import logging
+# import logging
+import csv
 import re
 import time
 from glob import iglob
 from os import access, R_OK
 from os.path import join, expanduser, isdir, sep
 
+import matplotlib
 import wx
 import wx.html2
-
 from configobj import ConfigObj
-import matplotlib
+
 matplotlib.use('TkAgg')
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
@@ -26,55 +27,61 @@ class HomePanel(WelcomePanel):
     # ----------------------------------------------------------------------
     def __init__(self, parent):
         super(HomePanel, self).__init__(parent)
-        img = wx.EmptyBitmap(1,1)
-        img.LoadFile(join('resources','MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
+        img = wx.EmptyBitmap(1, 1)
+        img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
         self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App")
         self.m_richText1.EndFontSize()
         self.m_richText1.Newline()
-        #self.m_richText1.BeginLeftIndent(20)
+        # self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.BeginItalic()
         self.m_richText1.WriteText("developed by Liz Cooper-Williams, QBI Software, The University of Queensland")
         self.m_richText1.EndItalic()
-        #self.m_richText1.EndLeftIndent()
+        # self.m_richText1.EndLeftIndent()
         self.m_richText1.Newline()
         self.m_richText1.WriteImage(img)
         self.m_richText1.Newline()
-        self.m_richText1.WriteText(r'''This is a multi-threaded application designed to automate analysis of single particle tracking data.''')
+        self.m_richText1.WriteText(
+            r'''This is a multi-threaded application designed to automate analysis of single particle tracking data.''')
         self.m_richText1.Newline()
         # self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
         self.m_richText1.BeginBold()
         self.m_richText1.WriteText("Configure")
         self.m_richText1.EndBold()
         self.m_richText1.Newline()
-        #self.m_richText1.BeginLeftIndent(20)
-        self.m_richText1.WriteText('All filenames, column names, groups, threshold and binwidth options can be specifically configured and multiple configurations saved and reloaded.')
+        # self.m_richText1.BeginLeftIndent(20)
+        self.m_richText1.WriteText(
+            'All filenames, column names, groups, threshold and binwidth options can be specifically configured and multiple configurations saved and reloaded.')
         self.m_richText1.Newline()
         self.m_richText1.BeginBold()
         self.m_richText1.WriteText("Select Files")
         self.m_richText1.EndBold()
-        #self.m_richText1.BeginLeftIndent(20)
+        # self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.Newline()
-        self.m_richText1.WriteText("Select a top level directory containing the required data files and/or use the Drag'n'Drop for individual files. Only files checked in the file list will be included in the analysis. Compiled output will be put in the output directory whereas individually processed files will be put in a subfolder in the input directory structure. It is recommended to provide a prefix (which should be a known search text) to group experiments for later comparison.")
+        self.m_richText1.WriteText(
+            "Select a top level directory containing the required data files and/or use the Drag'n'Drop for individual files. Only files checked in the file list will be included in the analysis. Compiled output will be put in the output directory whereas individually processed files will be put in a subfolder in the input directory structure. It is recommended to provide a prefix (which should be a known search text) to group experiments for later comparison.")
         self.m_richText1.Newline()
         self.m_richText1.BeginBold()
         self.m_richText1.WriteText("Run Processes")
         self.m_richText1.EndBold()
-        #self.m_richText1.BeginLeftIndent(20)
+        # self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.Newline()
-        self.m_richText1.WriteText(r"Each process is described with the required input files (which need to be available in the input directory structure) and the output files which it produces. These are multi-threaded processes which will run in sequence as listed and once running their progress can be monitored. A log file is produced in the user's home directory. Interactive plots can also be produced during processing.")
-        #self.m_richText1.EndLeftIndent()
+        self.m_richText1.WriteText(
+            r"Each process is described with the required input files (which need to be available in the input directory structure) and the output files which it produces. These are multi-threaded processes which will run in sequence as listed and once running their progress can be monitored. A log file is produced in the user's home directory. Interactive plots can also be produced during processing.")
+        # self.m_richText1.EndLeftIndent()
         self.m_richText1.Newline()
         self.m_richText1.BeginBold()
         self.m_richText1.WriteText("Compare Groups")
         self.m_richText1.EndBold()
-        #self.m_richText1.BeginLeftIndent(20)
+        # self.m_richText1.BeginLeftIndent(20)
         self.m_richText1.Newline()
-        self.m_richText1.WriteText("Once the appropriate files have been generated in the output folder, a statistical comparison of two groups can be run and an interactive plot generated.")
-        #self.m_richText1.EndLeftIndent()
+        self.m_richText1.WriteText(
+            "Once the appropriate files have been generated in the output folder, a statistical comparison of two groups can be run and an interactive plot generated.")
+        # self.m_richText1.EndLeftIndent()
         self.m_richText1.Newline()
-        self.m_richText1.AddParagraph("The requirements of this application have been provided by Ravi Kasula, Meunier Lab, QBI. The modular design of this application allows for additional processes with minimal effort.  The interactive plots can be saved and shared online via plot.ly if required.  Any issues can be logged via the github repository.")
+        self.m_richText1.AddParagraph(
+            "The requirements of this application have been provided by Ravi Kasula, Meunier Lab, QBI. The modular design of this application allows for additional processes with minimal effort.  The interactive plots can be saved and shared online via plot.ly if required.  Any issues can be logged via the github repository.")
         self.m_richText1.BeginItalic()
         self.m_richText1.AddParagraph(
             r"Copyright (2017) https://github.com/QBI-Software/MSDAnalysis")
@@ -82,6 +89,7 @@ class HomePanel(WelcomePanel):
 
     def loadController(self):
         pass
+
 
 ########################################################################
 class MSDConfig(ConfigPanel):
@@ -152,16 +160,15 @@ class MSDConfig(ConfigPanel):
                         fp.loadController()
             self.m_status.SetLabel("Config updated")
         except IOError as e:
-            self.Parent.Warn("Config error:", e.args[0])
+            self.Parent.Warn("Config error:" + e.args[0])
 
-    def OnSaveNew( self, event ):
+    def OnSaveNew(self, event):
         openFileDialog = wx.FileDialog(self, "Save config file", "", "", "Config files (*.cfg)|*",
                                        wx.FD_SAVE | wx.FD_CHANGE_DIR)
         openFileDialog.SetDirectory(expanduser('~'))
         if openFileDialog.ShowModal() == wx.ID_OK:
             configfile = str(openFileDialog.GetPath())
-            self.OnSaveConfig(event,configfile)
-
+            self.OnSaveConfig(event, configfile)
 
     def OnLoadConfig(self, event):
         print("Load From Config dialog")
@@ -178,7 +185,7 @@ class MSDConfig(ConfigPanel):
                 self.__loadValues(self.Parent.controller)
                 self.m_status.SetLabel("Config Loaded: %s" % configfile)
             except IOError as e:
-                self.Parent.Warn("Config error:", e.args[0])
+                self.Parent.Warn("Config error:" + e.args[0])
         openFileDialog.Destroy()
 
 
@@ -189,10 +196,10 @@ class MyFileDropTarget(wx.FileDropTarget):
         self.target = target
 
     def OnDropFiles(self, x, y, filenames):
-        group=''
+        group = ''
         for fname in filenames:
-            self.target.AppendItem([True, group,fname])
-        #Update status bar
+            self.target.AppendItem([True, group, fname])
+        # Update status bar
         status = 'Total files loaded: %s' % self.target.Parent.m_dataViewListCtrl1.GetItemCount()
         self.target.Parent.m_status.SetLabelText(status)
         return len(filenames)
@@ -204,7 +211,7 @@ class FileSelectPanel(FilesPanel):
         super(FileSelectPanel, self).__init__(parent)
         self.col_file.SetMinWidth(200)
 
-        self.m_cbGroups.SetItems([self.Parent.prefixes[0],self.Parent.prefixes[1]])
+        self.m_cbGroups.SetItems([self.Parent.prefixes[0], self.Parent.prefixes[1]])
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
         self.datafile = parent.controller.datafile
@@ -235,7 +242,7 @@ class FileSelectPanel(FilesPanel):
                 cpanel.m_tcGp2Files.SetValue(self.outputdir)
         dlg.Destroy()
 
-    def OnAssignGroup( self, event ):
+    def OnAssignGroup(self, event):
         """
         Allow user to assign groups to selected files
         :param event:
@@ -245,9 +252,58 @@ class FileSelectPanel(FilesPanel):
         group = self.m_cbGroups.GetStringSelection()
         for i in range(0, num_files):
             if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
-                self.m_dataViewListCtrl1.SetValue(group,i, 1)
+                self.m_dataViewListCtrl1.SetValue(group, i, 1)
                 print('Setting %s with group %s', self.m_dataViewListCtrl1.GetValue(i, 2), group)
 
+    def OnSaveList(self, event):
+        """
+        Save selected files to csv
+        :param event:
+        :return:
+        """
+        num_files = self.m_dataViewListCtrl1.GetItemCount()
+        try:
+            openFileDialog = wx.FileDialog(self, "Save file list", "", "", "CSV files (*.csv)|*",
+                                           wx.FD_SAVE | wx.FD_CHANGE_DIR)
+            if openFileDialog.ShowModal() == wx.ID_OK:
+                savefile = str(openFileDialog.GetPath())
+                with open(savefile, 'w') as csvfile:
+                    swriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+                    for i in range(0, num_files):
+                        if self.m_dataViewListCtrl1.GetToggleValue(i, 0):
+                            swriter.writerow(
+                                [self.m_dataViewListCtrl1.GetValue(i, 1), self.m_dataViewListCtrl1.GetValue(i, 2)])
+        except Exception as e:
+            self.Parent.Warn("Save list error:" + e.args[0])
+        finally:
+            print('Save list complete')
+
+    def OnLoadList(self, event):
+        """
+        Load saved list
+        :param event:
+        :return:
+        """
+        try:
+            openFileDialog = wx.FileDialog(self, "Open file list", "", "", "CSV files (*.csv)|*",
+                                           wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_CHANGE_DIR)
+
+            if openFileDialog.ShowModal() == wx.ID_OK:
+                savefile = str(openFileDialog.GetPath())
+                with open(savefile, 'r') as csvfile:
+                    sreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+                    self.m_dataViewListCtrl1.DeleteAllItems()
+                    for row in sreader:
+                        if len(row) > 0:
+                            self.m_dataViewListCtrl1.AppendItem([True, row[0], row[1]])
+                msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
+                self.m_status.SetLabelText(msg)
+        except Exception as e:
+            print(e.args[0])
+            self.Parent.Warn("Load list error:" + e.args[0])
+        finally:
+            print("Load list complete")
 
     def OnAutofind(self, event):
         """
@@ -265,18 +321,18 @@ class FileSelectPanel(FilesPanel):
             filenames = allfiles
 
         for fname in filenames:
-            group =''
-            #group as directory name ONLY
+            group = ''
+            # group as directory name ONLY
             for pfix in self.Parent.prefixes:
-                group=''
+                group = ''
                 if pfix.upper() in fname.upper().split(sep):
                     group = pfix
                     break
-                elif len(searchtext) > 0 and re.search(searchtext+pfix, fname, flags=re.IGNORECASE):
+                elif len(searchtext) > 0 and re.search(searchtext + pfix, fname, flags=re.IGNORECASE):
                     group = pfix
                     break
 
-            self.m_dataViewListCtrl1.AppendItem([True, group,fname])
+            self.m_dataViewListCtrl1.AppendItem([True, group, fname])
 
         self.col_file.SetMinWidth(wx.LIST_AUTOSIZE)
         msg = "Total Files loaded: %d" % self.m_dataViewListCtrl1.GetItemCount()
@@ -310,11 +366,11 @@ class ProcessRunPanel(ProcessPanel):
     def __init__(self, parent):
         super(ProcessRunPanel, self).__init__(parent)
         self.loadController()
-        #self.controller = parent.controller
+        # self.controller = parent.controller
         # Bind timer event
         # self.Bind(wx.EVT_TIMER, self.progressfunc, self.controller.timer)
-        #processes = [p['caption'] for p in self.controller.processes]
-        #self.m_checkListProcess.AppendItems(processes)
+        # processes = [p['caption'] for p in self.controller.processes]
+        # self.m_checkListProcess.AppendItems(processes)
         # Set up event handler for any worker thread results
         EVT_RESULT(self, self.progressfunc)
         # EVT_CANCEL(self, self.stopfunc)
@@ -416,12 +472,12 @@ class ProcessRunPanel(ProcessPanel):
         indivplots = self.m_cbIndivplots.GetValue()
         # Get data from other panels
         filepanel = self.getFilePanel()
-        filenames = {'all':[],self.Parent.prefixes[0]:[],self.Parent.prefixes[1]:[]}
+        filenames = {'all': [], self.Parent.prefixes[0]: [], self.Parent.prefixes[1]: []}
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
         expt = filepanel.m_tcSearch.GetValue()
-        if len(expt)<=0:
-            msg='No prefix for batch files. If required, enter in Files panel - prefix and re-run.'
+        if len(expt) <= 0:
+            msg = 'No prefix for batch files. If required, enter in Files panel - prefix and re-run.'
             self.Parent.Warn(msg)
 
         print('All Files:', num_files)
@@ -433,21 +489,25 @@ class ProcessRunPanel(ProcessPanel):
                         group = filepanel.m_dataViewListCtrl1.GetValue(i, 1)
                         if not isdir(fname):
                             filenames['all'].append(fname)
-                            if len(group) > 0 :
+                            if len(group) > 0:
                                 filenames[group].append(fname)
 
                 print('Selected Files:', len(filenames))
-                if len(filenames)<=0:
-                    raise ValueError("No files selected - please go to Files Panel and add files (not directories) to list")
+                if len(filenames) <= 0:
+                    raise ValueError(
+                        "No files selected - please go to Files Panel and add files (not directories) to list")
 
                 row = 0
                 # For each process
                 for p in selections:
-                    i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
-                    if self.controller.processes[i]['ptype'] =='indiv':
+                    i = \
+                        [i for i in range(len(self.controller.processes)) if
+                         p == self.controller.processes[i]['caption']][
+                            0]
+                    if self.controller.processes[i]['ptype'] == 'indiv':
                         self.controller.RunProcess(self, filenames['all'], i, outputdir, expt, row, indivplots)
                     else:
-                        self.controller.RunProcess(self, filenames, i, outputdir, expt, row,showplots)
+                        self.controller.RunProcess(self, filenames, i, outputdir, expt, row, showplots)
                     row = row + 1
                     print('Next process: row=', row)
 
@@ -474,7 +534,7 @@ class CompareRunPanel(ComparePanel):
     def loadController(self):
         self.controller = self.Parent.controller
 
-    def OnLoadDefaults(self,event):
+    def OnLoadDefaults(self, event):
         """
         callback
         :param event:
@@ -493,7 +553,7 @@ class CompareRunPanel(ComparePanel):
             self.m_tcGp1Files.SetValue(fpanel.txtOutputdir.GetValue())
             self.m_tcGp2Files.SetValue(fpanel.txtOutputdir.GetValue())
         else:
-            prefix =''
+            prefix = ''
         cpanel = self.getConfigPanel()
         if cpanel is not None:
             self.m_tcGp1.SetValue(prefix + cpanel.m_tcGroup1.GetValue())
@@ -516,7 +576,7 @@ class CompareRunPanel(ComparePanel):
         """ Open a file"""
         dlg = wx.DirDialog(self, "Choose a directory containing data files")
         if dlg.ShowModal() == wx.ID_OK:
-            #self.inputdir1 = str(dlg.GetPath())
+            # self.inputdir1 = str(dlg.GetPath())
             self.m_tcGp1Files.SetValue(str(dlg.GetPath()))
         dlg.Destroy()
 
@@ -524,12 +584,12 @@ class CompareRunPanel(ComparePanel):
         """ Open a file"""
         dlg = wx.DirDialog(self, "Choose a directory containing data files")
         if dlg.ShowModal() == wx.ID_OK:
-            #self.inputdir2 = str(dlg.GetPath())
+            # self.inputdir2 = str(dlg.GetPath())
             self.m_tcGp2Files.SetValue(str(dlg.GetPath()))
         dlg.Destroy()
 
     def OnCompareRun(self, event):
-        inputdirs = [self.m_tcGp1Files.GetValue(),self.m_tcGp2Files.GetValue()]
+        inputdirs = [self.m_tcGp1Files.GetValue(), self.m_tcGp2Files.GetValue()]
         prefixes = [self.m_tcGp1.GetValue(), self.m_tcGp2.GetValue()]
         try:
             for d in inputdirs:
@@ -537,7 +597,7 @@ class CompareRunPanel(ComparePanel):
                     raise ValueError("Please select directories containing files for comparison")
             if prefixes[0] == prefixes[1]:
                 raise ValueError("Groups are the same")
-            if len(prefixes[0])<=0 or len(prefixes[1])<=0:
+            if len(prefixes[0]) <= 0 or len(prefixes[1]) <= 0:
                 raise ValueError("Two groups are required - matching the prefixes of compiled files")
             outputdir = self.getFilePanel().txtOutputdir.GetValue()
             searchtext = self.getFilePanel().m_tcSearch.GetValue()
@@ -576,7 +636,6 @@ class CompareRunPanel(ComparePanel):
         return filepanel
 
 
-
 ########################################################################
 class AppMain(wx.Listbook):
     def __init__(self, parent):
@@ -587,8 +646,8 @@ class AppMain(wx.Listbook):
         #                     datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
         self.configfile = join(expanduser('~'), '.msdcfg')
-        if not access(self.configfile,R_OK):
-            #use local file in resources
+        if not access(self.configfile, R_OK):
+            # use local file in resources
             self.configfile = join('resources', 'msd.cfg')
         self.controller = MSDController(self.configfile)
         if self.controller.loaded:

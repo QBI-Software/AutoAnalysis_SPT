@@ -815,7 +815,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_button18 = wx.Button( self, wx.ID_ANY, u"Browse", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer4.Add( self.m_button18, 0, wx.ALL, 5 )
 		
-		self.m_staticText67 = wx.StaticText( self, wx.ID_ANY, u"Output directory (*required)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText67 = wx.StaticText( self, wx.ID_ANY, u"Output directory (batch output)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText67.Wrap( -1 )
 		self.m_staticText67.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		
@@ -859,12 +859,22 @@ class FilesPanel ( wx.Panel ):
 		fgSizer4.Add( self.m_staticText63, 0, wx.ALL, 5 )
 		
 		m_cbGroupsChoices = []
-		self.m_cbGroups = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_cbGroupsChoices, 0 )
+		self.m_cbGroups = wx.Choice( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( 200,-1 ), m_cbGroupsChoices, 0 )
 		self.m_cbGroups.SetSelection( 0 )
 		fgSizer4.Add( self.m_cbGroups, 0, wx.ALL, 5 )
 		
 		self.m_button181 = wx.Button( self, wx.ID_ANY, u"Assign", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer4.Add( self.m_button181, 0, wx.ALL, 5 )
+		
+		self.m_staticText64 = wx.StaticText( self, wx.ID_ANY, u"Store Selected File List", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText64.Wrap( -1 )
+		fgSizer4.Add( self.m_staticText64, 0, wx.ALL, 5 )
+		
+		self.m_button20 = wx.Button( self, wx.ID_ANY, u"Save list", wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer4.Add( self.m_button20, 0, wx.ALL, 5 )
+		
+		self.m_button21 = wx.Button( self, wx.ID_ANY, u"Load list", wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer4.Add( self.m_button21, 0, wx.ALL, 5 )
 		
 		
 		bSizer5.Add( fgSizer4, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
@@ -897,6 +907,8 @@ class FilesPanel ( wx.Panel ):
 		self.m_cbSelectall.Bind( wx.EVT_CHECKBOX, self.OnSelectall )
 		self.btnClearlist.Bind( wx.EVT_BUTTON, self.OnClearlist )
 		self.m_button181.Bind( wx.EVT_BUTTON, self.OnAssignGroup )
+		self.m_button20.Bind( wx.EVT_BUTTON, self.OnSaveList )
+		self.m_button21.Bind( wx.EVT_BUTTON, self.OnLoadList )
 	
 	def __del__( self ):
 		pass
@@ -919,6 +931,12 @@ class FilesPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnAssignGroup( self, event ):
+		event.Skip()
+	
+	def OnSaveList( self, event ):
+		event.Skip()
+	
+	def OnLoadList( self, event ):
 		event.Skip()
 	
 
