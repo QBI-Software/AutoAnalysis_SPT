@@ -6,13 +6,19 @@ import time
 from glob import iglob
 from os import access, R_OK
 from os.path import join, expanduser, isdir, sep
-
+#maintain this order of matplotlib
+# TkAgg causes Runtime errors in Thread
 import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.style.use('seaborn-paper')
 import wx
 import wx.html2
+
 from configobj import ConfigObj
 
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
+
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
 from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
@@ -151,12 +157,11 @@ class MSDConfig(ConfigPanel):
         config.write()
         # Reload to parent
         try:
-            self.Parent.controller = MSDController(self.Parent.configfile)
+            self.Parent.controller = MSDController(config.filename)
             if self.Parent.controller.loaded:
                 self.prefixes = [self.Parent.controller.group1, self.Parent.controller.group2]
                 for fp in self.Parent.Children:
                     if isinstance(fp, wx.Panel):
-                        fp.controller = self.Parent.controller
                         fp.loadController()
             self.m_status.SetLabel("Config updated")
         except IOError as e:
@@ -210,11 +215,18 @@ class FileSelectPanel(FilesPanel):
     def __init__(self, parent):
         super(FileSelectPanel, self).__init__(parent)
         self.col_file.SetMinWidth(200)
-
-        self.m_cbGroups.SetItems([self.Parent.prefixes[0], self.Parent.prefixes[1]])
+        self.loadController()
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
-        self.datafile = parent.controller.datafile
+        self.col_file.SetSortable(True)
+        self.col_group.SetSortable(True)
+
+
+    def OnColClick(self, event):
+        print("header clicked: ", event.GetColumn())
+        # colidx = event.GetColumn()
+        # self.m_dataViewListCtrl1.GetModel().Resort()
+
 
     def loadController(self):
         self.controller = self.Parent.controller

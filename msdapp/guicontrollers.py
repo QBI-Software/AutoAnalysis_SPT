@@ -221,7 +221,6 @@ class HistogramThread(threading.Thread):
             lock.release()
             hevent.clear()
 
-
     # ----------------------------------------------------------------------
     def terminate(self):
         logger.info("Terminating Histogram Thread")
@@ -489,9 +488,11 @@ class MSDController():
         filesIn = [self.config[f] for f in self.processes[i]['files'].split(", ")]
         logger.info("Running Threads - start: %s (Expt prefix: %s) [row: %d]", type, expt, row)
         wx.PostEvent(wxGui, ResultEvent((0, row, 0, len(filenames), processname)))
+
         if type == 'filter':
             t = FilterThread(self, wxGui, filenames, filesIn, type, row, processname)
             t.start()
+
         elif type == 'histogram':
             if row > 1:
                 event.wait()
@@ -546,10 +547,12 @@ class MSDController():
         logger.info("Running Thread - loaded: %s", type)
 
     # ----------------------------------------------------------------------
+
+
     def shutdown(self):
-        logger.info('Call to shutdown - empty')
-        # t = threading.current_thread()
-        # print("Thread counter:", threading._counter)
-        # if t.is_alive():
-        #     logger.info('Shutdown: closing %s', t.getName())
-        #     t.terminate()
+        logger.info('Close extra thread')
+        t = threading.current_thread()
+        #print("Thread counter:", threading.main_thread())
+        if t != threading.main_thread() and t.is_alive():
+            logger.info('Shutdown: closing %s', t.getName())
+            t.terminate()

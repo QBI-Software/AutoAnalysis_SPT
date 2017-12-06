@@ -55,18 +55,18 @@ if sys.platform == 'win32':
 build_exe_options = {
     'includes': ['idna.idnadata', "numpy", "plotly", "pkg_resources","packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
-    'packages': ['scipy','tkinter', 'seaborn', 'numpy.core._methods', 'numpy.lib.format', 'matplotlib.backends.backend_tkagg','plotly'],
+    'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly'],
     'include_files': ['noname.py', 'resources/',
                       #join(venvpython, 'seaborn', 'external'),
-                      join(mainpython, 'DLLs', 'tcl86t.dll'),
-                      join(mainpython, 'DLLs', 'tk86t.dll'),
+                      #join(mainpython, 'DLLs', 'tcl86t.dll'),
+                      #join(mainpython, 'DLLs', 'tk86t.dll'),
                       (join(venvpython, 'scipy', 'special', '_ufuncs.cp35-win_amd64.pyd'), '_ufuncs.pyd')],
     'include_msvcr': 1
 }
 # [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
 setup(
     name=application_title,
-    version='1.1.4',
+    version='1.1.5',
     description='MSD Analysis scripts with GUI',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',

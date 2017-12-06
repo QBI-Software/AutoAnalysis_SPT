@@ -14,10 +14,14 @@ Created on Tue Sep 5 2017
 """
 
 import argparse
-from os import R_OK, access
-from os.path import join, split,sep
-
+import logging
+from os import R_OK, access, remove
+from os.path import join, split
+# #maintain this order of matplotlib
+# import matplotlib
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+# plt.style.use('seaborn-paper')
 import numpy as np
 # from numpy import nan, isnan, mean, median, var, std, exp, histogram,linspace
 import pandas
@@ -123,46 +127,47 @@ class HistogramLogD():
             area_n = sum(n*self.binwidth)
             # Relabel bins as centres
             centrebins = np.linspace(self.fmin, self.fmax, n_bins)
-            # Create figure
-            # self.fig = plt.figure()
-            plt.figure()
-            # Seaborn fig
-            sns.set(color_codes=True)
-            if freq == 0:
-                n_norm = n / sum_n
-                outputfile = join(outputdir, self.histofile)
-                ylabel = 'Relative frequency'
-                ax = sns.barplot(centrebins, n_norm)
-            elif freq == 1:
-                n_norm = n * self.binwidth/ area_n
-                outputfile = join(outputdir, "Density_" + self.histofile)
-                ylabel = 'Density'
-                ax = sns.distplot(data, bins=centrebins, norm_hist=True, axlabel=self.logcolumn)
-            else:
-                #cumulative
-                n_norm = np.cumsum(n/sum_n)
-                outputfile = join(outputdir, "Cumulativefreq_" + self.histofile)
-                ylabel = 'Cumulative frequency'
-                ax = plt.hist(data, bins=bins, histtype='step', cumulative=1, label=ylabel)
-
-
+            n_norm = n / sum_n
             self.histdata = pandas.DataFrame({'bins': centrebins, self.logcolumn: n_norm})
+            outputfile = join(outputdir, self.histofile)
             self.histdata.to_csv(outputfile, index=False)
             print("Saved histogram data to ", outputfile)
-
-            plt.xlabel(self.logcolumn)
-            plt.ylabel(ylabel)
-            plt.title(self.cellid)
-
-            # Save plot to figure
             figtype = 'png'  # png, pdf, ps, eps and svg.
             figfile = outputfile.replace('csv', figtype)
-            plt.savefig(figfile, facecolor='w', edgecolor='w', format=figtype)
-            print("Saved histogram to ", figfile)
+            try:
+                # Create figure - causes Runtime errors in Thread
+                self.fig = plt.figure()
+                #plt.figure()
+                # Seaborn fig
+                sns.set_style("whitegrid")
+                sns.set_context("paper")
+                # sns.set(color_codes=True)
+                ylabel = 'Relative frequency'
+                ax = sns.barplot(centrebins, n_norm)
+                plt.xlabel(self.logcolumn)
+                plt.ylabel(ylabel)
+                plt.title(self.cellid)
 
-            # will stop here until fig is manually closed
-            if self.showplots:
-                plt.show()
+                # Save plot to figure
+
+                plt.savefig(figfile, facecolor='w', edgecolor='w', format=figtype)
+                print("Saved histogram to ", figfile)
+
+                # will stop here until fig is manually closed
+                if self.showplots:
+                    plt.show()
+                else:
+                    plt.close()
+            except RuntimeError as e:
+                msg = 'Unable to Create plots due to Matplotlib runtime errors'
+                print(msg)
+                logging.warning(msg)
+                #remove previous fig if exists - otherwise inconsistent
+                if access(figfile,R_OK):
+                    remove(figfile)
+                    logging.warning("File deleted: " + figfile)
+
+
             return (outputfile, figfile)
 
     def showPlotlyhistogram(self):
@@ -186,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument('--datafile', action='store', help='Initial data file', default="Filtered_log10D.csv")
     parser.add_argument('--outputdir', action='store', help='Output directory (must exist)', default="..\\..\\data")
     parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
-    parser.add_argument('--showplots', action='store_true',help='Display popup plots')
+    parser.add_argument('--showplots', action='store_true',help='Display popup plots', default=True)
     args = parser.parse_args()
 
     datafile = join(args.filedir, args.datafile)

@@ -909,6 +909,7 @@ class FilesPanel ( wx.Panel ):
 		self.m_button181.Bind( wx.EVT_BUTTON, self.OnAssignGroup )
 		self.m_button20.Bind( wx.EVT_BUTTON, self.OnSaveList )
 		self.m_button21.Bind( wx.EVT_BUTTON, self.OnLoadList )
+		self.Bind( wx.dataview.EVT_DATAVIEW_COLUMN_HEADER_CLICK, self.OnColClick, id = wx.ID_ANY )
 	
 	def __del__( self ):
 		pass
@@ -937,6 +938,9 @@ class FilesPanel ( wx.Panel ):
 		event.Skip()
 	
 	def OnLoadList( self, event ):
+		event.Skip()
+	
+	def OnColClick( self, event ):
 		event.Skip()
 	
 

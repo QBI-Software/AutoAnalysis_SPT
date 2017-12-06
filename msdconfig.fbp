@@ -13873,7 +13873,7 @@
                                 <property name="window_name"></property>
                                 <property name="window_style">wxHSCROLL|wxVSCROLL</property>
                                 <event name="OnChar"></event>
-                                <event name="OnDataViewListCtrlColumnHeaderClick"></event>
+                                <event name="OnDataViewListCtrlColumnHeaderClick">OnColClick</event>
                                 <event name="OnDataViewListCtrlColumnHeaderRightClick"></event>
                                 <event name="OnDataViewListCtrlColumnReordered"></event>
                                 <event name="OnDataViewListCtrlColumnSorted"></event>
