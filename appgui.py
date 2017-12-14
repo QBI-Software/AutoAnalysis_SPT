@@ -160,6 +160,7 @@ class MSDConfig(ConfigPanel):
             self.Parent.controller = MSDController(config.filename)
             if self.Parent.controller.loaded:
                 self.prefixes = [self.Parent.controller.group1, self.Parent.controller.group2]
+                self.Parent.prefixes = self.prefixes
                 for fp in self.Parent.Children:
                     if isinstance(fp, wx.Panel):
                         fp.loadController()
@@ -218,8 +219,8 @@ class FileSelectPanel(FilesPanel):
         self.loadController()
         self.filedrop = MyFileDropTarget(self.m_dataViewListCtrl1)
         self.m_tcDragdrop.SetDropTarget(self.filedrop)
-        self.col_file.SetSortable(True)
-        self.col_group.SetSortable(True)
+        #self.col_file.SetSortable(True)
+        #self.col_group.SetSortable(True)
 
 
     def OnColClick(self, event):
@@ -324,8 +325,12 @@ class FileSelectPanel(FilesPanel):
         :return:
         """
         self.btnAutoFind.Disable()
+        fullsearch = self.m_cbMatchAny.GetValue()
         self.m_status.SetLabelText("Finding files ... please wait")
-        allfiles = [y for y in iglob(join(self.inputdir, '**', self.datafile), recursive=True)]
+        if fullsearch:
+            allfiles = [y for y in iglob(join(self.inputdir, '**', '*'+self.datafile), recursive=True)]
+        else:
+            allfiles = [y for y in iglob(join(self.inputdir, '**', self.datafile), recursive=True)]
         searchtext = self.m_tcSearch.GetValue()
         if (len(searchtext) > 0):
             filenames = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
@@ -512,10 +517,7 @@ class ProcessRunPanel(ProcessPanel):
                 row = 0
                 # For each process
                 for p in selections:
-                    i = \
-                        [i for i in range(len(self.controller.processes)) if
-                         p == self.controller.processes[i]['caption']][
-                            0]
+                    i = [i for i in range(len(self.controller.processes)) if p == self.controller.processes[i]['caption']][0]
                     if self.controller.processes[i]['ptype'] == 'indiv':
                         self.controller.RunProcess(self, filenames['all'], i, outputdir, expt, row, indivplots)
                     else:

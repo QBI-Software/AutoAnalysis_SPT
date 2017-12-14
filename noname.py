@@ -631,7 +631,7 @@ class ProcessPanel ( wx.Panel ):
 class ComparePanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 700,700 ), style = wx.SIMPLE_BORDER|wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 781,1025 ), style = wx.SIMPLE_BORDER|wx.TAB_TRAVERSAL )
 		
 		bSizer1 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -654,8 +654,13 @@ class ComparePanel ( wx.Panel ):
 		
 		bSizer1.Add( self.m_staticText58, 0, wx.ALL|wx.EXPAND, 5 )
 		
-		fgSizer2 = wx.FlexGridSizer( 0, 4, 0, 0 )
-		fgSizer2.SetFlexibleDirection( wx.BOTH )
+		self.m_btnDefaults = wx.Button( self, wx.ID_ANY, u"Load Group Prefixes", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_btnDefaults.SetToolTipString( u"Load fields with defaults from configuration and files panel" )
+		
+		bSizer1.Add( self.m_btnDefaults, 0, wx.ALL, 5 )
+		
+		fgSizer2 = wx.FlexGridSizer( 3, 4, 0, 0 )
+		fgSizer2.SetFlexibleDirection( wx.HORIZONTAL )
 		fgSizer2.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_NONE )
 		
 		self.m_staticText19 = wx.StaticText( self, wx.ID_ANY, u"Group 1", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -684,62 +689,48 @@ class ComparePanel ( wx.Panel ):
 		self.m_btnGp2 = wx.Button( self, wx.ID_ANY, u"Browse", wx.DefaultPosition, wx.DefaultSize, 0 )
 		fgSizer2.Add( self.m_btnGp2, 0, wx.ALL, 5 )
 		
-		
-		bSizer1.Add( fgSizer2, 1, wx.EXPAND, 5 )
-		
-		bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
-		
-		self.m_btnDefaults = wx.Button( self, wx.ID_ANY, u"Load Group Prefixes", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_btnDefaults.SetToolTipString( u"Load fields with defaults from configuration and files panel" )
-		
-		bSizer3.Add( self.m_btnDefaults, 0, wx.ALL, 5 )
-		
 		self.m_btnCompareRun = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.Size( -1,-1 ), 0 )
 		self.m_btnCompareRun.SetForegroundColour( wx.Colour( 255, 255, 0 ) )
 		self.m_btnCompareRun.SetBackgroundColour( wx.Colour( 0, 128, 64 ) )
 		
-		bSizer3.Add( self.m_btnCompareRun, 0, wx.ALL, 5 )
-		
-		self.m_btnCompareStop = wx.Button( self, wx.ID_ANY, u"Stop", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.m_btnCompareStop.Enable( False )
-		
-		bSizer3.Add( self.m_btnCompareStop, 0, wx.ALL, 5 )
+		fgSizer2.Add( self.m_btnCompareRun, 0, wx.ALL, 5 )
 		
 		
-		bSizer1.Add( bSizer3, 1, wx.ALIGN_RIGHT|wx.RIGHT, 5 )
+		bSizer1.Add( fgSizer2, 1, wx.ALL, 5 )
+		
+		bSizer18 = wx.BoxSizer( wx.VERTICAL )
 		
 		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,350 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER|wx.VSCROLL )
-		bSizer1.Add( self.m_tcResults, 0, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5 )
+		bSizer18.Add( self.m_tcResults, 0, wx.EXPAND, 5 )
+		
+		
+		bSizer1.Add( bSizer18, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
 		
 		
 		self.SetSizer( bSizer1 )
 		self.Layout()
 		
 		# Connect Events
+		self.m_btnDefaults.Bind( wx.EVT_BUTTON, self.OnLoadDefaults )
 		self.m_btnGp1.Bind( wx.EVT_BUTTON, self.OnBrowseGp1 )
 		self.m_btnGp2.Bind( wx.EVT_BUTTON, self.OnBrowseGp2 )
-		self.m_btnDefaults.Bind( wx.EVT_BUTTON, self.OnLoadDefaults )
 		self.m_btnCompareRun.Bind( wx.EVT_BUTTON, self.OnCompareRun )
-		self.m_btnCompareStop.Bind( wx.EVT_BUTTON, self.OnCompareStop )
 	
 	def __del__( self ):
 		pass
 	
 	
 	# Virtual event handlers, overide them in your derived class
+	def OnLoadDefaults( self, event ):
+		event.Skip()
+	
 	def OnBrowseGp1( self, event ):
 		event.Skip()
 	
 	def OnBrowseGp2( self, event ):
 		event.Skip()
 	
-	def OnLoadDefaults( self, event ):
-		event.Skip()
-	
 	def OnCompareRun( self, event ):
-		event.Skip()
-	
-	def OnCompareStop( self, event ):
 		event.Skip()
 	
 
@@ -782,7 +773,7 @@ class WelcomePanel ( wx.Panel ):
 class FilesPanel ( wx.Panel ):
 	
 	def __init__( self, parent ):
-		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 700,700 ), style = wx.TAB_TRAVERSAL )
+		wx.Panel.__init__ ( self, parent, id = wx.ID_ANY, pos = wx.DefaultPosition, size = wx.Size( 771,747 ), style = wx.TAB_TRAVERSAL )
 		
 		bSizer5 = wx.BoxSizer( wx.VERTICAL )
 		
@@ -844,15 +835,17 @@ class FilesPanel ( wx.Panel ):
 		
 		self.m_cbSelectall = wx.CheckBox( self, wx.ID_ANY, u"Select All", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_cbSelectall.SetValue(True) 
-		fgSizer4.Add( self.m_cbSelectall, 0, wx.ALIGN_BOTTOM|wx.ALIGN_CENTER|wx.ALL, 5 )
+		fgSizer4.Add( self.m_cbSelectall, 0, wx.ALL, 5 )
 		
-		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag data files here !", wx.DefaultPosition, wx.Size( 200,100 ), wx.TE_CENTRE|wx.TE_READONLY )
+		self.m_tcDragdrop = wx.TextCtrl( self, wx.ID_ANY, u"Drag data files here (eg AllROI-D.txt)", wx.DefaultPosition, wx.Size( 300,100 ), wx.TE_READONLY|wx.TE_WORDWRAP )
 		self.m_tcDragdrop.SetBackgroundColour( wx.Colour( 191, 191, 255 ) )
 		
-		fgSizer4.Add( self.m_tcDragdrop, 0, wx.ALIGN_CENTER, 5 )
+		fgSizer4.Add( self.m_tcDragdrop, 0, 0, 5 )
 		
-		self.btnClearlist = wx.Button( self, wx.ID_ANY, u"Clear List", wx.DefaultPosition, wx.DefaultSize, 0 )
-		fgSizer4.Add( self.btnClearlist, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
+		self.m_cbMatchAny = wx.CheckBox( self, wx.ID_ANY, u"AutoFind Match Any ", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_cbMatchAny.SetToolTipString( u"Match Any Filename ending with Datafile filename" )
+		
+		fgSizer4.Add( self.m_cbMatchAny, 0, wx.ALL, 5 )
 		
 		self.m_staticText63 = wx.StaticText( self, wx.ID_ANY, u"Assign Group to selected files", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText63.Wrap( -1 )
@@ -870,11 +863,19 @@ class FilesPanel ( wx.Panel ):
 		self.m_staticText64.Wrap( -1 )
 		fgSizer4.Add( self.m_staticText64, 0, wx.ALL, 5 )
 		
-		self.m_button20 = wx.Button( self, wx.ID_ANY, u"Save list", wx.DefaultPosition, wx.DefaultSize, 0 )
-		fgSizer4.Add( self.m_button20, 0, wx.ALL, 5 )
+		bSizer17 = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self.m_button21 = wx.Button( self, wx.ID_ANY, u"Load list", wx.DefaultPosition, wx.DefaultSize, 0 )
-		fgSizer4.Add( self.m_button21, 0, wx.ALL, 5 )
+		bSizer17.Add( self.m_button21, 0, wx.ALL, 5 )
+		
+		self.m_button20 = wx.Button( self, wx.ID_ANY, u"Save list", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer17.Add( self.m_button20, 0, wx.ALL, 5 )
+		
+		self.btnClearlist = wx.Button( self, wx.ID_ANY, u"Clear list", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer17.Add( self.btnClearlist, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
+		
+		
+		fgSizer4.Add( bSizer17, 1, wx.EXPAND, 5 )
 		
 		
 		bSizer5.Add( fgSizer4, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
@@ -894,7 +895,7 @@ class FilesPanel ( wx.Panel ):
 		bSizer18.Add( self.m_status, 0, wx.ALL, 5 )
 		
 		
-		bSizer5.Add( bSizer18, 1, wx.EXPAND, 5 )
+		bSizer5.Add( bSizer18, 1, wx.ALIGN_TOP|wx.EXPAND, 5 )
 		
 		
 		self.SetSizer( bSizer5 )
@@ -905,10 +906,10 @@ class FilesPanel ( wx.Panel ):
 		self.m_button19.Bind( wx.EVT_BUTTON, self.OnOutputdir )
 		self.btnAutoFind.Bind( wx.EVT_BUTTON, self.OnAutofind )
 		self.m_cbSelectall.Bind( wx.EVT_CHECKBOX, self.OnSelectall )
-		self.btnClearlist.Bind( wx.EVT_BUTTON, self.OnClearlist )
 		self.m_button181.Bind( wx.EVT_BUTTON, self.OnAssignGroup )
-		self.m_button20.Bind( wx.EVT_BUTTON, self.OnSaveList )
 		self.m_button21.Bind( wx.EVT_BUTTON, self.OnLoadList )
+		self.m_button20.Bind( wx.EVT_BUTTON, self.OnSaveList )
+		self.btnClearlist.Bind( wx.EVT_BUTTON, self.OnClearlist )
 		self.Bind( wx.dataview.EVT_DATAVIEW_COLUMN_HEADER_CLICK, self.OnColClick, id = wx.ID_ANY )
 	
 	def __del__( self ):
@@ -928,16 +929,16 @@ class FilesPanel ( wx.Panel ):
 	def OnSelectall( self, event ):
 		event.Skip()
 	
-	def OnClearlist( self, event ):
+	def OnAssignGroup( self, event ):
 		event.Skip()
 	
-	def OnAssignGroup( self, event ):
+	def OnLoadList( self, event ):
 		event.Skip()
 	
 	def OnSaveList( self, event ):
 		event.Skip()
 	
-	def OnLoadList( self, event ):
+	def OnClearlist( self, event ):
 		event.Skip()
 	
 	def OnColClick( self, event ):

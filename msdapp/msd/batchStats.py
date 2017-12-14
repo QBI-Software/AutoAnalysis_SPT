@@ -117,6 +117,8 @@ class BatchStats:
             files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
             if len(files) <= 0:
                 files = [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
+            else:
+                files = allfiles #default assume prefix and expt strings are not found
             base = commonpath(files)
         print("Total Files Found: ", len(files))
 
