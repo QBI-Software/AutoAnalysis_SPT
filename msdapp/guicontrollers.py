@@ -228,11 +228,11 @@ class HistogramThread(threading.Thread):
 
 
 ##########################################################################################################
-class StatsThread(threading.Thread):
+class BatchThread(threading.Thread):
     """Multi Worker Thread Class."""
 
     # ----------------------------------------------------------------------
-    def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname, showplots):
+    def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname, showplots, total, i):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self.configfile = configfile
@@ -246,139 +246,214 @@ class StatsThread(threading.Thread):
         self.outputdir = outputdir
         self.processname = processname
         self.showplots = showplots
+        self.total = total
+        self.i = i
         logger = logging.getLogger(processname)
 
     # ----------------------------------------------------------------------
     def run(self):
         try:
             lock.acquire(True)
-            total = len(self.groups)
+            #total = len(self.groups)
             checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
-            i = 1
+            i = self.i
+            group = ''
             fmsds = []
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
-                fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
-                compiledfile = fmsd.runStats()
-                # Split to Mobile/immobile fractions - output
-                ratiofile = fmsd.splitMobile()
-                if self.showplots:
-                    fmsds.append(fmsd.showPlotly())
+                if self.type == 'stats':
+                    fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
+                    compiledfile = fmsd.runStats()
+                    # Split to Mobile/immobile fractions - output
+                    ratiofile = fmsd.splitMobile()
+                    if self.showplots:
+                        fmsds.append(fmsd.showPlotly())
+                elif self.type == 'msd':
+                    fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
+                    compiledfile = fmsd.compiledfile
+                    ratiofile = fmsd.calculateAreas()
+                    if self.showplots:
+                        fmsd.showPlotly()
 
-                count = (i / total) * 100
-                if total > 1:
-                    wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
-                logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile,ratiofile)
+                count = (i / self.total) * 100
+                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, self.total, self.processname)))
+                logger.info("%s: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.processname,self.expt, group, compiledfile,ratiofile)
                 i += 1
 
-            if total > 1:
-                wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
+            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, self.total, self.processname)))
             if self.showplots:
-                logger.info("HISTOGRAM BATCH: %s: %s\nPLOTS CREATED:\n\t%s\n", self.expt, group, ("\n\t").join(fmsds))
+                group = ''
+                logger.info("%s: %s: %s\nPLOTS CREATED:\n\t%s\n", self.processname,self.expt, group, ("\n\t").join(fmsds))
         except Exception as e:
             wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, 2,2, self.processname)))
             logging.error(e)
         except KeyboardInterrupt:
-            logger.warning("Keyboard interrupt in StatsThread")
+            logger.warning("Keyboard interrupt in BatchThread")
             self.terminate()
         finally:
-            logger.info('Finished StatsThread')
+            msg = 'Finished BatchThread: %s' % self.type.title()
+            logger.info(msg)
             lock.release()
 
     # ----------------------------------------------------------------------
     def terminate(self):
-        logger.info("Terminating Stats Thread")
+        logger.info("Terminating Batch Thread")
         self.terminate()
+
+
+# class StatsThread(threading.Thread):
+#     """Multi Worker Thread Class."""
+#
+#     # ----------------------------------------------------------------------
+#     def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname, showplots, total, i):
+#         """Init Worker Thread Class."""
+#         threading.Thread.__init__(self)
+#         self.configfile = configfile
+#         self.wxObject = wxObject
+#         self.filenames = filenames
+#         self.filesIn = filesIn
+#         self.row = row
+#         self.type = type
+#         self.expt = expt
+#         self.groups = groups
+#         self.outputdir = outputdir
+#         self.processname = processname
+#         self.showplots = showplots
+#         self.total = total
+#         self.i = i
+#         logger = logging.getLogger(processname)
+#
+#     # ----------------------------------------------------------------------
+#     def run(self):
+#         try:
+#             lock.acquire(True)
+#             #total = len(self.groups)
+#             checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
+#             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
+#             i = self.i
+#             group = ''
+#             fmsds = []
+#             for group in self.groups:
+#                 logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
+#                 fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
+#                 compiledfile = fmsd.runStats()
+#                 # Split to Mobile/immobile fractions - output
+#                 ratiofile = fmsd.splitMobile()
+#                 if self.showplots:
+#                     fmsds.append(fmsd.showPlotly())
+#
+#                 count = (i / self.total) * 100
+#                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, self.total, self.processname)))
+#                 logger.info("HISTOGRAM BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, compiledfile,ratiofile)
+#                 i += 1
+#
+#             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, self.total, self.processname)))
+#             if self.showplots:
+#                 group = ''
+#                 logger.info("HISTOGRAM BATCH: %s: %s\nPLOTS CREATED:\n\t%s\n", self.expt, group, ("\n\t").join(fmsds))
+#         except Exception as e:
+#             wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, 2,2, self.processname)))
+#             logging.error(e)
+#         except KeyboardInterrupt:
+#             logger.warning("Keyboard interrupt in StatsThread")
+#             self.terminate()
+#         finally:
+#             logger.info('Finished StatsThread')
+#             lock.release()
+#
+#     # ----------------------------------------------------------------------
+#     def terminate(self):
+#         logger.info("Terminating Stats Thread")
+#         self.terminate()
 
 
 ############################################################################
-class MsdThread(threading.Thread):
-    """Multi Worker Thread Class."""
-
-    # ----------------------------------------------------------------------
-    def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname, showplots):
-        """Init Worker Thread Class."""
-        self._stopevent = threading.Event()
-        threading.Thread.__init__(self)
-        self.configfile = configfile
-        self.wxObject = wxObject
-        self.filenames = filenames
-        self.filesIn = filesIn
-        self.row = row
-        self.type = type
-        self.expt = expt
-        self.groups = groups
-        self.outputdir = outputdir
-        self.processname = processname
-        self.showplots = showplots
-        logger = logging.getLogger(processname)
-        # self.start()  # start the thread after
-
-    # ----------------------------------------------------------------------
-    def run(self):
-        try:
-            lock.acquire(True)
-            checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
-            logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
-            total = len(self.groups)
-            i = 1
-
-            for group in self.groups:
-                logger.info("Running %s script: %s (%s)", self.processname.title(), self.expt, group)
-                fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
-                areasfile = fmsd.calculateAreas()
-                if self.showplots:
-                    fmsd.showPlotly()
-                count = (i / total) * 100
-                wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
-                logger.info("MSD BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, fmsd.compiledfile, areasfile)
-                i += 1
-
-            # Set the figure
-            wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
-        except Exception as e:
-            if i is None:
-                i= 0
-            if total is None:
-                total = 2
-            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i, total, self.processname)))
-            logging.error(e)
-        except KeyboardInterrupt:
-            logger.warning("Keyboard interrupt in MsdThread")
-            self.terminate()
-        finally:
-            logger.info('Finished MsdThread')
-            # if pool is not None:
-            #     pool.close()
-            #     pool.join()
-            lock.release()
-
-    def msdplot(self, fmsd):
-        """
-        Run plot functions which also output figs and areas.csv with option to display
-        :param fmsd:
-        :return:
-        """
-        # matplotlib
-        plt.figure(figsize=(8, 10))
-        axes1 = plt.subplot(221)
-        areasfile = fmsd.showPlotsWithAreas(axes1)
-        axes2 = plt.subplot(223)
-        fmsd.showAvgPlot(axes2)
-
-        figtype = 'png'  # png, pdf, ps, eps and svg.
-        figname = fmsd.compiledfile.replace('csv', figtype)
-        plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
-        if self.showplots:
-            plt.show()
-            # plotly
-            fmsd.showPlotly()
-
-    # ----------------------------------------------------------------------
-    def terminate(self):
-        logger.info("Terminating MSD Thread")
-        self.terminate()
+# class MsdThread(threading.Thread):
+#     """Multi Worker Thread Class."""
+#
+#     # ----------------------------------------------------------------------
+#     def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname, showplots, total, i):
+#         """Init Worker Thread Class."""
+#         self._stopevent = threading.Event()
+#         threading.Thread.__init__(self)
+#         self.configfile = configfile
+#         self.wxObject = wxObject
+#         self.filenames = filenames
+#         self.filesIn = filesIn
+#         self.row = row
+#         self.type = type
+#         self.expt = expt
+#         self.groups = groups
+#         self.outputdir = outputdir
+#         self.processname = processname
+#         self.showplots = showplots
+#         self.total = total
+#         self.i = i
+#         logger = logging.getLogger(processname)
+#         # self.start()  # start the thread after
+#
+#     # ----------------------------------------------------------------------
+#     def run(self):
+#         try:
+#             lock.acquire(True)
+#             checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
+#             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
+#             total = self.total
+#             i = self.i
+#             group = ''
+#
+#             for group in self.groups:
+#                 logger.info("Running %s script: %s (%s)", self.processname.title(), self.expt, group)
+#                 fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.configfile)
+#                 areasfile = fmsd.calculateAreas()
+#                 if self.showplots:
+#                     fmsd.showPlotly()
+#                 count = (i / total) * 100
+#                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, total, self.processname)))
+#                 logger.info("MSD BATCH: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.expt, group, fmsd.compiledfile, areasfile)
+#                 i += 1
+#
+#             # Set the figure
+#             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, total, self.processname)))
+#         except Exception as e:
+#             wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, i, total, self.processname)))
+#             logging.error(e)
+#         except KeyboardInterrupt:
+#             logger.warning("Keyboard interrupt in MsdThread")
+#             self.terminate()
+#         finally:
+#             logger.info('Finished MsdThread')
+#             # if pool is not None:
+#             #     pool.close()
+#             #     pool.join()
+#             lock.release()
+#
+#     def msdplot(self, fmsd):
+#         """
+#         Run plot functions which also output figs and areas.csv with option to display
+#         :param fmsd:
+#         :return:
+#         """
+#         # matplotlib
+#         plt.figure(figsize=(8, 10))
+#         axes1 = plt.subplot(221)
+#         areasfile = fmsd.showPlotsWithAreas(axes1)
+#         axes2 = plt.subplot(223)
+#         fmsd.showAvgPlot(axes2)
+#
+#         figtype = 'png'  # png, pdf, ps, eps and svg.
+#         figname = fmsd.compiledfile.replace('csv', figtype)
+#         plt.savefig(figname, facecolor='w', edgecolor='w', format=figtype)
+#         if self.showplots:
+#             plt.show()
+#             # plotly
+#             fmsd.showPlotly()
+#
+#     # ----------------------------------------------------------------------
+#     def terminate(self):
+#         logger.info("Terminating MSD Thread")
+#         self.terminate()
 
 
 ########################################################################
@@ -418,11 +493,11 @@ class MSDController():
         """
         rtn = False
         try:
-            if access(self.configfile, R_OK):
-                logger.debug("Loading config file:%s", self.configfile)
+            if config is not None and isinstance(config, ConfigObj):
+                logger.info("Loading config obj:%s", config.filename)
+            elif access(self.configfile, R_OK):
+                logger.debug("Loading config from file:%s", self.configfile)
                 config = ConfigObj(self.configfile, encoding='ISO-8859-1')
-            elif config is not None and isinstance(config, ConfigObj):
-                logger.debug("Loading config object:%s", config.filename)
             else:
                 logger.warning('No config file found')
                 return rtn
@@ -511,15 +586,15 @@ class MSDController():
                     continue
                 if len(filenames[k]) > 0:
                     groupflag += 1
-                    t = StatsThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row, processname,showplots)
+                    t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row, processname,showplots, total, groupflag)
                     t.start()
-                    wx.PostEvent(wxGui, ResultEvent((100*groupflag/total, row, groupflag, total, processname)))
+
             #If no groups provided - use all
             if not groupflag:
                 total = len([self.group1,self.group2])
-                t = StatsThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1,self.group2], type, row, processname,showplots)
+                t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1,self.group2], type, row, processname,showplots, total, groupflag+1)
                 t.start()
-            wx.PostEvent(wxGui, ResultEvent((100, row, total, total, processname)))
+
         elif type == 'msd':
             if row > 1:
                 event.wait()
@@ -531,18 +606,16 @@ class MSDController():
                     continue
                 if len(filenames[k]) > 0:
                     groupflag += 1
-                    t = MsdThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt,
-                                  [k], type, row, processname, showplots)
+                    t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt,
+                                  [k], type, row, processname, showplots, total, groupflag)
                     t.start()
-                    wx.PostEvent(wxGui, ResultEvent((100 * groupflag / total, row, groupflag, total, processname)))
+
             # If no groups provided - use all
             if not groupflag:
                 total = len([self.group1, self.group2])
-                t = MsdThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
-                              type, row, processname, showplots)
+                t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
+                              type, row, processname, showplots, total, groupflag+1)
                 t.start()
-            wx.PostEvent(wxGui, ResultEvent((100, row, total, total, processname)))
-
 
         logger.info("Running Thread - loaded: %s", type)
 

@@ -37,7 +37,7 @@ class HomePanel(WelcomePanel):
         img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
-        self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App")
+        self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App (v.1.1.6)")
         self.m_richText1.EndFontSize()
         self.m_richText1.Newline()
         # self.m_richText1.BeginLeftIndent(20)
@@ -102,6 +102,7 @@ class MSDConfig(ConfigPanel):
     def __init__(self, parent):
         super(MSDConfig, self).__init__(parent)
         self.encoding = 'ISO-8859-1'
+        self.currentconfig= join(expanduser('~'), '.msdcfg')
         if parent.controller.loaded:
             self.__loadValues(parent.controller)
 
@@ -128,13 +129,16 @@ class MSDConfig(ConfigPanel):
         self.m_tcGroup1.SetValue(parent.group1)
         self.m_tcGroup2.SetValue(parent.group2)
         self.m_tcCellid.SetValue(parent.cellid)
+        msg = "Config file: %s" % parent.configfile
+        print(msg)
+        self.m_status.SetLabel(msg)
 
     def OnSaveConfig(self, event, configfile=None):
         config = ConfigObj()
         if configfile is not None:
             config.filename = configfile
         else:
-            config.filename = join(expanduser('~'), '.msdcfg')
+            config.filename = self.currentconfig
         config.encoding = self.encoding
         config['DATA_FILENAME'] = self.m_textCtrl15.GetValue()
         config['MSD_FILENAME'] = self.m_textCtrl16.GetValue()
@@ -164,7 +168,9 @@ class MSDConfig(ConfigPanel):
                 for fp in self.Parent.Children:
                     if isinstance(fp, wx.Panel):
                         fp.loadController()
-            self.m_status.SetLabel("Config updated")
+            msg = "Config file: %s" % config.filename
+            print(msg)
+            self.m_status.SetLabel(msg)
         except IOError as e:
             self.Parent.Warn("Config error:" + e.args[0])
 
@@ -174,6 +180,7 @@ class MSDConfig(ConfigPanel):
         openFileDialog.SetDirectory(expanduser('~'))
         if openFileDialog.ShowModal() == wx.ID_OK:
             configfile = str(openFileDialog.GetPath())
+            self.currentconfig = configfile
             self.OnSaveConfig(event, configfile)
 
     def OnLoadConfig(self, event):
@@ -186,10 +193,11 @@ class MSDConfig(ConfigPanel):
             try:
                 config = ConfigObj(configfile, encoding='ISO-8859-1')
                 self.Parent.controller.loadConfig(config)
-                self.Parent.controller.config.filename = join(expanduser('~'), '.msdcfg')  # save over existing?
-                self.Parent.controller.config.write()
+                self.currentconfig=configfile
+                #self.Parent.controller.config.filename = join(expanduser('~'), '.msdcfg')  # save over existing?
+                #self.Parent.controller.config.write()
                 self.__loadValues(self.Parent.controller)
-                self.m_status.SetLabel("Config Loaded: %s" % configfile)
+                self.m_status.SetLabel("Config file: %s" % configfile)
             except IOError as e:
                 self.Parent.Warn("Config error:" + e.args[0])
         openFileDialog.Destroy()
