@@ -66,7 +66,7 @@ build_exe_options = {
 # [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
 setup(
     name=application_title,
-    version='1.1.5',
+    version='1.1.6',
     description='MSD Analysis scripts with GUI',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',
