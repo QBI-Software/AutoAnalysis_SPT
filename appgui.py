@@ -37,7 +37,7 @@ class HomePanel(WelcomePanel):
         img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
-        self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App (v.1.1.6)")
+        self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App (v.1.1.7)")
         self.m_richText1.EndFontSize()
         self.m_richText1.Newline()
         # self.m_richText1.BeginLeftIndent(20)
