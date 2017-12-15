@@ -26,7 +26,7 @@ from numpy import unique
 
 
 class BatchStats:
-    def __init__(self, inputfiles, outputdir, prefix, expt, configfile=None):
+    def __init__(self, inputfiles, outputdir, prefix, expt, configfile=None, nolistfilter=False):
         self.encoding = 'ISO-8859-1'
         self.__loadConfig(configfile)
         if self.config is not None and self.datafield is not None:
@@ -36,7 +36,7 @@ class BatchStats:
         self.searchtext = expt + prefix
         self.expt = expt
         self.prefix = prefix
-        (self.base, self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix)
+        (self.base, self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix, nofilter=nolistfilter)
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
         self.n = 1  # generating id
@@ -69,7 +69,7 @@ class BatchStats:
 
         return itemlist
 
-    def getSelectedFiles(self, inputdir, datafile, expt, prefix):
+    def getSelectedFiles(self, inputdir, datafile, expt, prefix, nofilter=False):
         """
         Check list or directory matches searchtext(expt) and prefix(group) and contains only datafiles
         tries several methods for detecting files
@@ -77,6 +77,7 @@ class BatchStats:
         :param datafile: matching datafile name
         :param expt: searchstring in filename/filepath
         :param prefix: comparison group - also needs to appear in filepath or filename
+        :param nofilter: assume provided list is correct - no further matching
         :return: basename and file list
         """
         files = []
@@ -114,11 +115,14 @@ class BatchStats:
                 allfiles = unique(inputdir).tolist()
             else:
                 allfiles = unique(inputdir.tolist()).tolist()
-            files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
-            if len(files) <= 0:
-                files = [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
+            if not nofilter:
+                files = [f for f in allfiles if re.search(searchtext, f, flags=re.IGNORECASE)]
+                if len(files) <= 0:
+                    files = [f for f in allfiles if prefix.upper() in f.upper().split(sep)]
+                else:
+                    files = allfiles #default assume prefix and expt strings are not found
             else:
-                files = allfiles #default assume prefix and expt strings are not found
+                files = allfiles
             base = commonpath(files)
         print("Total Files Found: ", len(files))
 
