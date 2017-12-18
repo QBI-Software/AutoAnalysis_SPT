@@ -341,6 +341,13 @@ class ConfigPanel ( wx.Panel ):
 		self.m_textCtrl3 = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
 		fgSizer1.Add( self.m_textCtrl3, 0, wx.ALL, 5 )
 		
+		self.m_staticText65 = wx.StaticText( self, wx.ID_ANY, u"All Log10D Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText65.Wrap( -1 )
+		fgSizer1.Add( self.m_staticText65, 0, wx.ALL, 5 )
+		
+		self.m_txtAlllogdfilename = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 200,-1 ), 0 )
+		fgSizer1.Add( self.m_txtAlllogdfilename, 0, wx.ALL, 5 )
+		
 		self.m_staticText3 = wx.StaticText( self, wx.ID_ANY, u"Histogram Filename (generated)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText3.Wrap( -1 )
 		fgSizer1.Add( self.m_staticText3, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )

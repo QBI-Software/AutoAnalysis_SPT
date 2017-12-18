@@ -129,6 +129,7 @@ class MSDConfig(ConfigPanel):
         self.m_tcGroup1.SetValue(parent.group1)
         self.m_tcGroup2.SetValue(parent.group2)
         self.m_tcCellid.SetValue(parent.cellid)
+        self.m_txtAlllogdfilename.SetValue(parent.batchd)
         msg = "Config file: %s" % parent.configfile
         print(msg)
         self.m_status.SetLabel(msg)
@@ -158,6 +159,7 @@ class MSDConfig(ConfigPanel):
         config['GROUP1'] = self.m_tcGroup1.GetValue()
         config['GROUP2'] = self.m_tcGroup2.GetValue()
         config['CELLID'] = self.m_tcCellid.GetValue()
+        config['BATCHD_FILENAME'] = self.m_txtAlllogdfilename.GetValue()
         config.write()
         # Reload to parent
         try:
@@ -500,7 +502,11 @@ class ProcessRunPanel(ProcessPanel):
         filenames = {'all': [], self.Parent.prefixes[0]: [], self.Parent.prefixes[1]: []}
         num_files = filepanel.m_dataViewListCtrl1.GetItemCount()
         outputdir = filepanel.txtOutputdir.GetValue()  # for batch processes
+
         expt = filepanel.m_tcSearch.GetValue()
+        # reload logging to output to outputdir
+        if len(outputdir) > 0:
+            self.controller.loadLogger(outputdir, expt)
         if len(expt) <= 0:
             msg = 'No prefix for batch files. If required, enter in Files panel - prefix and re-run.'
             self.Parent.Warn(msg)
