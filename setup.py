@@ -36,15 +36,11 @@ import os
 import sys
 import shutil
 from os.path import join
-
 from cx_Freeze import setup, Executable
+from appgui import __version__
 
-# devhome
-# venvpython = 'D:\\python_venv\\scipyenv\\Lib\\site-packages'
-# mainpython = 'C:\\Users\\lizcw\\AppData\\Local\\Programs\\Python\\Python35'
-# devwork
-venvpython = 'D:\\Dev\\python\\scipyenv\\Lib\\site-packages'
-mainpython = 'D:\\Programs\\Python35'
+venvpython = join(sys.prefix,'Lib','site-packages')
+mainpython = "D:\\Programs\\Python35"
 
 os.environ['TCL_LIBRARY'] = join(mainpython, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = join(mainpython, 'tcl', 'tk8.6')
@@ -66,7 +62,7 @@ build_exe_options = {
 # [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
 setup(
     name=application_title,
-    version='1.2.0',
+    version=__version__,
     description='MSD Analysis scripts with GUI',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',
@@ -81,5 +77,5 @@ setup(
 )
 
 #Rename ckdtree
-shutil.move('build\\exe.win-amd64-3.5\\scipy\\spatial\\cKDTree.cp35-win_amd64.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.pyd')
-shutil.copyfile('build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.pyd', 'build\\exe.win-amd64-3.5\\scipy\\spatial\\ckdtree.cp35-win_amd64.pyd')
+shutil.move(join('build','exe.win-amd64-3.5','scipy','spatial','cKDTree.cp35-win_amd64.pyd'), join('build','exe.win-amd64-3.5','scipy','spatial','ckdtree.pyd'))
+shutil.copyfile(join('build','exe.win-amd64-3.5','scipy','spatial','ckdtree.pyd'), join('build','exe.win-amd64-3.5','scipy','spatial','ckdtree.cp35-win_amd64.pyd'))

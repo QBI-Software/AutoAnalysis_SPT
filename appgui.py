@@ -16,13 +16,10 @@ import wx
 import wx.html2
 
 from configobj import ConfigObj
-
-#matplotlib.use('TkAgg')
-
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
 from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
-
+__version__='1.2.0'
 
 ########################################################################
 class HomePanel(WelcomePanel):
@@ -37,7 +34,8 @@ class HomePanel(WelcomePanel):
         img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
-        self.m_richText1.WriteText("Welcome to the MSD Automated Analysis App (v.1.2.0)")
+        welcome = "Welcome to the MSD Automated Analysis App (v.%s)"% __version__
+        self.m_richText1.WriteText(welcome)
         self.m_richText1.EndFontSize()
         self.m_richText1.Newline()
         # self.m_richText1.BeginLeftIndent(20)
