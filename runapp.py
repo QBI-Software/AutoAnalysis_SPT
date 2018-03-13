@@ -6,9 +6,11 @@ import time
 from glob import iglob
 from os import access, R_OK
 from os.path import join, expanduser, isdir, sep
-#maintain this order of matplotlib
+
+# maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-paper')
@@ -18,8 +20,8 @@ import wx.html2
 from configobj import ConfigObj
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
-from noname import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel
-__version__='1.2.0'
+from gui.gui_spt import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel, dlgLogViewer
+__version__='1.2.1'
 
 ########################################################################
 class HomePanel(WelcomePanel):
@@ -128,6 +130,7 @@ class MSDConfig(ConfigPanel):
         self.m_tcGroup2.SetValue(parent.group2)
         self.m_tcCellid.SetValue(parent.cellid)
         self.m_txtAlllogdfilename.SetValue(parent.batchd)
+        self.m_cbROI.SetValue(int(parent.roi))
         msg = "Config file: %s" % parent.configfile
         print(msg)
         self.m_status.SetLabel(msg)
@@ -158,6 +161,7 @@ class MSDConfig(ConfigPanel):
         config['GROUP2'] = self.m_tcGroup2.GetValue()
         config['CELLID'] = self.m_tcCellid.GetValue()
         config['BATCHD_FILENAME'] = self.m_txtAlllogdfilename.GetValue()
+        config['GROUPBY_ROI'] = int(self.m_cbROI.GetValue())
         config.write()
         # Reload to parent
         try:
@@ -547,6 +551,17 @@ class ProcessRunPanel(ProcessPanel):
             # Enable Run button
             self.m_btnRunProcess.Enable()
 
+    def OnShowLog(self, event):
+        """
+        Load logfile into viewer
+        :param event:
+        :return:
+        """
+        dlg = dlgLogViewer(self)
+        logfile = self.controller.logfile
+        dlg.m_txtLog.LoadFile(logfile)
+        dlg.ShowModal()
+        dlg.Destroy()
 
 ########################################################################
 class CompareRunPanel(ComparePanel):
@@ -754,6 +769,7 @@ class AppMain(wx.Listbook):
             self.Destroy()
         else:
             e.Veto()
+
 
 
 ########################################################################

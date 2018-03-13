@@ -355,8 +355,8 @@ class MSDController():
             expt = expt + "_"
         if not access(join(homedir, "logs"), R_OK):
             mkdir(join(homedir, "logs"))
-        logfile = join(homedir, "logs", expt+'msdanalysis.log')
-        handler = RotatingFileHandler(filename=logfile, maxBytes=10000000, backupCount=10)
+        self.logfile = join(homedir, "logs", expt+'msdanalysis.log')
+        handler = RotatingFileHandler(filename=self.logfile, maxBytes=10000000, backupCount=10)
         formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] (%(threadName)-9s) %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -402,6 +402,10 @@ class MSDController():
                 self.batchd = config['BATCHD_FILENAME']
             else:
                 self.batchd = 'All_log10D.csv'
+            if 'GROUPBY_ROI' in config:
+                self.roi = config['GROUPBY_ROI']
+            else:
+                self.roi = 0
             self.config = config
             rtn = True
 

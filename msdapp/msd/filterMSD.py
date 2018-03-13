@@ -16,8 +16,8 @@ import argparse
 import csv
 import logging
 from collections import OrderedDict
-from os import R_OK, access
-from os.path import join, splitext
+from os import R_OK, access, mkdir
+from os.path import join, splitext, exists
 
 import pandas as pd
 from configobj import ConfigObj
@@ -38,7 +38,7 @@ class FilterMSD():
             self.filtered_msd = 'Filtered_MSD.csv'
             self.minlimit = float(minlimit)
             self.maxlimit = float(maxlimit)
-
+            self.roi = 0
             # Load data
         self.outputdir = outputdir
         print("FilterMSD: Loading data ...")
@@ -64,6 +64,7 @@ class FilterMSD():
             self.msdpoints = int(config['MSD_POINTS'])
             self.minlimit = float(config['MINLIMIT'])
             self.maxlimit = float(config['MAXLIMIT'])
+            self.roi = config['GROUPBY_ROI']
 
     def load_datafiles(self, datafile, datafile_msd):
         """
@@ -144,15 +145,35 @@ class FilterMSD():
             len(filtered), num_data, len(filtered_msd), num_msd)
             print(msg)
             logging.info(msg)
-            # Save files
-            fdata = join(self.outputdir, self.filteredfname)
-            fmsd = join(self.outputdir, self.filtered_msd)
+            # Save files  if GroupbyROI - save to subdirectories
             try:
-                filtered.to_csv(fdata, columns=[logcolumn], index=False)  # with or without original index numbers
-                filtered_msd.to_csv(fmsd, index=True)
-                print("Files saved: ")
-                print('\t', fdata, '\n\t', fmsd)
-                results = (fdata, fmsd, num_data, len(filtered), num_msd, len(filtered_msd))
+                if self.roi:
+                    roilist = filtered.groupby('ROI')
+                    msdlist = filtered_msd.groupby('ROI')
+                    results=0
+                    for g in roilist.groups:
+                        df = roilist.get_group(g)
+                        dm = msdlist.get_group(' '+str(g))
+                        sdir = join(self.outputdir,'ROI_' + str(g))
+                        if not exists(sdir):
+                            mkdir(sdir)
+                        fdata = join(sdir,self.filteredfname)
+                        fmsd = join(sdir, self.filtered_msd)
+                        df.to_csv(fdata, columns=[logcolumn], index=False)  # with or without original index numbers
+                        dm.to_csv(fmsd, index=True)
+                        msg ="ROI Files saved: \n\t%s\n\t%s" % (fdata,fmsd)
+                        logging.info(msg)
+                        print(msg)
+                        results += 1
+                else:
+                    fdata = join(self.outputdir, self.filteredfname)
+                    fmsd = join(self.outputdir, self.filtered_msd)
+
+                    filtered.to_csv(fdata, columns=[logcolumn], index=False)  # with or without original index numbers
+                    filtered_msd.to_csv(fmsd, index=True)
+                    print("Files saved: ")
+                    print('\t', fdata, '\n\t', fmsd)
+                    results = (fdata, fmsd, num_data, len(filtered), num_msd, len(filtered_msd))
             except IOError as e:
                 raise e
 

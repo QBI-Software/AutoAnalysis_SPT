@@ -40,11 +40,13 @@ class BatchLogd(BatchStats):
             else:
                 self.outputfile = 'All_log10D.csv'
             self.logcol = self.config['LOG_COLUMN']
+            self.roi = self.config['GROUPBY_ROI']
             print("BatchLogD: Config file loaded")
         else:  # defaults
             self.outputfile = 'All_log10D.csv'
             self.datafile = 'Filtered_log10D.csv'
             self.logcol = 'log10D'
+            self.roi = 0
             print("BatchLogD: Using config defaults")
 
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)
@@ -61,7 +63,7 @@ class BatchLogd(BatchStats):
             batchfile={}
             for f in self.inputfiles:
                 df = pd.read_csv(f)
-                cell = self.generateID(f)
+                cell = self.generateID(f) #TODO add ROI to ID
                 #create dict
                 batchfile[cell] = df[self.logcol]
 
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument('--outputdir', action='store', help='Output directory', default="data")
     parser.add_argument('--prefix', action='store', help='Prefix for compiled file eg STIM or NOSTIM', default="")
     parser.add_argument('--expt', action='store', help='ProteinCelltype as shown on directory names',
-                        default="ProteinCelltype")
+                        default="")
     parser.add_argument('--config', action='store', help='Config file for parameters', default=None)
     args = parser.parse_args()
 
