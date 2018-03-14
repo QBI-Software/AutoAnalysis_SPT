@@ -40,13 +40,11 @@ class BatchLogd(BatchStats):
             else:
                 self.outputfile = 'All_log10D.csv'
             self.logcol = self.config['LOG_COLUMN']
-            self.roi = self.config['GROUPBY_ROI']
             print("BatchLogD: Config file loaded")
         else:  # defaults
             self.outputfile = 'All_log10D.csv'
             self.datafile = 'Filtered_log10D.csv'
             self.logcol = 'log10D'
-            self.roi = 0
             print("BatchLogD: Using config defaults")
 
         self.compiledfile = join(self.outputdir, self.searchtext + "_" + self.outputfile)

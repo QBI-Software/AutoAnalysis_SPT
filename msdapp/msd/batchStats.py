@@ -39,16 +39,24 @@ class BatchStats:
         (self.base, self.inputfiles) = self.getSelectedFiles(inputfiles, self.datafile, expt, prefix, nofilter=nolistfilter)
         self.numcells = len(self.inputfiles)
         self.outputdir = outputdir
-        self.n = 1  # generating id
+        if self.roi:
+            self.n = 0
+        else:
+            self.n = 1  # generating id
+
 
     def __loadConfig(self, configfile=None):
         try:
             if configfile is not None and access(configfile, R_OK):
                 config = ConfigObj(configfile, encoding=self.encoding)
                 self.config = config
-                logging.info("Batch: Config file loaded")
+                if 'GROUPBY_ROI' in config.keys():
+                    self.roi = int(self.config['GROUPBY_ROI'])
+                msg = "Batch: Config file loaded. Group by ROIs: %d" % self.roi
+                logging.info(msg)
             else:
                 self.config = None
+                self.roi = 0
                 logging.warning("Batch: NO Config file loaded")
 
         except:
@@ -138,8 +146,16 @@ class BatchStats:
         if len(cells) > (len(base) + num + 1):
             cell = "_".join(cells[len(base):len(base) + num])
         else:
-            cellid = 'c{0:03d}'.format(self.n)
+            if (self.roi and re.search('ROI_\d',f)):
+                m = re.search('ROI_\d', f)
+                roi_id = m.group(0)
+                if roi_id == 'ROI_1':
+                    self.n +=1
+                cellid = 'c{0:03d}_{1}'.format(self.n,m.group(0))
+            else:
+                cellid = 'c{0:03d}'.format(self.n)
+                self.n += 1
             cell = "_".join([self.searchtext, cellid])
-            self.n += 1
+
         print("base=", self.base, " cellid=", cell)
         return cell
