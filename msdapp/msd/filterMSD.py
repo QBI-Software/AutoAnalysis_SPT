@@ -64,7 +64,7 @@ class FilterMSD():
             self.msdpoints = int(config['MSD_POINTS'])
             self.minlimit = float(config['MINLIMIT'])
             self.maxlimit = float(config['MAXLIMIT'])
-            self.roi = config['GROUPBY_ROI']
+            self.roi = int(config['GROUPBY_ROI'])
 
     def load_datafiles(self, datafile, datafile_msd):
         """
@@ -167,7 +167,7 @@ class FilterMSD():
                 else:
                     fdata = join(self.outputdir, self.filteredfname)
                     fmsd = join(self.outputdir, self.filtered_msd)
-
+                    print('saving files')
                     filtered.to_csv(fdata, columns=[logcolumn], index=False)  # with or without original index numbers
                     filtered_msd.to_csv(fmsd, index=True)
                     print("Files saved: ")

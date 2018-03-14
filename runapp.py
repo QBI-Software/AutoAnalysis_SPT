@@ -704,13 +704,13 @@ class AppMain(wx.Listbook):
 
         # make an image list using the LBXX images
         il = wx.ImageList(32, 32)
-        bmp = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_FRAME_ICON, (32, 32))
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_GO_HOME, wx.ART_FRAME_ICON, (32, 32))
         il.Add(bmp)
-        bmp = wx.ArtProvider.GetBitmap(wx.ART_HELP_SIDE_PANEL, wx.ART_FRAME_ICON, (32, 32))
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_TIP, wx.ART_FRAME_ICON, (32, 32))
         il.Add(bmp)
         bmp = wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_FRAME_ICON, (32, 32))
         il.Add(bmp)
-        bmp = wx.ArtProvider.GetBitmap(wx.ART_EXECUTABLE_FILE, wx.ART_FRAME_ICON, (32, 32))
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD, wx.ART_FRAME_ICON, (32, 32))
         il.Add(bmp)
         bmp = wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_FRAME_ICON, (32, 32))
         il.Add(bmp)
