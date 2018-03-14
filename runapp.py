@@ -21,7 +21,7 @@ from configobj import ConfigObj
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
 from gui.gui_spt import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel, dlgLogViewer
-__version__='1.2.1'
+__version__='1.3.0'
 
 ########################################################################
 class HomePanel(WelcomePanel):
@@ -87,10 +87,10 @@ class HomePanel(WelcomePanel):
         # self.m_richText1.EndLeftIndent()
         self.m_richText1.Newline()
         self.m_richText1.AddParagraph(
-            "The requirements of this application have been provided by Ravi Kasula, Meunier Lab, QBI. The modular design of this application allows for additional processes with minimal effort.  The interactive plots can be saved and shared online via plot.ly if required.  Any issues can be logged via the github repository.")
+            "The requirements of this application have been provided by Ravi Kasula, Meunier Lab, QBI. The modular design of this application allows for additional processes with minimal effort.  The interactive plots can be saved and shared online via https://plot.ly.  Any issues can be logged via the github repository. This project was initially called MSDAnalysis.")
         self.m_richText1.BeginItalic()
         self.m_richText1.AddParagraph(
-            r"Copyright (2017) https://github.com/QBI-Software/MSDAnalysis")
+            r"Copyright (2018) https://github.com/QBI-Software/AutoAnalysis_SPT")
         self.m_richText1.EndItalic()
 
     def loadController(self):

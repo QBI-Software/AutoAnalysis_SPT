@@ -29,15 +29,15 @@
 # test with exe
 # then run bdist_msi
 
-application_title = 'QBI MSD Analysis'
-main_python_file = 'appgui.py'
+application_title = 'QBI SPT Auto Analysis'
+main_python_file = 'runapp.py'
 
 import os
 import sys
 import shutil
 from os.path import join
 from cx_Freeze import setup, Executable
-from appgui import __version__
+from runapp import __version__
 
 venvpython = join(sys.prefix,'Lib','site-packages')
 mainpython = "D:\\Programs\\Python35"
@@ -52,7 +52,7 @@ build_exe_options = {
     'includes': ['idna.idnadata', "numpy", "plotly", "pkg_resources","packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
     'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly'],
-    'include_files': ['noname.py', 'resources/',
+    'include_files': ['resources/','gui/',
                       #join(venvpython, 'seaborn', 'external'),
                       #join(mainpython, 'DLLs', 'tcl86t.dll'),
                       #join(mainpython, 'DLLs', 'tk86t.dll'),
@@ -63,13 +63,13 @@ build_exe_options = {
 setup(
     name=application_title,
     version=__version__,
-    description='MSD Analysis scripts with GUI',
+    description='Auto Analysis for SPT',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',
     author_email='e.cooperwilliams@uq.edu.au',
     maintainer='QBI Custom Software, UQ',
     maintainer_email='qbi-dev-admin@uq.edu.au',
-    url='http://github.com/QBI-Software/MSDAnalysis',
+    url='http://github.com/QBI-Software/AutoAnalysis_SPT',
     license='GNU General Public License (GPL)',
     options={'build_exe': build_exe_options, },
     executables=[Executable(main_python_file, base=base, targetName='msdanalysis.exe', icon='resources/measure.ico',
