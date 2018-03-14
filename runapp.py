@@ -36,7 +36,7 @@ class HomePanel(WelcomePanel):
         img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
-        welcome = "Welcome to the MSD Automated Analysis App (v.%s)"% __version__
+        welcome = "Welcome to the Automated Analysis App for SPT (v.%s)" % __version__
         self.m_richText1.WriteText(welcome)
         self.m_richText1.EndFontSize()
         self.m_richText1.Newline()
@@ -49,7 +49,7 @@ class HomePanel(WelcomePanel):
         self.m_richText1.WriteImage(img)
         self.m_richText1.Newline()
         self.m_richText1.WriteText(
-            r'''This is a multi-threaded application designed to automate analysis of single particle tracking data.''')
+            r'''This is a multi-threaded application developed for the Meunier Group, QBI, which is designed to automate analysis of single particle tracking (SPT) data.''')
         self.m_richText1.Newline()
         # self.m_richText1.BeginNumberedBullet(1, 0.2, 0.2, wx.TEXT_ATTR_BULLET_STYLE)
         self.m_richText1.BeginBold()
@@ -703,18 +703,19 @@ class AppMain(wx.Listbook):
     def InitUI(self):
 
         # make an image list using the LBXX images
-        # il = wx.ImageList(32, 32)
-        # # for x in [wx.ArtProvider.]:
-        # #     obj = getattr(images, 'LB%02d' % (x + 1))
-        # #     bmp = obj.GetBitmap()
-        # #     il.Add(bmp)
-        # bmp = wx.ArtProvider.GetBitmap(wx.ART_HELP_SETTINGS, wx.ART_FRAME_ICON, (16, 16))
-        # il.Add(bmp)
-        # bmp = wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_FRAME_ICON, (16, 16))
-        # il.Add(bmp)
-        # bmp = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_FRAME_ICON, (16, 16))
-        # il.Add(bmp)
-        # self.AssignImageList(il)
+        il = wx.ImageList(32, 32)
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_FRAME_ICON, (32, 32))
+        il.Add(bmp)
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_HELP_SIDE_PANEL, wx.ART_FRAME_ICON, (32, 32))
+        il.Add(bmp)
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_FRAME_ICON, (32, 32))
+        il.Add(bmp)
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_EXECUTABLE_FILE, wx.ART_FRAME_ICON, (32, 32))
+        il.Add(bmp)
+        bmp = wx.ArtProvider.GetBitmap(wx.ART_REPORT_VIEW, wx.ART_FRAME_ICON, (32, 32))
+        il.Add(bmp)
+
+        self.AssignImageList(il)
 
         pages = [(HomePanel(self), "Welcome"),
                  (MSDConfig(self), "Configure"),
@@ -723,8 +724,8 @@ class AppMain(wx.Listbook):
                  (CompareRunPanel(self), "Compare Groups")]
         imID = 0
         for page, label in pages:
-            # self.AddPage(page, label, imageId=imID)
-            self.AddPage(page, label)
+            self.AddPage(page, label, imageId=imID)
+            #self.AddPage(page, label)
             imID += 1
 
         self.GetListView().SetColumnWidth(0, wx.LIST_AUTOSIZE)

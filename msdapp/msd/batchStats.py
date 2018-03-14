@@ -52,7 +52,9 @@ class BatchStats:
                 self.config = config
                 if 'GROUPBY_ROI' in config.keys():
                     self.roi = int(self.config['GROUPBY_ROI'])
-                msg = "Batch: Config file loaded. Group by ROIs: %d" % self.roi
+                    msg = "Batch: Config file loaded. Group by ROIs: %d" % self.roi
+                else:
+                    msg = "Batch: Config file loaded."
                 logging.info(msg)
             else:
                 self.config = None
