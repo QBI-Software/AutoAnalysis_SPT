@@ -42,7 +42,7 @@ from cx_Freeze import setup, Executable
 from runapp import __version__
 
 venvpython = join(sys.prefix,'Lib','site-packages')
-mainpython = "D:\\Programs\\Python35"
+mainpython = "D:\\Programs\\Python36"
 
 os.environ['TCL_LIBRARY'] = join(mainpython, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = join(mainpython, 'tcl', 'tk8.6')
@@ -51,10 +51,10 @@ if sys.platform == 'win32':
     base = 'Win32GUI'
 
 build_exe_options = {
-    'includes': ['idna.idnadata', "numpy", "plotly", "pkg_resources","packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
+    'includes': ['idna.idnadata', "numpy", "plotly", "packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
     'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly','wx'],
-    'include_files': ['resources/','gui/', (join(venvpython, 'scipy', 'special', '_ufuncs.cp35-win_amd64.pyd'), '_ufuncs.pyd')],
+    'include_files': ['resources/','gui/', (join(venvpython, 'scipy', 'special', '_ufuncs.cp36-win_amd64.pyd'), '_ufuncs.pyd')],
     'include_msvcr': 1
 }
 
@@ -83,5 +83,5 @@ setup(
 )
 
 #Rename ckdtree
-shutil.move(join('build','exe.win-amd64-3.5','lib','scipy','spatial','cKDTree.cp35-win_amd64.pyd'), join('build','exe.win-amd64-3.5','lib','scipy','spatial','ckdtree.pyd'))
-shutil.copyfile(join('build','exe.win-amd64-3.5','lib','scipy','spatial','ckdtree.pyd'), join('build','exe.win-amd64-3.5','lib','scipy','spatial','ckdtree.cp35-win_amd64.pyd'))
+shutil.move(join('build','exe.win-amd64-3.6','lib','scipy','spatial','cKDTree.cp36-win_amd64.pyd'), join('build','exe.win-amd64-3.6','lib','scipy','spatial','ckdtree.pyd'))
+shutil.copyfile(join('build','exe.win-amd64-3.6','lib','scipy','spatial','ckdtree.pyd'), join('build','exe.win-amd64-3.6','lib','scipy','spatial','ckdtree.cp36-win_amd64.pyd'))
