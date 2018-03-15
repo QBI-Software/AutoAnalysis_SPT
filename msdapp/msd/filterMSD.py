@@ -146,13 +146,23 @@ class FilterMSD():
             logging.info(msg)
             # Save files  if GroupbyROI - save to subdirectories
             try:
+
                 if self.roi:
+                    print('ROI config is ON:',self.roi)
                     roilist = filtered.groupby('ROI')
                     msdlist = filtered_msd.groupby('ROI')
                     results=0
                     for g in roilist.groups:
                         df = roilist.get_group(g)
-                        dm = msdlist.get_group(' '+str(g))
+                        if g in msdlist.groups.keys():
+                            dm = msdlist.get_group(g)
+                        elif str(g) in msdlist.groups.keys():
+                            dm = msdlist.get_group(str(g))
+                        elif ' '+str(g) in msdlist.groups.keys():
+                            dm = msdlist.get_group(' '+str(g))
+                        else:
+                            raise ValueError('Cannot group MSD file - check if has ROIs')
+
                         sdir = join(self.outputdir,'ROI_' + str(g))
                         if not exists(sdir):
                             mkdir(sdir)
@@ -174,6 +184,7 @@ class FilterMSD():
                     print('\t', fdata, '\n\t', fmsd)
                     results = (fdata, fmsd, num_data, len(filtered), num_msd, len(filtered_msd))
             except IOError as e:
+                logging.error(e)
                 raise e
 
         else:

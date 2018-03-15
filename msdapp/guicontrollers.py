@@ -377,9 +377,11 @@ class MSDController():
                 logger.debug("Loading config from file:%s", self.configfile)
                 config = ConfigObj(self.configfile, encoding='ISO-8859-1')
             else:
-                logger.warning('No config file found')
-                return rtn
-
+                logger.warning('No user config file found - using default')
+                default_config = join('resources','msd.cfg')
+                config = ConfigObj(default_config, encoding='ISO-8859-1')
+            if config is None:
+                raise ValueError('Config object not loaded')
             self.datafile = config['DATA_FILENAME']  # AllROI-D.txt
             self.msdfile = config['MSD_FILENAME']  # AllROI-MSD.txt
             self.filteredfname = config['FILTERED_FILENAME']
