@@ -28,6 +28,8 @@
 # 3. change Plot.pyc to plot.pyc in multiprocessing
 # test with exe
 # then run bdist_msi
+# create 64bit from 32bit python with python setup.py build --plat-name=win-amd64
+# NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
 
 application_title = 'QBI SPT Auto Analysis'
 main_python_file = 'runapp.py'
@@ -51,19 +53,19 @@ if sys.platform == 'win32':
 build_exe_options = {
     'includes': ['idna.idnadata', "numpy", "plotly", "pkg_resources","packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
     'excludes': ['PyQt4', 'PyQt5'],
-    'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly'],
-    'include_files': ['resources/','gui/',
-                      #join(venvpython, 'seaborn', 'external'),
-                      #join(mainpython, 'DLLs', 'tcl86t.dll'),
-                      #join(mainpython, 'DLLs', 'tk86t.dll'),
-                      (join(venvpython, 'scipy', 'special', '_ufuncs.cp35-win_amd64.pyd'), '_ufuncs.pyd')],
+    'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly','wx'],
+    'include_files': ['resources/','gui/', (join(venvpython, 'scipy', 'special', '_ufuncs.cp35-win_amd64.pyd'), '_ufuncs.pyd')],
     'include_msvcr': 1
 }
-# [Bad fix but only thing that works] NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
+
+bdist_msi_options = {
+    "upgrade_code": "{13252EEB-C257-41C6-9BC9-6CD4B4FD9D85}" #get uid from first installation regedit
+    }
+
 setup(
     name=application_title,
     version=__version__,
-    description='Auto Analysis for SPT',
+    description='Auto Analysis for SPT (Meunier,QBI)',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',
     author_email='e.cooperwilliams@uq.edu.au',
@@ -71,11 +73,15 @@ setup(
     maintainer_email='qbi-dev-admin@uq.edu.au',
     url='http://github.com/QBI-Software/AutoAnalysis_SPT',
     license='GNU General Public License (GPL)',
-    options={'build_exe': build_exe_options, },
-    executables=[Executable(main_python_file, base=base, targetName='msdanalysis.exe', icon='resources/measure.ico',
-                            shortcutName=application_title, shortcutDir='DesktopFolder')]
+    options={'build_exe': build_exe_options, 'bdist_msi': bdist_msi_options},
+    executables=[Executable(main_python_file,
+                            base=base,
+                            targetName='autoanalysis_spt.exe',
+                            icon='resources/measure.ico',
+                            shortcutName=application_title,
+                            shortcutDir='DesktopFolder')]
 )
 
 #Rename ckdtree
-shutil.move(join('build','exe.win-amd64-3.5','scipy','spatial','cKDTree.cp35-win_amd64.pyd'), join('build','exe.win-amd64-3.5','scipy','spatial','ckdtree.pyd'))
-shutil.copyfile(join('build','exe.win-amd64-3.5','scipy','spatial','ckdtree.pyd'), join('build','exe.win-amd64-3.5','scipy','spatial','ckdtree.cp35-win_amd64.pyd'))
+shutil.move(join('build','exe.win-amd64-3.5','lib','scipy','spatial','cKDTree.cp35-win_amd64.pyd'), join('build','exe.win-amd64-3.5','lib','scipy','spatial','ckdtree.pyd'))
+shutil.copyfile(join('build','exe.win-amd64-3.5','lib','scipy','spatial','ckdtree.pyd'), join('build','exe.win-amd64-3.5','lib','scipy','spatial','ckdtree.cp35-win_amd64.pyd'))

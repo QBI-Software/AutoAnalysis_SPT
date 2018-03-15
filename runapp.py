@@ -21,7 +21,7 @@ from configobj import ConfigObj
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
 from gui.gui_spt import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel, dlgLogViewer
-__version__='1.3.0'
+__version__='2.1.0'
 
 ########################################################################
 class HomePanel(WelcomePanel):
