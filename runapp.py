@@ -32,8 +32,7 @@ class HomePanel(WelcomePanel):
     # ----------------------------------------------------------------------
     def __init__(self, parent):
         super(HomePanel, self).__init__(parent)
-        img = wx.EmptyBitmap(1, 1)
-        img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
+        img= wx.Bitmap(join('resources', 'Welcome.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
         welcome = "Welcome to the Automated Analysis App for SPT (v.%s)" % __version__
