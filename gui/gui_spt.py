@@ -284,6 +284,8 @@ class ProcessPanel ( wx.Panel ):
 		
 		m_checkListProcessChoices = []
 		self.m_checkListProcess = wx.CheckListBox( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_checkListProcessChoices, wx.LB_MULTIPLE )
+		self.m_checkListProcess.SetMinSize( wx.Size( 300,200 ) )
+		
 		bSizer20.Add( self.m_checkListProcess, 0, wx.ALL, 5 )
 		
 		bSizer15 = wx.BoxSizer( wx.VERTICAL )
