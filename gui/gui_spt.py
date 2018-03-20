@@ -476,7 +476,7 @@ class ComparePanel ( wx.Panel ):
 		
 		bSizer18 = wx.BoxSizer( wx.VERTICAL )
 		
-		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,350 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER|wx.VSCROLL )
+		self.m_tcResults = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,350 ), wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.SIMPLE_BORDER )
 		bSizer18.Add( self.m_tcResults, 0, wx.EXPAND, 5 )
 		
 		
