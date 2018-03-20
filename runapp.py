@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 plt.style.use('seaborn-paper')
 import wx
 import wx.html2
+import sys
 
 from configobj import ConfigObj
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
@@ -32,7 +33,8 @@ class HomePanel(WelcomePanel):
     # ----------------------------------------------------------------------
     def __init__(self, parent):
         super(HomePanel, self).__init__(parent)
-        img= wx.Bitmap(join('resources', 'Welcome.bmp'), wx.BITMAP_TYPE_BMP)
+        img = wx.Bitmap(1, 1)
+        img.LoadFile(join('resources', 'MSDPlots.bmp'), wx.BITMAP_TYPE_BMP)
 
         self.m_richText1.BeginFontSize(14)
         welcome = "Welcome to the Automated Analysis App for SPT (v.%s)" % __version__
@@ -727,7 +729,8 @@ class AppMain(wx.Listbook):
             #self.AddPage(page, label)
             imID += 1
 
-        self.GetListView().SetColumnWidth(0, wx.LIST_AUTOSIZE)
+            if sys.platform == 'win32':
+                self.GetListView().SetColumnWidth(0, wx.LIST_AUTOSIZE)
 
         self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.Bind(wx.EVT_LISTBOOK_PAGE_CHANGING, self.OnPageChanging)
