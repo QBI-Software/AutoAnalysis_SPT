@@ -27,7 +27,7 @@ class ConfigPanel ( wx.Panel ):
 		
 		self.m_scrolledWindow1 = wx.ScrolledWindow( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
 		self.m_scrolledWindow1.SetScrollRate( 5, 5 )
-		self.m_scrolledWindow1.SetMinSize( wx.Size( 600,600 ) )
+		self.m_scrolledWindow1.SetMinSize( wx.Size( 600,500 ) )
 		
 		fgSizer6 = wx.FlexGridSizer( 0, 2, 0, 0 )
 		fgSizer6.SetFlexibleDirection( wx.BOTH )
