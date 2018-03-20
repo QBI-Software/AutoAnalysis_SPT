@@ -7810,7 +7810,7 @@
                         <property name="validator_variable"></property>
                         <property name="window_extra_style"></property>
                         <property name="window_name">welcome</property>
-                        <property name="window_style">wxNO_BORDER|wxVSCROLL|wxWANTS_CHARS</property>
+                        <property name="window_style">wxNO_BORDER|wxWANTS_CHARS</property>
                         <event name="OnChar"></event>
                         <event name="OnEnterWindow"></event>
                         <event name="OnEraseBackground"></event>
