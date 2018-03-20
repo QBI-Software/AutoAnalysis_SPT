@@ -5220,7 +5220,7 @@
                                         <property name="tooltip"></property>
                                         <property name="window_extra_style"></property>
                                         <property name="window_name"></property>
-                                        <property name="window_style">wxFULL_REPAINT_ON_RESIZE|wxVSCROLL</property>
+                                        <property name="window_style">wxFULL_REPAINT_ON_RESIZE</property>
                                         <property name="wrap">-1</property>
                                         <event name="OnChar"></event>
                                         <event name="OnEnterWindow"></event>

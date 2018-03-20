@@ -294,7 +294,7 @@ class ProcessPanel ( wx.Panel ):
 		
 		bSizer15.Add( self.m_stTitle, 0, wx.ALL, 5 )
 		
-		self.m_stDescription = wx.StaticText( self, wx.ID_ANY, u"Process Description", wx.DefaultPosition, wx.Size( -1,80 ), 0|wx.FULL_REPAINT_ON_RESIZE|wx.VSCROLL )
+		self.m_stDescription = wx.StaticText( self, wx.ID_ANY, u"Process Description", wx.DefaultPosition, wx.Size( -1,80 ), 0|wx.FULL_REPAINT_ON_RESIZE )
 		self.m_stDescription.Wrap( -1 )
 		self.m_stDescription.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
 		
