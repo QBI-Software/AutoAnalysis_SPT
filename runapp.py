@@ -684,8 +684,6 @@ class AppMain(wx.Listbook):
         """Constructor"""
         wx.Listbook.__init__(self, parent, wx.ID_ANY, style=wx.BK_DEFAULT)
 
-        # logging.basicConfig(filename='msdanalysis.log', level=logging.INFO, format='%(asctime)s %(message)s',
-        #                     datefmt='%d-%m-%Y %I:%M:%S %p')
         self.encoding = 'ISO-8859-1'
         self.configfile = join(expanduser('~'), '.msdcfg')
         if not access(self.configfile, R_OK):
@@ -785,7 +783,7 @@ class MSDFrame(wx.Frame):
     def __init__(self):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
-                          "MSD Autoanalysis",
+                          "QBI Autoanalysis SPT",
                           size=(900, 700)
                           )
 

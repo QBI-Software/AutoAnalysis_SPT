@@ -9,7 +9,7 @@ from os.path import join, dirname, exists, split, splitext, expanduser
 import matplotlib.pyplot as plt
 import wx
 from configobj import ConfigObj
-
+import msdapp
 from msdapp.msd.batchCompareMSD import CompareMSD
 from msdapp.msd.batchHistogramStats import HistoStats
 from msdapp.msd.filterMSD import FilterMSD
@@ -357,7 +357,7 @@ class MSDController():
             mkdir(join(homedir, "logs"))
         self.logfile = join(homedir, "logs", expt+'msdanalysis.log')
         handler = RotatingFileHandler(filename=self.logfile, maxBytes=10000000, backupCount=10)
-        formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] (%(threadName)-9s) %(message)s')
+        formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] %(filename)s %(lineno)d : (%(threadName)-9s) %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         return logger

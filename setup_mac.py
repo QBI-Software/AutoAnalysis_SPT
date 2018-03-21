@@ -30,8 +30,8 @@ import sys
 from os.path import join
 from os import getcwd
 #Self -bootstrapping https://py2app.readthedocs.io
-import ez_setup
-ez_setup.use_setuptools()
+# import ez_setup
+# ez_setup.use_setuptools()
 
 
 from runapp import __version__
@@ -44,17 +44,19 @@ exe_name='autoanalysis_spt'
 # Add info to MacOSX plist
 # plist = Plist.fromFile('Info.plist')
 plist = dict(CFBundleDisplayName=application_title,
-	CFBundleName=exe_name,
+	         CFBundleName=exe_name,
              NSHumanReadableCopyright='Copyright (c) 2018 Queensland Brain Institute',
              CFBundleTypeIconFile='measure.ico.icns',
-             CFBundleVersion=__version__)
+             CFBundleVersion=__version__
+             )
 
 APP = ['runapp.py']
 DATA_FILES = ['resources', 'gui']
+PARENTDIR= join(getcwd(),'.')
 OPTIONS = {'argv_emulation': True,
            'plist': plist,
            'iconfile': 'resources/measure.ico.icns',
-           'packages': ['scipy', 'wx','pandas','autoanalysis.processmodules'],
+           'packages': ['scipy', 'wx','pandas','msdapp'],
            'includes':['six','appdirs','packaging','packaging.version','packaging.specifiers','packaging.requirements','os','numbers','future_builtins'],
            'bdist_base': join(PARENTDIR, 'build'),
            'dist_dir': join(PARENTDIR, 'dist'),
