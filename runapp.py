@@ -6,7 +6,7 @@ import time
 from glob import iglob
 from os import access, R_OK
 from os.path import join, expanduser, isdir, sep
-
+import shutil
 # maintain this order of matplotlib
 # TkAgg causes Runtime errors in Thread
 import matplotlib
@@ -21,8 +21,9 @@ import sys
 from configobj import ConfigObj
 from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
+from msdapp.utils import findResourceDir
 from gui.gui_spt import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel, dlgLogViewer
-__version__='2.1.0'
+__version__='2.1.1'
 
 ########################################################################
 class HomePanel(WelcomePanel):
@@ -686,9 +687,11 @@ class AppMain(wx.Listbook):
 
         self.encoding = 'ISO-8859-1'
         self.configfile = join(expanduser('~'), '.msdcfg')
+        self.resourcesdir = findResourceDir()
         if not access(self.configfile, R_OK):
             # use local file in resources
-            self.configfile = join('resources', 'msd.cfg')
+            defaultdb = join(self.resourcesdir, 'msd.cfg')
+            shutil.copy(defaultdb, self.configfile)
         self.controller = MSDController(self.configfile)
         if self.controller.loaded:
             self.prefixes = [self.controller.group1, self.controller.group2]
