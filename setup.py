@@ -20,6 +20,8 @@
 # Step 2. Create MSI distribution (Windows) (in PyCharm: Tools -> Run setup.py Task -> bdist_msi)
 #   python setup.py bdist_msi
 # View dist dir contents - test run bdist_msi file
+########
+# NOTE: If error with bdist_msi, comment out lines #333-342 in cx_freeze\windist.py and change elif to if
 
 
 application_title = 'QBI SPT Auto Analysis'
@@ -67,9 +69,9 @@ setup(
     options={'build_exe': build_exe_options, 'bdist_msi': bdist_msi_options},
     executables=[Executable(main_python_file,
                             base=base,
-                            targetName='autoanalysis_spt.exe',
+                            target_name='autoanalysis_spt.exe',
                             icon='resources/measure.ico',
-                            shortcutName=application_title,
-                            shortcutDir='DesktopFolder')]
+                            shortcut_name=application_title,
+                            shortcut_dir='DesktopFolder')]
 )
 
