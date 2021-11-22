@@ -22,8 +22,9 @@ freeze_support()
 # Define notification event for thread completion
 EVT_RESULT_ID = wx.NewId()
 EVT_DATA_ID = wx.NewId()
-#global logger
+# global logger
 logger = logging.getLogger()
+
 
 def EVT_RESULT(win, func):
     """Define Result Event."""
@@ -180,7 +181,7 @@ class HistogramThread(threading.Thread):
     """Multi Worker Thread Class."""
 
     # ----------------------------------------------------------------------
-    def __init__(self, controller, wxObject, filenames, filesIn, type, row, processname,showplots):
+    def __init__(self, controller, wxObject, filenames, filesIn, type, row, processname, showplots):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self.controller = controller
@@ -208,7 +209,7 @@ class HistogramThread(threading.Thread):
                 logger.info("Process histogram with file: %s", datafile)
                 outputdir = dirname(datafile)
                 fd = HistogramLogD(datafile, configfile=self.controller.configfile, showplots=self.showplots)
-                q[datafile] = fd.generateHistogram(freq=0,outputdir=outputdir)
+                q[datafile] = fd.generateHistogram(freq=0, outputdir=outputdir)
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i + 1, total_files, self.type)))
 
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, total_files, total_files, self.processname)))
@@ -234,7 +235,8 @@ class BatchThread(threading.Thread):
     """Multi Worker Thread Class."""
 
     # ----------------------------------------------------------------------
-    def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname, showplots, total, i, nolistfilter):
+    def __init__(self, configfile, wxObject, filenames, filesIn, outputdir, expt, groups, type, row, processname,
+                 showplots, total, i, nolistfilter):
         """Init Worker Thread Class."""
         threading.Thread.__init__(self)
         self.configfile = configfile
@@ -257,7 +259,7 @@ class BatchThread(threading.Thread):
     def run(self):
         try:
             lock.acquire(True)
-            #total = len(self.groups)
+            # total = len(self.groups)
             checkedfilenames = CheckFilenames(self.filenames, self.filesIn)
             logger.info("Checked by type: (%s): \nFILES LOADED:\n%s", self.processname, "\n\t".join(checkedfilenames))
             i = self.i
@@ -266,37 +268,42 @@ class BatchThread(threading.Thread):
             for group in self.groups:
                 logger.info("Running %s script: %s (%s)", self.type.title(), self.expt, group)
                 if self.type == 'stats':
-                    fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.configfile,self.nolistfilter)
+                    fmsd = HistoStats(checkedfilenames, self.outputdir, group, self.expt, self.configfile,
+                                      self.nolistfilter)
                     compiledfile = fmsd.runStats()
                     # Split to Mobile/immobile fractions - output
                     ratiofile = fmsd.splitMobile()
                     if self.showplots:
                         fmsds.append(fmsd.showPlotly())
                 elif self.type == 'msd':
-                    fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.configfile,self.nolistfilter)
+                    fmsd = CompareMSD(checkedfilenames, self.outputdir, group, self.expt, self.configfile,
+                                      self.nolistfilter)
                     compiledfile = fmsd.compiledfile
                     ratiofile = fmsd.calculateAreas()
                     if self.showplots:
                         fmsds.append(fmsd.showPlotly())
                 elif self.type == 'batchd':
-                    fmsd = BatchLogd(checkedfilenames, self.outputdir, group, self.expt, self.configfile,self.nolistfilter)
+                    fmsd = BatchLogd(checkedfilenames, self.outputdir, group, self.expt, self.configfile,
+                                     self.nolistfilter)
                     fmsd.saveCompiled()
                     compiledfile = fmsd.compiledfile
-                    ratiofile =''
+                    ratiofile = ''
                 else:
                     continue
 
                 count = (i / self.total) * 100
                 wx.PostEvent(self.wxObject, ResultEvent((count, self.row, i, self.total, self.processname)))
-                logger.info("%s: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.processname,self.expt, group, compiledfile,ratiofile)
+                logger.info("%s: %s: %s\nFILES CREATED:\n\t%s\n\t%s\n", self.processname, self.expt, group,
+                            compiledfile, ratiofile)
                 i += 1
 
             wx.PostEvent(self.wxObject, ResultEvent((100, self.row, i - 1, self.total, self.processname)))
             if self.showplots and len(fmsds) > 0:
                 group = ''
-                logger.info("%s: %s: %s\nPLOTS CREATED:\n\t%s\n", self.processname,self.expt, group, ("\n\t").join(fmsds))
+                logger.info("%s: %s: %s\nPLOTS CREATED:\n\t%s\n", self.processname, self.expt, group,
+                            ("\n\t").join(fmsds))
         except Exception as e:
-            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, 2,2, self.processname)))
+            wx.PostEvent(self.wxObject, ResultEvent((-1, self.row, 2, 2, self.processname)))
             logging.error(e)
         except KeyboardInterrupt:
             logger.warning("Keyboard interrupt in BatchThread")
@@ -312,7 +319,6 @@ class BatchThread(threading.Thread):
         self.terminate()
 
 
-
 ########################################################################
 
 class MSDController():
@@ -320,12 +326,13 @@ class MSDController():
 
         self.processes = [
             {'caption': '1. Filter Data', 'href': 'filter',
-             'description': 'For each cell, generate log10 of diffusion coefficient, then filters between min and max range. MSD data is also filtered with corresponding rows.','ptype':'indiv',
+             'description': 'For each cell, generate log10 of diffusion coefficient, then filters between min and max range. MSD data is also filtered with corresponding rows.',
+             'ptype': 'indiv',
              'files': 'DATA_FILENAME, MSD_FILENAME',
              'filesout': 'FILTERED_FILENAME, FILTERED_MSD'},
             {'caption': '2. Generate Histograms', 'href': 'histogram',
              'description': 'For each cell, generate relative frequency histograms of log10(D) data',
-             'files': 'FILTERED_FILENAME','ptype':'indiv',
+             'files': 'FILTERED_FILENAME', 'ptype': 'indiv',
              'filesout': 'HISTOGRAM_FILENAME'},
             {'caption': '2. Batch Log10(D)', 'href': 'batchd',
              'description': 'Compiles all filtered log10(D) data',
@@ -333,11 +340,11 @@ class MSDController():
              'filesout': 'BATCHD_FILENAME'},
             {'caption': '3. Histogram Stats', 'href': 'stats',
              'description': 'Compiles histogram data with descriptive statistics from all cells (batch) into one file per group in output directory',
-             'files': 'HISTOGRAM_FILENAME','ptype':'batch',
+             'files': 'HISTOGRAM_FILENAME', 'ptype': 'batch',
              'filesout': 'ALLSTATS_FILENAME'},
             {'caption': '4. Compile MSD', 'href': 'msd',
              'description': 'Compiles MSD data with descriptive statistics from all cells (batch) into one file per group in output directory',
-             'files': 'FILTERED_MSD','ptype':'batch',
+             'files': 'FILTERED_MSD', 'ptype': 'batch',
              'filesout': 'AVGMSD_FILENAME'}
         ]
 
@@ -345,19 +352,20 @@ class MSDController():
         self.loaded = self.loadConfig()
         self.logger = self.loadLogger()
 
-    def loadLogger(self,outputdir=None, expt=''):
+    def loadLogger(self, outputdir=None, expt=''):
         #### LoggingConfig
         logger.setLevel(logging.INFO)
         homedir = expanduser("~")
         if outputdir is not None and access(outputdir, R_OK):
             homedir = outputdir
-        if len(expt) >0:
+        if len(expt) > 0:
             expt = expt + "_"
         if not access(join(homedir, "logs"), R_OK):
             mkdir(join(homedir, "logs"))
-        self.logfile = join(homedir, "logs", expt+'msdanalysis.log')
+        self.logfile = join(homedir, "logs", expt + 'msdanalysis.log')
         handler = RotatingFileHandler(filename=self.logfile, maxBytes=10000000, backupCount=10)
-        formatter = logging.Formatter('[ %(asctime)s %(levelname)-4s ] %(filename)s %(lineno)d : (%(threadName)-9s) %(message)s')
+        formatter = logging.Formatter(
+            '[ %(asctime)s %(levelname)-4s ] %(filename)s %(lineno)d : (%(threadName)-9s) %(message)s')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         return logger
@@ -378,7 +386,7 @@ class MSDController():
                 config = ConfigObj(self.configfile, encoding='ISO-8859-1')
             else:
                 logger.warning('No user config file found - using default')
-                default_config = join('resources','msd.cfg')
+                default_config = join('resources', 'msd.cfg')
                 config = ConfigObj(default_config, encoding='ISO-8859-1')
             if config is None:
                 raise ValueError('Config object not loaded')
@@ -408,6 +416,10 @@ class MSDController():
                 self.roi = config['GROUPBY_ROI']
             else:
                 self.roi = 0
+            if 'ENCODING' in config:
+                self.encoding = config['ENCODING']
+            else:
+                self.encoding = 'ISO-8859-1'
             self.config = config
             rtn = True
 
@@ -436,14 +448,13 @@ class MSDController():
             # Show plots
             if len(searchtext) <= 0:
                 searchtext = " vs ".join(prefixes)
-            #Comparison plots - both?
+            # Comparison plots - both?
             rs.showPlotly()
             rs.showPlots(searchtext)
         except Exception as e:
             logging.error(e)
         finally:
             logging.info('Run compare finished')
-
 
     # ----------------------------------------------------------------------
     def RunProcess(self, wxGui, filenames, i, outputdir, expt, row, showplots=False):
@@ -468,48 +479,52 @@ class MSDController():
         elif type == 'histogram':
             if row > 1:
                 event.wait()
-            t = HistogramThread(self, wxGui, filenames, filesIn, type, row, processname,showplots)
+            t = HistogramThread(self, wxGui, filenames, filesIn, type, row, processname, showplots)
             t.start()
         elif type == 'stats':
             if row > 2:
                 event.wait()
             if row > 1:
                 hevent.wait()
-            #Allow for filenames already grouped - flag=True for no further filtering
+            # Allow for filenames already grouped - flag=True for no further filtering
             groupflag = 0
-            total=len(filenames.keys())-1
+            total = len(filenames.keys()) - 1
             for k in filenames.keys():
                 if k == 'all':
                     continue
                 if len(filenames[k]) > 0:
                     groupflag += 1
-                    t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row, processname,showplots, total, groupflag, True)
+                    t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row,
+                                    processname, showplots, total, groupflag, True)
                     t.start()
 
-            #If no groups provided - use all
+            # If no groups provided - use all
             if not groupflag:
-                total = len([self.group1,self.group2])
-                t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1,self.group2], type, row, processname,showplots, total, groupflag+1, False)
+                total = len([self.group1, self.group2])
+                t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
+                                type, row, processname, showplots, total, groupflag + 1, False)
                 t.start()
 
         elif type == 'batchd':
             if row > 1:
                 event.wait()
-            #Allow for filenames already grouped - flag=True for no further filtering
+            # Allow for filenames already grouped - flag=True for no further filtering
             groupflag = 0
-            total=len(filenames.keys())-1
+            total = len(filenames.keys()) - 1
             for k in filenames.keys():
                 if k == 'all':
                     continue
                 if len(filenames[k]) > 0:
                     groupflag += 1
-                    t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row, processname,showplots, total, groupflag, True)
+                    t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt, [k], type, row,
+                                    processname, showplots, total, groupflag, True)
                     t.start()
 
-            #If no groups provided - use all
+            # If no groups provided - use all
             if not groupflag:
-                total = len([self.group1,self.group2])
-                t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1,self.group2], type, row, processname,showplots, total, groupflag+1, False)
+                total = len([self.group1, self.group2])
+                t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
+                                type, row, processname, showplots, total, groupflag + 1, False)
                 t.start()
 
         elif type == 'msd':
@@ -524,25 +539,24 @@ class MSDController():
                 if len(filenames[k]) > 0:
                     groupflag += 1
                     t = BatchThread(self.configfile, wxGui, filenames[k], filesIn, outputdir, expt,
-                                  [k], type, row, processname, showplots, total, groupflag, True)
+                                    [k], type, row, processname, showplots, total, groupflag, True)
                     t.start()
 
             # If no groups provided - use all
             if not groupflag:
                 total = len([self.group1, self.group2])
                 t = BatchThread(self.configfile, wxGui, filenames, filesIn, outputdir, expt, [self.group1, self.group2],
-                              type, row, processname, showplots, total, groupflag+1, False)
+                                type, row, processname, showplots, total, groupflag + 1, False)
                 t.start()
 
         logger.info("Running Thread - loaded: %s", type)
 
     # ----------------------------------------------------------------------
 
-
     def shutdown(self):
         logger.info('Close extra thread')
         t = threading.current_thread()
-        #print("Thread counter:", threading.main_thread())
+        # print("Thread counter:", threading.main_thread())
         if t != threading.main_thread() and t.is_alive():
             logger.info('Shutdown: closing %s', t.getName())
             t.terminate()

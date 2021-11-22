@@ -65,6 +65,8 @@ class FilterMSD():
             self.minlimit = float(config['MINLIMIT'])
             self.maxlimit = float(config['MAXLIMIT'])
             self.roi = int(config['GROUPBY_ROI'])
+            if 'ENCODING' in config:
+                self.encoding = config['ENCODING']
 
     def load_datafiles(self, datafile, datafile_msd):
         """

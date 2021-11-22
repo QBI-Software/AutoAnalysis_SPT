@@ -23,7 +23,7 @@ from msdapp.guicontrollers import EVT_RESULT, EVT_DATA
 from msdapp.guicontrollers import MSDController
 from msdapp.utils import findResourceDir
 from gui.gui_spt import ConfigPanel, FilesPanel, ComparePanel, WelcomePanel, ProcessPanel, dlgLogViewer
-__version__='2.1.1'
+__version__='2.1.2'
 
 ########################################################################
 class HomePanel(WelcomePanel):
@@ -133,7 +133,8 @@ class MSDConfig(ConfigPanel):
         self.m_tcCellid.SetValue(parent.cellid)
         self.m_txtAlllogdfilename.SetValue(parent.batchd)
         self.m_cbROI.SetValue(int(parent.roi))
-        msg = "Config file: %s" % parent.configfile
+        self.m_textCtrl162.SetValue(parent.encoding)
+        msg = "Config file: %s with encoding %s" % (parent.configfile, parent.encoding)
         print(msg)
         self.m_status.SetLabel(msg)
 
@@ -164,6 +165,7 @@ class MSDConfig(ConfigPanel):
         config['CELLID'] = self.m_tcCellid.GetValue()
         config['BATCHD_FILENAME'] = self.m_txtAlllogdfilename.GetValue()
         config['GROUPBY_ROI'] = int(self.m_cbROI.GetValue())
+        config['ENCODING'] = self.m_textCtrl162.GetValue()
         config.write()
         # Reload to parent
         try:

@@ -68,6 +68,8 @@ class HistogramLogD():
                 self.fmax = float(config['MAXLIMIT'])
                 self.binwidth = float(config['BINWIDTH'])
                 self.logcolumn = config['LOG_COLUMN']
+                if 'ENCODING' in config:
+                    self.encoding = config['ENCODING']
             except:
                 raise IOError
 
