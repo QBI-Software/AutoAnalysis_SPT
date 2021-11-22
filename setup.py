@@ -14,12 +14,12 @@
     GNU General Public License for more details.
 '''
 #
-# Step 1. Build first
+# Step 1. Build exe (in PyCharm: Tools -> Run setup.py Task -> build)
 #   python setup.py build
-# View build dir contents - double-click RUN autoanalysis_SPT.exe to test run
-# Step 2. Create MSI distribution (Windows)
+# View build dir contents - double-click autoanalysis_spt.exe to test run
+# Step 2. Create MSI distribution (Windows) (in PyCharm: Tools -> Run setup.py Task -> bdist_msi)
 #   python setup.py bdist_msi
-# View dist dir contents - test run bdist_msi
+# View dist dir contents - test run bdist_msi file
 
 
 application_title = 'QBI SPT Auto Analysis'
@@ -49,6 +49,7 @@ build_exe_options = {
 }
 
 bdist_msi_options = {
+    "skip_build": True,
     "upgrade_code": "{13252EEB-C257-41C6-9BC9-6CD4B4FD9D85}" #get uid from first installation regedit
     }
 
