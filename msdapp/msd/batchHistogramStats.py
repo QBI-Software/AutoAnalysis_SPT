@@ -111,7 +111,7 @@ class HistoStats(BatchStats):
         df['SUM'] = df.apply(lambda x: (x[1:n].sum()), axis=1)
         # reorder ORDER: mean,sem,count,std,sum
         cols = df.columns[0:n].tolist() + ['MEAN', 'SEM', 'COUNT', 'STD', 'SUM']
-        df = df.reindex_axis(cols, axis=1)
+        df = df.reindex(cols, axis=1)
         self.compiled = df
         self.saveCompiled()
         return self.compiledfile

@@ -16,27 +16,17 @@
 #
 # Step 1. Build first
 #   python setup.py build
-# View build dir contents
+# View build dir contents - double-click RUN autoanalysis_SPT.exe to test run
 # Step 2. Create MSI distribution (Windows)
 #   python setup.py bdist_msi
-# View dist dir contents
-####
-# Issues with scipy and cx-freeze -> https://stackoverflow.com/questions/32432887/cx-freeze-importerror-no-module-named-scipy
-# 1. changed cx_Freeze/hooks.py scipy.lib to scipy._lib (line 560)
-#then run setup.py build
-# 2. changed scipy/spatial cKDTree.cp35-win_amd64.pyd to ckdtree.cp35-win_amd64.pyd
-# 3. change Plot.pyc to plot.pyc in multiprocessing
-# test with exe
-# then run bdist_msi
-# create 64bit from 32bit python with python setup.py build --plat-name=win-amd64
-# NB To add Shortcut working dir - change cx_freeze/windist.py Line 61 : last None - > 'TARGETDIR'
+# View dist dir contents - test run bdist_msi
+
 
 application_title = 'QBI SPT Auto Analysis'
 main_python_file = 'runapp.py'
 
 import os
 import sys
-import shutil
 from os.path import join
 from cx_Freeze import setup, Executable
 from runapp import __version__
@@ -51,9 +41,9 @@ if sys.platform == 'win32':
     base = 'Win32GUI'
 
 build_exe_options = {
-    'includes': ['idna.idnadata', "numpy", "plotly", "packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.cKDTree'],
+    'includes': ['idna.idnadata', "numpy", "plotly", "packaging.version","packaging.specifiers", "packaging.requirements","appdirs",'scipy.spatial.ckdtree'],
     'excludes': ['PyQt4', 'PyQt5'],
-    'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly','wx'],
+    'packages': ['scipy','seaborn', 'numpy.core._methods', 'numpy.lib.format', 'plotly','wx','importlib', 'pandas'],
     'include_files': ['resources/','gui/', (join(venvpython, 'scipy', 'special', '_ufuncs.cp36-win_amd64.pyd'), '_ufuncs.pyd')],
     'include_msvcr': 1
 }
@@ -68,7 +58,7 @@ setup(
     description='Auto Analysis for SPT (Meunier,QBI)',
     long_description=open('README.md').read(),
     author='Liz Cooper-Williams, QBI',
-    author_email='e.cooperwilliams@uq.edu.au',
+    author_email='lcwsoftware@gmail.com',
     maintainer='QBI Custom Software, UQ',
     maintainer_email='qbi-dev-admin@uq.edu.au',
     url='http://github.com/QBI-Software/AutoAnalysis_SPT',
@@ -82,6 +72,3 @@ setup(
                             shortcutDir='DesktopFolder')]
 )
 
-#Rename ckdtree
-shutil.move(join('build','exe.win-amd64-3.6','lib','scipy','spatial','cKDTree.cp36-win_amd64.pyd'), join('build','exe.win-amd64-3.6','lib','scipy','spatial','ckdtree.pyd'))
-shutil.copyfile(join('build','exe.win-amd64-3.6','lib','scipy','spatial','ckdtree.pyd'), join('build','exe.win-amd64-3.6','lib','scipy','spatial','ckdtree.cp36-win_amd64.pyd'))

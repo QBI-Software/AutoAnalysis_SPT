@@ -133,7 +133,8 @@ class BatchStats:
                     files = allfiles #default assume prefix and expt strings are not found
             else:
                 files = allfiles
-            base = commonpath(files)
+            if (len(files) > 0):
+                base = commonpath(files)
         print("Total Files Found: ", len(files))
 
         return (base, files)
